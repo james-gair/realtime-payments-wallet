@@ -1,3 +1,6 @@
+/**
+ * Delete this after starting the actual project
+ */
 import { Request, Response } from "express";
 import { CreateTodoDto } from "../dtos/CreateTodo.dto";
 import { CreateTodoQueryParams } from "../types/query-params";
