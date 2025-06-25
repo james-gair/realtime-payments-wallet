@@ -40,3 +40,5 @@ temp/
 
 # Jest snapshot cache
 __snapshots__/
+
+serviceAccountKey.json
