@@ -1,7 +1,11 @@
 import { createApp } from "../createApp";
 import { Express } from "express";
 import request from "supertest";
-describe("api/todos", () => {
+
+/**
+ * Delete this after starting the actual project
+ */
+describe("/api/todo", () => {
   let app: Express;
   beforeAll(() => {
     app = createApp();
