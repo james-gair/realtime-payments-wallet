@@ -1,54 +1,124 @@
-# React + TypeScript + Vite
+# Frontend Setup – COMP3900
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application built with **React**, **TypeScript**, and **Vite**.
 
-Currently, two official plugins are available:
+## 🚀 Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🔄 Current setup (as of 26 June 2025)
 
-## Expanding the ESLint configuration
+1. Start the frontend, backend, and database:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+docker-compose up --build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Access the frontend application:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
 ```
+http://localhost:5173
+```
+
+3. Run frontend tests inside Docker:
+
+```bash
+docker exec -it frontend_app npm test
+```
+
+4. Run linting inside Docker:
+
+```bash
+docker exec -it frontend_app npm run lint
+```
+
+_Note: Don't forget to copy the .env file to local machine (from confluence)_
+
+## 📁 Folder Structure
+
+```plaintext
+comp3900_frontend/
+├── dist/              # Build output (generated)
+├── node_modules/      # Dependencies (generated)
+├── public/            # Static assets
+├── src/
+│   ├── assets/        # Application assets
+│   ├── components/    # React components
+│   ├── pages/         # Page components
+│   ├── hooks/         # Custom React hooks
+│   ├── utils/         # Utility functions
+│   ├── types/         # TypeScript type definitions
+│   ├── styles/        # CSS/SCSS files
+│   ├── App.tsx        # Main App component
+│   └── main.tsx       # Application entry point
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── eslint.config.js
+├── index.html         # HTML template
+├── package.json
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── vite.config.ts
+└── README.md
+```
+
+## 🛠️ Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Reference
+
+- Initial setup based on Vite React TypeScript template
+- Logic and structure will be adapted and extended in the actual project phase.
+
+---
+
+## 🧪 Legacy / local-only setup (not using Docker)
+
+_For running the frontend directly on your machine:_
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. **Run the frontend in development**
+
+```bash
+npm run dev
+```
+
+3. **Build the project**
+
+```bash
+npm run build
+```
+
+4. **Preview the production build**
+
+```bash
+npm run preview
+```
+
+5. **Run linting**
+
+```bash
+npm run lint
+```
+
+## 🔧 Configuration
+
+### Vite Configuration
+The project uses Vite for fast development and building. Configuration is in `vite.config.ts`.
+
+### TypeScript Configuration
+- `tsconfig.json` - Base TypeScript configuration
+- `tsconfig.app.json` - App-specific configuration
+- `tsconfig.node.json` - Node.js specific configuration
+
+### ESLint Configuration
+The project uses ESLint with TypeScript support. Configuration is in `eslint.config.js`.
