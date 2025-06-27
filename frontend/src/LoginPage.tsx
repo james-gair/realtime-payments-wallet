@@ -23,7 +23,7 @@ function LoginPage() {
       <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <button onClick={handleLogin}>Login</button>
-      <p>Don't have an account? <a href="/Register">Register</a></p>
+      <p>Don't have an account? <a href="/Register">Create One</a></p>
     </div>
   );
 }

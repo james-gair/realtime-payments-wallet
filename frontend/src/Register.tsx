@@ -7,6 +7,8 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async () => {
@@ -17,8 +19,15 @@ function Register() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      alert(`Registration successful! Welcome ${userCredential.user.email} please log in`);
-      navigate("/");
+      
+      // For now, just alert the extra fields
+      alert(`Registration successful! Welcome ${userCredential.user.email}. Please log in.
+Phone: ${phone}
+DOB: ${dob}`);
+
+      // TODO: Save phone and dob to your backend or Firestore here if you want
+      
+      navigate("/"); // Navigate to login page
     } catch (error: any) {
       alert("Registration failed: " + error.message);
     }
@@ -47,6 +56,18 @@ function Register() {
         value={confirmPassword}
         onChange={(e) => setConfirmPassword(e.target.value)}
         required
+      />
+      <input
+        type="tel"
+        placeholder="Phone Number"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+      <input
+        type="date"
+        placeholder="Date of Birth"
+        value={dob}
+        onChange={(e) => setDob(e.target.value)}
       />
       <button onClick={handleRegister}>Register</button>
       <p>Already have an account? <a href="/">Login</a></p>
