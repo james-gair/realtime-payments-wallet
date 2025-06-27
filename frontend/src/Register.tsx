@@ -15,7 +15,7 @@ function Register() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      alert(`Registration successful! Welcome ${userCredential.user.email}`);
+      alert(`Registration successful! Welcome ${userCredential.user.email} please log in`);
     } catch (error: any) {
       alert("Registration failed: " + error.message);
     }
@@ -46,6 +46,7 @@ function Register() {
         required
       />
       <button onClick={handleRegister}>Register</button>
+      <p>Already have an account? <a href="/">Login</a></p>
     </div>
   );
 }
