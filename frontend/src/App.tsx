@@ -4,6 +4,7 @@ import Register from "./Register";
 import Dashboard from "./Dashboard";
 import ResetPassword from "./ResetPassword";
 import EmailSent from "./EmailSent";
+import EmailConfirmation from "./EmailConfirmation";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/resetPassword" element={<ResetPassword />} />
       <Route path="/emailSent" element={<EmailSent />} />
+      <Route path="/emailConfirmation" element={<EmailConfirmation />} />
     </Routes>
   );
 }

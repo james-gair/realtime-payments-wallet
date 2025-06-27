@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
 import "./styles/App.css";
@@ -19,15 +19,10 @@ function Register() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user); //send email verification to the user
       
-      // For now, just alert the extra fields
-      alert(`Registration successful! Welcome ${userCredential.user.email}. Please log in.
-Phone: ${phone}
-DOB: ${dob}`);
 
-      // TODO: Save phone and dob to your backend or Firestore here if you want
-      
-      navigate("/"); // Navigate to login page
+      navigate("/EmailConfirmation"); // Navigate to email confirmation page 
     } catch (error: any) {
       alert("Registration failed: " + error.message);
     }
