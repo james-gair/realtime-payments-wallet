@@ -66,3 +66,22 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;    /* centers horizontally */
+  justify-content: center; /* centers vertically */
+  height: 100vh;          /* full viewport height */
+  gap: 12px;              /* space between each item */
+  max-width: 300px;       /* optional, limits form width */
+  margin: 0 auto;         /* centers container horizontally */
+}
+
+.form-container input,
+.form-container button {
+  width: 100%;            /* full width inputs/buttons */
+  padding: 8px;
+  font-size: 1rem;
+  box-sizing: border-box; /* ensure padding doesn't expand size */
+}
