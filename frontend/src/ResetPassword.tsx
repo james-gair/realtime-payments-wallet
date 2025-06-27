@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "./firebase";
+import { useNavigate } from "react-router-dom";
 import "./styles/App.css";
 function ResetPassword() {
     const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleReset = async () => {
         try {
           await sendPasswordResetEmail(auth, email);
-          setMessage("Password reset email sent. Please check your inbox.");
+          alert("Password reset email sent. Please check your inbox.");
+          navigate("/");
         } catch (error: any) {
           setMessage("Error: " + error.message);
         }
