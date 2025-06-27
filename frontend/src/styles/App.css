@@ -5,6 +5,25 @@
   text-align: center;
 }
 
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;    
+  justify-content: center; 
+  height: 100vh;          
+  gap: 12px;              
+  max-width: 300px;       
+  margin: 0 auto;         
+}
+
+.form-container input,
+.form-container button {
+  width: 100%;            
+  padding: 8px;
+  font-size: 1rem;
+  box-sizing: border-box; 
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -40,3 +59,4 @@
 .read-the-docs {
   color: #888;
 }
+

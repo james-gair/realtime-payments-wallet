@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
-
+import "./styles/App.css";
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +34,7 @@ DOB: ${dob}`);
   };
 
   return (
-    <div>
+    <div className="form-container">
       <h2>Register</h2>
       <input
         type="email"
