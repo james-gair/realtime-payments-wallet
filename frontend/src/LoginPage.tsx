@@ -14,6 +14,7 @@ function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // need to put multi factor authentication before acessing the dashboard
       navigate("/dashboard");
     } catch (error: any) {
       alert("Login failed: " + error.message);
