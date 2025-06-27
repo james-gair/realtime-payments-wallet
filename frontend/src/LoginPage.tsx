@@ -3,6 +3,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
 import "./styles/App.css";
+import { Link } from "react-router-dom";
 
 
 function LoginPage() {
@@ -24,6 +25,11 @@ function LoginPage() {
       <h2>Login</h2>
       <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <p >
+        <Link to="/ResetPassword" style={{ textDecoration: "underline", color: "blue", cursor: "pointer" }}>
+        Forgot password?
+        </Link>
+      </p>
       <button onClick={handleLogin}>Next</button>
       <p>Don't have an account? <a href="/Register">Create One</a></p>
     </div>
