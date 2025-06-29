@@ -1,6 +1,7 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
+import logo from "../assets/logo.png";
 import { auth } from "../services/firebase";
 
 function LoginPage() {
@@ -21,6 +22,7 @@ function LoginPage() {
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <img alt="SENDIT Logo" src={logo} className="mx-auto h-20 w-auto" />
         <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
           Sign in to your account
         </h2>
@@ -44,7 +46,7 @@ function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-black sm:text-sm/6"
               />
             </div>
           </div>
@@ -60,7 +62,7 @@ function LoginPage() {
               <div className="text-sm">
                 <Link
                   to="/ResetPassword"
-                  className="font-semibold text-indigo-600 hover:text-indigo-500"
+                  className="font-semibold text-black hover:text-zinc-700"
                 >
                   Forgot password?
                 </Link>
@@ -75,7 +77,7 @@ function LoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-black sm:text-sm/6"
               />
             </div>
           </div>
@@ -84,7 +86,7 @@ function LoginPage() {
             <button
               type="button"
               onClick={handleLogin}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
+              className="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black cursor-pointer"
             >
               Sign in
             </button>
@@ -95,7 +97,7 @@ function LoginPage() {
           Not a member?{" "}
           <Link
             to="/Register"
-            className="font-semibold text-indigo-600 hover:text-indigo-500"
+            className="font-semibold text-black hover:text-zinc-700"
           >
             Create an account
           </Link>
