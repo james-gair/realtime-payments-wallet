@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 
-// This file contains examples to write into and pull data from the backend
+// These are example handlers used to test the backend–database connection
+// and demonstrate how to query and write data to the database.
+// Authentication is handled by the Firebase API.
+// Delete this file when actual development begins.
 
 export async function getUsers(req: Request, res: Response) {
   res.send(
