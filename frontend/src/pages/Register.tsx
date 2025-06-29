@@ -4,7 +4,7 @@ import {
 } from "firebase/auth";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth } from "../utils/firebase";
+import { auth } from "../services/firebase";
 
 function Register() {
   const [email, setEmail] = useState("");
