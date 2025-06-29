@@ -1,10 +1,11 @@
-import { Routes, Route } from "react-router-dom";
-import LoginPage from "./LoginPage";
-import Register from "./Register";
-import Dashboard from "./Dashboard";
-import ResetPassword from "./ResetPassword";
-import EmailSent from "./EmailSent";
-import EmailConfirmation from "./EmailConfirmation";
+import { Route, Routes } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import EmailSent from "./pages/EmailSent";
+import LoginPage from "./pages/LoginPage";
+import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
+import "./styles/App.css";
 
 function App() {
   return (
