@@ -40,21 +40,21 @@ interface IncomeExpenseData {
 const mockCards: Card[] = [
   {
     id: 1,
-    currency: "USD",
-    balance: 22350.5,
-    cardNumber: "4358 4445 0968 2323",
-    expiryDate: "08/24",
-    gradient: "from-emerald-400 to-emerald-600",
-    symbol: "$",
-  },
-  {
-    id: 2,
     currency: "AUD",
     balance: 31245.75,
     cardNumber: "5234 6789 1234 5678",
     expiryDate: "12/25",
-    gradient: "from-blue-400 to-blue-600",
+    gradient: "from-emerald-400 to-emerald-600",
     symbol: "A$",
+  },
+  {
+    id: 2,
+    currency: "USD",
+    balance: 22350.5,
+    cardNumber: "4358 4445 0968 2323",
+    expiryDate: "08/24",
+    gradient: "from-blue-400 to-blue-600",
+    symbol: "$",
   },
   {
     id: 3,
@@ -116,8 +116,8 @@ const mockTransactions: Transaction[] = [
 ];
 
 const mockExpenseCategories: ExpenseCategory[] = [
-  { name: "Food", amount: "$950", color: "bg-indigo-500", percentage: 60 },
-  { name: "Clothes", amount: "$420", color: "bg-green-500", percentage: 25 },
+  { name: "Friends", amount: "$950", color: "bg-indigo-500", percentage: 60 },
+  { name: "Bills", amount: "$420", color: "bg-green-500", percentage: 25 },
   { name: "Other", amount: "$380", color: "bg-lime-500", percentage: 15 },
 ];
 
@@ -381,7 +381,9 @@ function Dashboard() {
           {/* Available Pie Chart */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Available</h3>
+              <h3 className="font-semibold text-gray-900">
+                Expense Categories
+              </h3>
               <button className="text-sm text-gray-500 hover:text-black hover:cursor-pointer">
                 View All →
               </button>
