@@ -6,7 +6,6 @@ export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   if (!user) throw new Error("not authenticated");
 
   const idToken = await user.getIdToken();
-
   const headers = {
     ...(init.headers || {}),
     Authorization: `Bearer ${idToken}`,

@@ -1,7 +1,7 @@
-INSERT INTO Account (email, phone, verified, pword) VALUES
-  ('alice@example.com', '0411212122', TRUE, 'hashedpass123'),
-  ('bob@example.com', '0411212122', TRUE, 'hashedpass456'),
-  ('carol@example.com', '0411212122', FALSE, 'hashedpass789');
+INSERT INTO Account (email, phone, dob, verified) VALUES
+  ('alice@example.com', '0411212122', '2025-06-30', TRUE),
+  ('bob@example.com', '0411212122', '2025-06-30', TRUE),
+  ('carol@example.com', '0411212122', '2025-06-30', FALSE);
 
   INSERT INTO Wallet (balance, currency, Account) VALUES
   (0, 'AUD', (SELECT aId FROM Account WHERE email = 'alice@example.com')),

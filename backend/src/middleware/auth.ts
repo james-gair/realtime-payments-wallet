@@ -1,6 +1,6 @@
 // backend/src/middleware/auth.ts
 import admin from '../firebaseAdmin';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 export async function authenticateFirebaseToken(
   req: Request,
