@@ -21,13 +21,6 @@ interface Transaction {
   category?: string;
 }
 
-interface ChartData {
-  month: string;
-  height: string;
-  value: string;
-  highlight?: boolean;
-}
-
 interface ExpenseCategory {
   name: string;
   amount: string;
@@ -122,15 +115,6 @@ const mockTransactions: Transaction[] = [
   },
 ];
 
-const mockChartData: ChartData[] = [
-  { month: "Mar", height: "30%", value: "1.2k" },
-  { month: "Apr", height: "45%", value: "1.8k" },
-  { month: "May", height: "40%", value: "1.5k" },
-  { month: "Jun", height: "50%", value: "2.0k" },
-  { month: "Jul", height: "85%", value: "2.2k", highlight: true },
-  { month: "Aug", height: "35%", value: "1.4k" },
-];
-
 const mockExpenseCategories: ExpenseCategory[] = [
   { name: "Food", amount: "$950", color: "bg-indigo-500", percentage: 60 },
   { name: "Clothes", amount: "$420", color: "bg-green-500", percentage: 25 },
@@ -162,16 +146,11 @@ const formatBalance = (balance: number, currency: string): string => {
   });
 };
 
-const generateRandomChartData = (length: number): number[] => {
-  return Array.from({ length }, () => Math.random() * 100);
-};
-
 function Dashboard() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   const [cards] = useState<Card[]>(mockCards);
   const [transactions] = useState<Transaction[]>(mockTransactions);
-  const [chartData] = useState<ChartData[]>(mockChartData);
   const [expenseCategories] = useState<ExpenseCategory[]>(
     mockExpenseCategories
   );
@@ -280,7 +259,7 @@ function Dashboard() {
             {/* Navigation Buttons - Hidden on mobile, shown on larger screens */}
             <button
               onClick={prevCard}
-              className="hidden sm:flex absolute left-0 top-[calc(50%+1rem)] transform -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg items-center justify-center hover:shadow-xl transition-all z-10 hover:cursor-pointer"
+              className="hidden sm:flex absolute left-0 top-[calc(50%+1rem)] transform -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg items-center justify-center hover:shadow-xl transition-all z-10 hover:cursor-pointer hover:bg-gray-200"
             >
               <svg
                 className="w-5 h-5 text-gray-600"
@@ -298,7 +277,7 @@ function Dashboard() {
             </button>
             <button
               onClick={nextCard}
-              className="hidden sm:flex absolute right-0 top-[calc(50%+1rem)] transform -translate-y-1/2 translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg items-center justify-center hover:shadow-xl transition-all z-10 hover:cursor-pointer"
+              className="hidden sm:flex absolute right-0 top-[calc(50%+1rem)] transform -translate-y-1/2 translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg items-center justify-center hover:shadow-xl transition-all z-10 hover:cursor-pointer hover:bg-gray-200"
             >
               <svg
                 className="w-5 h-5 text-gray-600"
@@ -319,7 +298,7 @@ function Dashboard() {
             <div className="sm:hidden flex gap-4 mt-4">
               <button
                 onClick={prevCard}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 bg-gray-100 rounded-full text-sm text-gray-600 hover:bg-gray-200 transition-all hover:cursor-pointer"
+                className="flex-1 flex items-center justify-center space-x-2 py-3 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:bg-gray-200 transition-all hover:cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -337,7 +316,7 @@ function Dashboard() {
               </button>
               <button
                 onClick={nextCard}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 bg-gray-100 rounded-full text-sm text-gray-600 hover:bg-gray-200 transition-all hover:cursor-pointer"
+                className="flex-1 flex items-center justify-center space-x-2 py-3 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:bg-gray-200 transition-all hover:cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
