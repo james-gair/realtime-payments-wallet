@@ -22,7 +22,7 @@ export async function authenticateFirebaseToken(
 
     // const decodedToken = await admin.auth().verifyIdToken(idToken);
     // (req as any).user = decodedToken;
-    next();
+    return next();
   } catch (err) {
     return res.status(401).json({ message: 'failed auth invalid token' });
   }

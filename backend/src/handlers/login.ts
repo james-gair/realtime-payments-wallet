@@ -12,6 +12,7 @@ export async function registerUser(req: Request, res: Response) {
       RETURNING *
     `;
 
+    // just for debugging
     res.status(201).send(result[0]);
     return;
   } catch (error) {
