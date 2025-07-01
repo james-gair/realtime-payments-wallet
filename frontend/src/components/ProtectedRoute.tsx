@@ -9,12 +9,15 @@ function ProtectedRoute() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("ProtectedRoute - onAuthStateChanged user:", user);
       setIsAuthed(!!user);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  console.log("ProtectedRoute - loading:", loading, "isAuthed:", isAuthed);
 
   if (loading) {
     return <div className="text-center mt-20 text-lg">Loading...</div>;
