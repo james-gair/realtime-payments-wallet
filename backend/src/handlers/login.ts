@@ -4,11 +4,12 @@ import { authenticateFirebaseToken } from "../middleware/auth"
 
 export async function registerUser(req: Request, res: Response) {
   const { phone, email, dob } = req.body;
+  const auth_id = (req as any).user.uid;
   
   try {
     const result = await sql`
-      INSERT INTO Account (email, phone, dob, verified)
-      VALUES (${email}, ${phone}, ${dob}, false)
+      INSERT INTO Account (firebase_id, email, phone, dob)
+      VALUES (${auth_id}, ${email}, ${phone}, ${dob})
       RETURNING *
     `;
 
@@ -24,12 +25,13 @@ export async function registerUser(req: Request, res: Response) {
 
 export async function loginUser(req: Request, res: Response) {
 
-  console.log(req);
+  console.log(req.body);
+  console.log((req as any).user.uid);
   res.json({ message: "login" });
 }
 
-export async function logoutUser(req: Request, res: Response) {
-  console.log(req);
-  console.log("logged out");
-  res.json({ message: "logout" });
-}
+// export async function logoutUser(req: Request, res: Response) {
+//   console.log(req);
+//   console.log("logged out");
+//   res.json({ message: "logout" });
+// }

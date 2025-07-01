@@ -4,6 +4,6 @@ import { authenticateFirebaseToken} from "../middleware/auth"
 
 const router = Router();
 
-router.get("/dashboard", getUser);
+router.get("/dashboard", authenticateFirebaseToken as any, getUser);
 
 export default router;

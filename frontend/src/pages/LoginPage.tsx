@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import logo from "../assets/logo.png";
 import { auth } from "../services/firebase";
+import { authFetch } from "../services/firebaseFetch";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,25 @@ function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+      try {
+        const response = await authFetch("http://localhost:4000/api/login", {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          // Handle HTTP errors
+          const errorData = await response.json();
+          console.error("Error response:", errorData);
+          return;
+        } else {
+          const data = await response.json();
+          console.log("Success:", data);
+        }
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+
       // need to put multi factor authentication before acessing the dashboard
       navigate("/dashboard");
     } catch (error: any) {

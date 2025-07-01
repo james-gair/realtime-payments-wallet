@@ -7,6 +7,6 @@ const router = Router();
 // router.post("/register", authenticateFirebaseToken, registerUser);
 router.post("/register", authenticateFirebaseToken as any, registerUser);
 
-router.post("/login", loginUser);
+router.post("/login", authenticateFirebaseToken as any, loginUser);
 
 export default router;
