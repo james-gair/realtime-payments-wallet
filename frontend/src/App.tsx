@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import Payments from "./pages/Payments";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 import "./styles/App.css";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
       <Route path="/resetPassword" element={<ResetPassword />} />
       <Route path="/emailSent" element={<EmailSent />} />
       <Route path="/emailConfirmation" element={<EmailConfirmation />} />
+      <Route path="/profile" element={<Profile />} />
       <Route element={<NavbarLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/payments" element={<Payments />} />
