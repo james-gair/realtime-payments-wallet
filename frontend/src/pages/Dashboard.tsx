@@ -340,7 +340,7 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 lg:hidden">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-400 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -356,20 +356,8 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-400 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6m-6 0l-1 13a2 2 0 002 2h8a2 2 0 002-2L15 7M9 7h6"
-                  />
-                </svg>
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+                <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
             </div>
@@ -422,7 +410,7 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -438,7 +426,7 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
@@ -523,9 +511,6 @@ function Dashboard() {
                   <h3 className="font-semibold text-gray-900 capitalize">
                     {data.type}
                   </h3>
-                  <button className="text-gray-400 hover:text-gray-600 hover:cursor-pointer">
-                    ⋯
-                  </button>
                 </div>
                 <div className="text-xl font-bold text-gray-900 mb-1">
                   {data.amount}
