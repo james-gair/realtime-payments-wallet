@@ -6,7 +6,6 @@ export interface KYCVerifyResultResponse {
   validatedData: KYCVerifyInput;
   verifiedAt: string; // ISO timestamp string
   idType: "passport" | "drivers_license";
-  riskLevel: "low" | "medium" | "high";
 }
 
 export interface KYCVerifyInputErrorResponse {

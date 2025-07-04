@@ -5,6 +5,7 @@ import {
   KYCVerifyResponse,
 } from "../dtos/KYCResBody.dtos";
 import { ZodIssue } from "zod";
+import { mockKYCRecords } from "../sampleData";
 
 export function kycVerifyHandler(
   req: Request,
@@ -28,14 +29,41 @@ export function kycVerifyHandler(
 
   const validatedData: KYCVerifyInput = parseResult.data;
 
-  // Continue with logic
-  // TODO: mock KYC verification
+  // mock KYC verification
+  let result: "verified" | "rejected";
+  let findRecord;
+  if (validatedData.type === "passport") {
+    findRecord = mockKYCRecords.find(
+      (i) =>
+        i.countryOfIssue === validatedData.countryOfIssue &&
+        new Date(i.dateOfBirth).getTime() ===
+          validatedData.dateOfBirth.getTime() &&
+        i.fullName === validatedData.fullName &&
+        new Date(i.expiryDate).getTime() ===
+          validatedData.expiryDate.getTime() &&
+        i.passportNumber === validatedData.passportNumber
+    );
+  } else {
+    findRecord = mockKYCRecords.find(
+      (i) =>
+        i.stateOfIssue === validatedData.stateOfIssue &&
+        new Date(i.dateOfBirth).getTime() ===
+          validatedData.dateOfBirth.getTime() &&
+        i.fullName === validatedData.fullName &&
+        new Date(i.expiryDate).getTime() ===
+          validatedData.expiryDate.getTime() &&
+        i.licenseNumber === validatedData.licenseNumber
+    );
+  }
 
+  if (!findRecord) result = "rejected";
+  else result = "verified";
+
+  // in real world, the risklevel depends on the records i.e, fraud activity...
   res.status(200).json({
-    status: "verified",
+    status: result,
     validatedData: validatedData,
     verifiedAt: new Date().toISOString(),
-    idType: "passport",
-    riskLevel: "low",
+    idType: validatedData.type,
   });
 }
