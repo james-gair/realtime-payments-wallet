@@ -17,4 +17,4 @@ export const mockKYCRecords = [
   },
 ];
 
-export const authorizedApiKeys = ["hjdssddfd-fdi33"];
+export const authorizedApiKeys = ["mock-kyc-secret-token"];
