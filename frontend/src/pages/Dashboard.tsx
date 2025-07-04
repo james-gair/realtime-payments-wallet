@@ -407,8 +407,8 @@ function Dashboard() {
         {/* Right Column - Charts and Analytics */}
         <div className="space-y-6 lg:col-span-2">
           {/* Send & Request Buttons - Desktop only */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block">
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block mt-11">
+            <h3 className="font-semibold text-gray-900 mb-6">Quick Actions</h3>
             <div className="space-y-3">
               <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <svg
