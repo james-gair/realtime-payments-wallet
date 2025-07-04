@@ -13,7 +13,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 
 const navigation = [
@@ -171,7 +171,7 @@ export default function NavbarLayout() {
           </div>
         </div>
 
-        <main className="py-10 lg:pl-72">
+        <main className="py-6 lg:py-10 lg:pl-72">
           <div className="px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>

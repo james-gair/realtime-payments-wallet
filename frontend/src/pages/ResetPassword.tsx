@@ -1,6 +1,6 @@
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { auth } from "../services/firebase";
 
@@ -19,7 +19,7 @@ function ResetPassword() {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+    <div className="flex min-h-screen flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <img alt="SENDIT Logo" src={logo} className="mx-auto h-20 w-auto" />
         <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
