@@ -1,3 +1,4 @@
+import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 
 // TypeScript interfaces for backend integration
@@ -335,6 +336,45 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* Send & Request Buttons - Mobile only (appears between cards and transactions) */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 lg:hidden">
+            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-400 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                <span className="font-medium">Send Money</span>
+              </button>
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-400 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6m-6 0l-1 13a2 2 0 002 2h8a2 2 0 002-2L15 7M9 7h6"
+                  />
+                </svg>
+                <span className="font-medium">Request Money</span>
+              </button>
+            </div>
+          </div>
+
           {/* Transactions */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -378,6 +418,32 @@ function Dashboard() {
 
         {/* Right Column - Charts and Analytics */}
         <div className="space-y-6 lg:col-span-2">
+          {/* Send & Request Buttons - Desktop only */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block">
+            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all hover:cursor-pointer">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                <span className="font-medium">Send Money</span>
+              </button>
+              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all hover:cursor-pointer">
+                <InboxArrowDownIcon className="w-5 h-5" />
+                <span className="font-medium">Request Money</span>
+              </button>
+            </div>
+          </div>
           {/* Available Pie Chart */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -445,35 +511,37 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Income & Expense Cards */}
-          {incomeExpenseData.map((data, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl border border-gray-200 p-6"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 capitalize">
-                  {data.type}
-                </h3>
-                <button className="text-gray-400 hover:text-gray-600 hover:cursor-pointer">
-                  ⋯
-                </button>
-              </div>
-              <div className="text-xl font-bold text-gray-900 mb-1">
-                {data.amount}
-              </div>
-              <div className="text-sm text-gray-500 mb-4">{data.period}</div>
+          {/* Expense Card */}
+          {incomeExpenseData
+            .filter((data) => data.type === "expense")
+            .map((data, index) => (
               <div
-                className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                  data.changeType === "positive"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-purple-100 text-purple-800"
-                }`}
+                key={index}
+                className="bg-white rounded-xl border border-gray-200 p-6"
               >
-                {data.change}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900 capitalize">
+                    {data.type}
+                  </h3>
+                  <button className="text-gray-400 hover:text-gray-600 hover:cursor-pointer">
+                    ⋯
+                  </button>
+                </div>
+                <div className="text-xl font-bold text-gray-900 mb-1">
+                  {data.amount}
+                </div>
+                <div className="text-sm text-gray-500 mb-4">{data.period}</div>
+                <div
+                  className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
+                    data.changeType === "positive"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-purple-100 text-purple-800"
+                  }`}
+                >
+                  {data.change}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>
