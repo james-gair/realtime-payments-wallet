@@ -10,6 +10,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import "./styles/App.css";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { KYCApplication } from "./pages/KYCApplication";
 
 function App() {
   return (
@@ -21,10 +22,12 @@ function App() {
       <Route path="/emailSent" element={<EmailSent />} />
       <Route path="/emailConfirmation" element={<EmailConfirmation />} />
       <Route path="/profile" element={<Profile />} />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<NavbarLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/kyc" element={<KYCApplication />} />
         </Route>
       </Route>
     </Routes>
