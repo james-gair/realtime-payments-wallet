@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Route, Routes } from "react-router-dom";
 import NavbarLayout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -7,7 +7,9 @@ import LoginPage from "./pages/LoginPage";
 import Payments from "./pages/Payments";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 import "./styles/App.css";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -18,9 +20,12 @@ function App() {
       <Route path="/resetPassword" element={<ResetPassword />} />
       <Route path="/emailSent" element={<EmailSent />} />
       <Route path="/emailConfirmation" element={<EmailConfirmation />} />
-      <Route element={<NavbarLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/payments" element={<Payments />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<NavbarLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/payments" element={<Payments />} />
+        </Route>
       </Route>
     </Routes>
   );
