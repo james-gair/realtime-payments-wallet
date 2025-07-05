@@ -2,6 +2,8 @@ import { useState } from "react";
 import { auth } from "../services/firebase";
 
 export function KYCApplication() {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
   const handleConfirm = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,12 +46,32 @@ export function KYCApplication() {
       }
     }
 
+    fetch(backendUrl + "/api/kyc", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fullName: "John Doe",
+        dateOfBirth: "1990-01-01",
+        idType: "passport",
+        passportNumber: "P1234567",
+        countryOfIssue: "Australia",
+        passportExpiry: "2030-12-31",
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Success:", data);
+      });
+
     for (const [key, value] of formData.entries()) {
       console.log(`${key}: ${value}`);
     }
 
     console.log("UID: " + auth.currentUser?.uid);
     console.log("email: " + auth.currentUser?.email);
+    console.log(backendUrl);
   };
 
   return (
