@@ -4,6 +4,7 @@ import serviceAccount from "../serviceAccountKey.json";
 import type { ServiceAccount } from "firebase-admin/app";
 
 if (getApps().length === 0) {
+  // check this works
   initializeApp({
     credential: cert(serviceAccount as ServiceAccount),
   });
