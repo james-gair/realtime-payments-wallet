@@ -1,6 +1,6 @@
 // backend/src/middleware/auth.ts
 import admin from '../firebaseAdmin';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 export async function authenticateFirebaseToken(
   req: Request,
@@ -20,9 +20,9 @@ export async function authenticateFirebaseToken(
     // attach user info to request, not needed for setup
     // uncomment if need to access user detail in development arises
 
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // (req as any).user = decodedToken;
-    next();
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    (req as any).user = decodedToken;
+    return next();
   } catch (err) {
     return res.status(401).json({ message: 'failed auth invalid token' });
   }

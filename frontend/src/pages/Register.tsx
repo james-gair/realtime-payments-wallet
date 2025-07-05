@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { auth } from "../services/firebase";
+import { authFetch } from "../services/firebaseFetch";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -28,6 +29,25 @@ function Register() {
         password
       );
       await sendEmailVerification(userCredential.user); //send email verification to the user
+        
+    try {
+      const response = await authFetch("http://localhost:4000/api/register", {
+        method: "POST",
+        body: JSON.stringify({ phone, email, dob }),
+      });
+
+      if (!response.ok) {
+        // Handle HTTP errors
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        return;
+      } else {
+        const data = await response.json();
+        console.log("Success:", data);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
 
       navigate("/EmailConfirmation"); // Navigate to email confirmation page
     } catch (error: any) {
