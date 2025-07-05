@@ -1,4 +1,57 @@
+import { useState } from "react";
+import { auth } from "../services/firebase";
+
 export function KYCApplication() {
+  const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
+  const handleConfirm = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    // Input fileds check:
+    // Either passport or driver's license should be selected
+    if (idType === "") {
+      alert("Please select an ID type");
+    }
+    // All the fields under the selected ID type should be filled out
+    if (idType === "passport") {
+      const passportNumber = formData.get("passportNumber")?.toString().trim();
+      const countryOfIssue = formData.get("countryOfIssue")?.toString().trim();
+      const passportExpiry = formData.get("passportExpiry")?.toString().trim();
+      const passportPhoto = formData.get("passportPhoto");
+
+      if (
+        !passportNumber ||
+        !countryOfIssue ||
+        !passportExpiry ||
+        !passportPhoto
+      ) {
+        alert("Please complete all passport fields and upload a photo.");
+        return;
+      }
+    }
+
+    if (idType === "driverLicense") {
+      const licenseNumber = formData.get("licenseNumber")?.toString().trim();
+      const stateOfIssue = formData.get("stateOfIssue")?.toString().trim();
+      const licenseExpiry = formData.get("licenseExpiry")?.toString().trim();
+      const licensePhoto = formData.get("driverLicensePhoto");
+
+      if (!licenseNumber || !stateOfIssue || !licenseExpiry || !licensePhoto) {
+        alert(
+          "Please complete all driver's license fields and upload a photo."
+        );
+        return;
+      }
+    }
+
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+
+    console.log("UID: " + auth.currentUser?.uid);
+    console.log("email: " + auth.currentUser?.email);
+  };
+
   return (
     <div className="m-10 bg-white">
       <section aria-labelledby="kyc-section-heading">
@@ -14,7 +67,11 @@ export function KYCApplication() {
           purposes.
         </p>
 
-        <form className="mt-6 space-y-6" aria-labelledby="kyc-section-heading">
+        <form
+          className="mt-6 space-y-6"
+          aria-labelledby="kyc-section-heading"
+          onSubmit={handleConfirm}
+        >
           <div>
             <label htmlFor="fullName" className="block font-medium">
               Full Name
@@ -24,6 +81,7 @@ export function KYCApplication() {
               id="fullName"
               name="fullName"
               className="w-full border px-3 py-2 rounded"
+              required
             />
           </div>
 
@@ -36,118 +94,133 @@ export function KYCApplication() {
               id="dob"
               name="dateOfBirth"
               className="w-full border px-3 py-2 rounded"
+              required
             />
           </div>
 
-          <fieldset className="border rounded p-4">
-            <legend className="font-semibold flex items-center gap-2">
-              <input type="checkbox" id="driverLicense" name="driverLicense" />
-              <label htmlFor="driverLicense">Driver’s License</label>
-            </legend>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <label htmlFor="licenseNumber" className="block font-medium">
-                  License Number
-                </label>
+          <div className="space-y-2">
+            <label className="block font-medium">Select ID Type</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1">
                 <input
-                  type="text"
-                  id="licenseNumber"
-                  name="licenseNumber"
-                  className="w-full border px-3 py-2 rounded"
+                  type="radio"
+                  name="idType"
+                  value="passport"
+                  checked={idType === "passport"}
+                  onChange={() => setIdType("passport")}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="stateOfIssue" className="block font-medium">
-                  State of Issue
-                </label>
+                Passport
+              </label>
+              <label className="flex items-center gap-1">
                 <input
-                  type="text"
-                  id="stateOfIssue"
-                  name="stateOfIssue"
-                  className="w-full border px-3 py-2 rounded"
+                  type="radio"
+                  name="idType"
+                  value="drivers_license" // complies with the id check api
+                  checked={idType === "driverLicense"}
+                  onChange={() => setIdType("driverLicense")}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="licenseExpiry" className="block font-medium">
-                  Expiry Date
-                </label>
-                <input
-                  type="date"
-                  id="licenseExpiry"
-                  name="licenseExpiry"
-                  className="w-full border px-3 py-2 rounded"
-                />
-              </div>
-
-              <button
-                type="button"
-                className="mt-2 px-4 py-2 bg-gray-300 rounded"
-              >
-                Upload a photo of the front of the license
-              </button>
+                Driver's License
+              </label>
             </div>
-          </fieldset>
+          </div>
 
-          <fieldset className="border rounded p-4">
-            <legend className="font-semibold flex items-center gap-2">
-              <input type="checkbox" id="passport" name="passport" />
-              <label htmlFor="passport">Passport</label>
-            </legend>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <label htmlFor="passportNumber" className="block font-medium">
-                  Passport Number
-                </label>
+          {idType === "passport" && (
+            <div className="space-y-4 border p-4 rounded">
+              <label>
+                Passport Number
                 <input
-                  type="text"
-                  id="passportNumber"
                   name="passportNumber"
-                  className="w-full border px-3 py-2 rounded"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
                 />
-              </div>
-
-              <div>
-                <label htmlFor="countryOfIssue" className="block font-medium">
-                  Country of Issue
-                </label>
+              </label>
+              <label>
+                Country of Issue
                 <input
-                  type="text"
-                  id="countryOfIssue"
                   name="countryOfIssue"
-                  className="w-full border px-3 py-2 rounded"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
                 />
-              </div>
-
-              <div>
-                <label htmlFor="passportExpiry" className="block font-medium">
-                  Expiry Date
-                </label>
+              </label>
+              <label>
+                Expiry Date
                 <input
                   type="date"
-                  id="passportExpiry"
                   name="passportExpiry"
-                  className="w-full border px-3 py-2 rounded"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
                 />
-              </div>
+              </label>
 
-              <button
-                type="button"
-                className="mt-2 px-4 py-2 bg-gray-300 rounded"
+              <input
+                type="file"
+                id="passportPhoto"
+                name="passportPhoto"
+                accept="image/*"
+                className="sr-only inline-block m-10"
+                required
+              />
+
+              <label
+                htmlFor="passportPhoto"
+                className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
               >
                 Upload a photo of the front of the passport
-              </button>
+              </label>
             </div>
-          </fieldset>
+          )}
+
+          {idType === "driverLicense" && (
+            <div className="space-y-4 border p-4 rounded">
+              <label>
+                License Number
+                <input
+                  name="licenseNumber"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
+                />
+              </label>
+              <label>
+                State of Issue
+                <input
+                  name="stateOfIssue"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
+                />
+              </label>
+              <label>
+                Expiry Date
+                <input
+                  type="date"
+                  name="licenseExpiry"
+                  className="block border px-2 py-1 w-full rounded"
+                  required
+                />
+              </label>
+
+              <input
+                type="file"
+                id="driverLicensePhoto"
+                name="driverLicensePhoto"
+                accept="image/*"
+                className="sr-only inline-block m-10"
+                required
+              />
+
+              <label
+                htmlFor="driverLicensePhoto"
+                className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
+              >
+                Upload a photo of the front of your driver's license
+              </label>
+            </div>
+          )}
 
           <button
             type="submit"
-            className="mt-6 bg-blue-500 text-white py-2 px-6 rounded font-semibold"
+            className="mt-6 bg-blue-500 text-white py-2 px-6 rounded font-semibold hover:cursor-pointer"
           >
-            Confirm
+            Sibmit
           </button>
         </form>
       </section>
