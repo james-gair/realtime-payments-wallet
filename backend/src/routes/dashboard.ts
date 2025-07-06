@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { getUser } from "../handlers/dashboard";
+import { getUserWallet, getUserTransactions } from "../handlers/dashboard";
 import { authenticateFirebaseToken} from "../middleware/auth"
 
 const router = Router();
 
-router.get("/dashboard", authenticateFirebaseToken as any, getUser);
+router.get("/dashboard/wallet", authenticateFirebaseToken as any, getUserWallet);
+router.get("/dashboard/transactions", authenticateFirebaseToken as any, getUserTransactions);
 
 export default router;

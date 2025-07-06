@@ -15,7 +15,7 @@ export function createApp() {
   app.use("/api", todoRouter);
   app.use("/api", userRouter);
   app.use("/api", userLogin);
-  // app.use("/api", userDashboard);
+  app.use("/api", userDashboard);
 
   return app;
 }
