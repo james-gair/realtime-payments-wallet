@@ -5,6 +5,7 @@ import userRouter from "./routes/users";
 import userLogin from "./routes/login";
 import userDashboard from "./routes/dashboard";
 import kycRouter from "./routes/kyc";
+import { errorHandler } from "./middleware/errorHandler";
 export function createApp() {
   const app = express();
 
@@ -18,5 +19,6 @@ export function createApp() {
   app.use("/api", userLogin);
   // app.use("/api", userDashboard);
   app.use("/api", kycRouter);
+  app.use(errorHandler);
   return app;
 }

@@ -1,6 +1,6 @@
 export const mockKYCRecords = [
   {
-    type: "drivers_license",
+    idType: "drivers_license",
     fullName: "Emily Chen",
     dateOfBirth: "1994-06-15",
     licenseNumber: "NSW1234567",
@@ -8,7 +8,7 @@ export const mockKYCRecords = [
     expiryDate: "2026-10-01",
   },
   {
-    type: "passport",
+    idType: "passport",
     fullName: "David Tran",
     dateOfBirth: "1990-12-03",
     passportNumber: "P987654321",

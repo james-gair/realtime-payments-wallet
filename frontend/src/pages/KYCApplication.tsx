@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { auth } from "../services/firebase";
 
+// TODO: Selfie Capture and error handling
+
 export function KYCApplication() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -48,17 +50,7 @@ export function KYCApplication() {
 
     fetch(backendUrl + "/api/kyc", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fullName: "John Doe",
-        dateOfBirth: "1990-01-01",
-        idType: "passport",
-        passportNumber: "P1234567",
-        countryOfIssue: "Australia",
-        passportExpiry: "2030-12-31",
-      }),
+      body: formData,
     })
       .then((res) => res.json())
       .then((data) => {

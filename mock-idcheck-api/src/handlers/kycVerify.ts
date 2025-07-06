@@ -11,6 +11,16 @@ export function kycVerifyHandler(
   req: Request,
   res: Response<KYCVerifyResponse>
 ) {
+  // Just to see the req.file
+  // In this mock API we don't do anything with this pic
+  // In real world, a third party app will check it
+  console.log({
+    fieldname: req.file?.fieldname,
+    originalname: req.file?.originalname,
+    mimetype: req.file?.mimetype,
+    size: req.file?.size,
+  });
+
   const parseResult = KYCVerifySchema.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({
@@ -32,7 +42,7 @@ export function kycVerifyHandler(
   // mock KYC verification
   let result: "verified" | "rejected";
   let findRecord;
-  if (validatedData.type === "passport") {
+  if (validatedData.idType === "passport") {
     findRecord = mockKYCRecords.find(
       (i) =>
         i.countryOfIssue === validatedData.countryOfIssue &&
@@ -64,6 +74,6 @@ export function kycVerifyHandler(
     status: result,
     validatedData: validatedData,
     verifiedAt: new Date().toISOString(),
-    idType: validatedData.type,
+    idType: validatedData.idType,
   });
 }

@@ -20,7 +20,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // and here in this mock api we check the key, if the key does not
 // match our api keys, we reject to serve the request.
 // We only accept server-to-server communication for security reason
-app.use("/kyc", kycVerifyrouter);
+app.use("/api/kyc", kycVerifyrouter);
 
 app.listen(PORT, () => {
   console.log(`mock idcheck service is running on port ${PORT}`);
