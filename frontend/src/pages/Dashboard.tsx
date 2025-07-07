@@ -1,5 +1,7 @@
+// import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect } from "react";
 import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { authFetch } from "../services/firebaseFetch";
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -38,83 +40,83 @@ interface IncomeExpenseData {
 }
 
 // Mock data - replace with API calls
-const mockCards: Card[] = [
-  {
-    id: 1,
-    currency: "AUD",
-    balance: 31245.75,
-    cardNumber: "5234 6789 1234 5678",
-    expiryDate: "12/25",
-    gradient: "from-emerald-400 to-emerald-600",
-    symbol: "A$",
-  },
-  {
-    id: 2,
-    currency: "USD",
-    balance: 22350.5,
-    cardNumber: "4358 4445 0968 2323",
-    expiryDate: "08/24",
-    gradient: "from-blue-400 to-blue-600",
-    symbol: "$",
-  },
-  {
-    id: 3,
-    currency: "YEN",
-    balance: 2450000,
-    cardNumber: "6789 1234 5678 9012",
-    expiryDate: "03/26",
-    gradient: "from-purple-400 to-purple-600",
-    symbol: "¥",
-  },
-];
+// const mockCards: Card[] = [
+//   {
+//     id: 1,
+//     currency: "AUD",
+//     balance: 31245.75,
+//     cardNumber: "5234 6789 1234 5678",
+//     expiryDate: "12/25",
+//     gradient: "from-emerald-400 to-emerald-600",
+//     symbol: "A$",
+//   },
+//   {
+//     id: 2,
+//     currency: "USD",
+//     balance: 22350.5,
+//     cardNumber: "4358 4445 0968 2323",
+//     expiryDate: "08/24",
+//     gradient: "from-blue-400 to-blue-600",
+//     symbol: "$",
+//   },
+//   {
+//     id: 3,
+//     currency: "YEN",
+//     balance: 2450000,
+//     cardNumber: "6789 1234 5678 9012",
+//     expiryDate: "03/26",
+//     gradient: "from-purple-400 to-purple-600",
+//     symbol: "¥",
+//   },
+// ];
 
-const mockTransactions: Transaction[] = [
-  {
-    id: 1,
-    name: "Figma",
-    amount: "-$ 15.00",
-    icon: "🎨",
-    color: "bg-orange-100",
-    time: "2 hours ago",
-    category: "Software",
-  },
-  {
-    id: 2,
-    name: "Grammarly",
-    amount: "-$ 10.00",
-    icon: "✍️",
-    color: "bg-green-100",
-    time: "1 day ago",
-    category: "Software",
-  },
-  {
-    id: 3,
-    name: "Blender",
-    amount: "-$ 15.00",
-    icon: "🔷",
-    color: "bg-orange-100",
-    time: "2 days ago",
-    category: "Software",
-  },
-  {
-    id: 4,
-    name: "Netflix",
-    amount: "-$ 12.99",
-    icon: "🎬",
-    color: "bg-red-100",
-    time: "3 days ago",
-    category: "Entertainment",
-  },
-  {
-    id: 5,
-    name: "Spotify",
-    amount: "-$ 9.99",
-    icon: "🎵",
-    color: "bg-green-100",
-    time: "1 week ago",
-    category: "Entertainment",
-  },
-];
+// const mockTransactions: Transaction[] = [
+//   {
+//     id: 1,
+//     name: "Figma",
+//     amount: "-$ 15.00",
+//     icon: "🎨",
+//     color: "bg-orange-100",
+//     time: "2 hours ago",
+//     category: "Software",
+//   },
+//   {
+//     id: 2,
+//     name: "Grammarly",
+//     amount: "-$ 10.00",
+//     icon: "✍️",
+//     color: "bg-green-100",
+//     time: "1 day ago",
+//     category: "Software",
+//   },
+//   {
+//     id: 3,
+//     name: "Blender",
+//     amount: "-$ 15.00",
+//     icon: "🔷",
+//     color: "bg-orange-100",
+//     time: "2 days ago",
+//     category: "Software",
+//   },
+//   {
+//     id: 4,
+//     name: "Netflix",
+//     amount: "-$ 12.99",
+//     icon: "🎬",
+//     color: "bg-red-100",
+//     time: "3 days ago",
+//     category: "Entertainment",
+//   },
+//   {
+//     id: 5,
+//     name: "Spotify",
+//     amount: "-$ 9.99",
+//     icon: "🎵",
+//     color: "bg-green-100",
+//     time: "1 week ago",
+//     category: "Entertainment",
+//   },
+// ];
 
 const mockExpenseCategories: ExpenseCategory[] = [
   { name: "Friends", amount: "$950", color: "bg-indigo-500", percentage: 60 },
@@ -150,8 +152,11 @@ const formatBalance = (balance: number, currency: string): string => {
 function Dashboard() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
-  const [cards] = useState<Card[]>(mockCards);
-  const [transactions] = useState<Transaction[]>(mockTransactions);
+  // done
+  const [cards, setCards] = useState<Card[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // to do
   const [expenseCategories] = useState<ExpenseCategory[]>(
     mockExpenseCategories
   );
@@ -170,6 +175,30 @@ function Dashboard() {
   const goToCard = (index: number) => {
     setCurrentCardIndex(index);
   };
+
+
+  // const [test,setTest] = useState([]);
+
+  const fetchCards = async () => {
+    const response = await authFetch("http://localhost:4000/api/dashboard/wallet", {
+      method: "GET",
+    });
+    const data = await response.json();
+    setCards(data.wallets)
+  };
+
+  const fetchTransactions = async () => {
+    const response = await authFetch("http://localhost:4000/api/dashboard/transactions", {
+      method: "GET",
+    });
+    const data = await response.json();
+    setTransactions(data.transactions)
+  };
+
+  useEffect(() => {
+    fetchCards();
+    fetchTransactions();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -530,7 +559,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default Dashboard;
