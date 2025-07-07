@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-//import { authFetch } from "../services/firebaseFetch"; 
+import { authFetch } from "../services/firebaseFetch"; 
 interface Rates {
   [currency: string]: number;
 }
@@ -11,25 +11,13 @@ function Forex() {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const mockData = {
-          rates: {
-            USD: 0.67,
-            EUR: 0.61,
-            GBP: 0.52,
-            JPY: 106.37,
-          },
-          date: "2025-07-07",
-        };
+        const res = await authFetch("http://localhost:4000/api/fx-rates", {
+             method: "GET",
+        });
 
-        setRates(mockData.rates);
-        setLastUpdated(mockData.date);
-        // const res = await authFetch("http://localhost:4000/api/fx-rates", {
-        //     method: "GET",
-        // });
-
-        // const data = await res.json();
-        // setRates(data.rates);
-        // setLastUpdated(data.lastUpdated || "");
+        const data = await res.json();
+        setRates(data.rates);
+        setLastUpdated(data.lastUpdated || "");
       } catch (error) {
         console.error("Failed to fetch FX rates", error);
       }
