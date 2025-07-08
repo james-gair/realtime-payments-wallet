@@ -42,27 +42,30 @@ export function kycVerifyHandler(
   // mock KYC verification
   let result: "verified" | "rejected";
   let findRecord;
+  console.log("country of issue: ", validatedData.countryOfIssue);
   if (validatedData.idType === "passport") {
     findRecord = mockKYCRecords.find(
       (i) =>
-        i.countryOfIssue === validatedData.countryOfIssue &&
+        i.countryOfIssue?.toUpperCase() ===
+          validatedData.countryOfIssue?.toUpperCase() &&
         new Date(i.dateOfBirth).getTime() ===
-          validatedData.dateOfBirth.getTime() &&
-        i.fullName === validatedData.fullName &&
+          new Date(validatedData.dateOfBirth).getTime() &&
+        i.fullName.toUpperCase() === validatedData.fullName.toUpperCase() &&
         new Date(i.expiryDate).getTime() ===
-          validatedData.expiryDate.getTime() &&
-        i.passportNumber === validatedData.passportNumber
+          new Date(validatedData.expiryDate).getTime() &&
+        i.passportNumber?.toString().toUpperCase() ===
+          validatedData.passportNumber?.toString().toUpperCase()
     );
   } else {
     findRecord = mockKYCRecords.find(
       (i) =>
         i.stateOfIssue === validatedData.stateOfIssue &&
         new Date(i.dateOfBirth).getTime() ===
-          validatedData.dateOfBirth.getTime() &&
+          new Date(validatedData.dateOfBirth).getTime() &&
         i.fullName === validatedData.fullName &&
         new Date(i.expiryDate).getTime() ===
-          validatedData.expiryDate.getTime() &&
-        i.licenseNumber === validatedData.licenseNumber
+          new Date(validatedData.expiryDate).getTime() &&
+        i.licenseNumber?.toString() === validatedData.licenseNumber?.toString()
     );
   }
 
@@ -71,7 +74,7 @@ export function kycVerifyHandler(
 
   // in real world, the risklevel depends on the records i.e, fraud activity...
   res.status(200).json({
-    status: result,
+    result: result,
     validatedData: validatedData,
     verifiedAt: new Date().toISOString(),
     idType: validatedData.idType,

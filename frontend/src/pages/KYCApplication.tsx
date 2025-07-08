@@ -7,7 +7,7 @@ export function KYCApplication() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
-  const handleConfirm = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
@@ -48,9 +48,20 @@ export function KYCApplication() {
       }
     }
 
-    fetch(backendUrl + "/api/kyc", {
+    const user = auth.currentUser;
+    if (!user) throw new Error("not authenticated");
+
+    const idToken = await user.getIdToken();
+
+    await fetch(backendUrl + "/api/kyc", {
       method: "POST",
       body: formData,
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        // Does not use the fecth wrapper here
+        // because I can't add "Content-Type" here,
+        // the browser will set it correctly
+      },
     })
       .then((res) => res.json())
       .then((data) => {

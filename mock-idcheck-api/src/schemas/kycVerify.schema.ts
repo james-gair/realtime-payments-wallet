@@ -21,18 +21,26 @@ export const KYCVerifySchema = z
   .refine(
     (data) =>
       data.idType !== "passport" ||
-      (data.passportNumber && data.passportNumber.length > 0),
+      (data.passportNumber &&
+        data.passportNumber.length > 0 &&
+        data.countryOfIssue &&
+        data.countryOfIssue.length > 0),
     {
-      message: "Passport number is required if type is passport",
+      message:
+        "Passport number and country of issue is required if type is passport",
       path: ["passportNumber"],
     }
   )
   .refine(
     (data) =>
       data.idType !== "drivers_license" ||
-      (data.licenseNumber && data.licenseNumber.length > 0),
+      (data.licenseNumber &&
+        data.licenseNumber.length > 0 &&
+        data.stateOfIssue &&
+        data.stateOfIssue.length > 0),
     {
-      message: "License number is required if type is drivers_license",
+      message:
+        "License number and state of issue is required if type is drivers_license",
       path: ["licenseNumber"],
     }
   );
