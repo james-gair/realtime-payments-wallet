@@ -76,9 +76,7 @@ export async function kycHandler(req: Request, res: Response) {
     contentType: file.mimetype,
   });
 
-  // --------------------------
-  // First try/catch: call mock API
-  // --------------------------
+  // Call mock API to verify the user
   let verificationResult: KYCVerifyResultResponse;
   try {
     const response = await axios.post<KYCVerifyResultResponse>(
@@ -124,9 +122,7 @@ export async function kycHandler(req: Request, res: Response) {
     return;
   }
 
-  // --------------------------
-  // Second try/catch: update DB
-  // --------------------------
+  // Update the database
   try {
     const result = await sql`
       UPDATE Account
