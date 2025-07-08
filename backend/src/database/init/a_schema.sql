@@ -11,7 +11,8 @@ CREATE TABLE Account (
 -- Currencies table
 CREATE TABLE Currency (
   currency_id SERIAL PRIMARY KEY,
-  code VARCHAR(10) NOT NULL UNIQUE  -- e.g. "AUD", "USD"
+  code VARCHAR(10) NOT NULL UNIQUE,  -- e.g. "AUD", "USD"
+  symbol VARCHAR(10) NOT NULL UNIQUE
 );
 
 -- Wallets table
@@ -20,6 +21,8 @@ CREATE TABLE Wallet (
   account INTEGER NOT NULL,
   currency INTEGER NOT NULL,
   balance NUMERIC(18, 2) DEFAULT 0 CHECK (balance >= 0),
+  card_number VARCHAR(16) NOT NULL,
+  expiry_date VARCHAR(5) NOT NULL,
   monthly_limit NUMERIC(18, 2) CHECK (monthly_limit >= 0),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -43,9 +46,10 @@ EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TABLE Transactions (
   transaction_id SERIAL PRIMARY KEY,
-  category TEXT NOT NULL, /*bills, direct payment*/
-  event_Time TIMESTAMP NOT NULL,
-  amount MONEY NOT NULL,
+  name TEXT NOT NULL,
+  amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
+  event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  category TEXT,
   sender SERIAL REFERENCES Wallet(wallet_id),
   recipient SERIAL REFERENCES Wallet(wallet_id)
 );
