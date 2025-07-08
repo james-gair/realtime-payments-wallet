@@ -14,13 +14,14 @@ export function kycVerifyHandler(
   // Just to see the req.file
   // In this mock API we don't do anything with this pic
   // In real world, a third party app will check it
-  console.log({
-    fieldname: req.file?.fieldname,
-    originalname: req.file?.originalname,
-    mimetype: req.file?.mimetype,
-    size: req.file?.size,
-  });
+  // console.log({
+  //   fieldname: req.file?.fieldname,
+  //   originalname: req.file?.originalname,
+  //   mimetype: req.file?.mimetype,
+  //   size: req.file?.size,
+  // });
 
+  // check the inputs
   const parseResult = KYCVerifySchema.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({
@@ -42,7 +43,7 @@ export function kycVerifyHandler(
   // mock KYC verification
   let result: "verified" | "rejected";
   let findRecord;
-  console.log("country of issue: ", validatedData.countryOfIssue);
+
   if (validatedData.idType === "passport") {
     findRecord = mockKYCRecords.find(
       (i) =>
@@ -59,20 +60,21 @@ export function kycVerifyHandler(
   } else {
     findRecord = mockKYCRecords.find(
       (i) =>
-        i.stateOfIssue === validatedData.stateOfIssue &&
+        i.stateOfIssue?.toUpperCase() ===
+          validatedData.stateOfIssue?.toUpperCase() &&
         new Date(i.dateOfBirth).getTime() ===
           new Date(validatedData.dateOfBirth).getTime() &&
-        i.fullName === validatedData.fullName &&
+        i.fullName.toUpperCase() === validatedData.fullName.toUpperCase() &&
         new Date(i.expiryDate).getTime() ===
           new Date(validatedData.expiryDate).getTime() &&
-        i.licenseNumber?.toString() === validatedData.licenseNumber?.toString()
+        i.licenseNumber?.toString().toUpperCase() ===
+          validatedData.licenseNumber?.toString().toUpperCase()
     );
   }
 
   if (!findRecord) result = "rejected";
   else result = "verified";
 
-  // in real world, the risklevel depends on the records i.e, fraud activity...
   res.status(200).json({
     result: result,
     validatedData: validatedData,
