@@ -16,6 +16,7 @@ export function KYCApplication() {
     // Either passport or driver's license should be selected
     if (idType === "") {
       alert("Please select an ID type");
+      return;
     }
     // All the fields under the selected ID type should be filled out
     if (idType === "passport") {
@@ -61,8 +62,9 @@ export function KYCApplication() {
         body: formData,
         headers: {
           Authorization: `Bearer ${idToken}`,
-          // Does not use the fecth wrapper here
-          // because I can't add "Content-Type" here,
+          // Did not use the fecth wrapper here
+          // because I should not set it "Content-Type" here,
+          // we are sending a photo too,
           // the browser will set it correctly
         },
       });
@@ -70,7 +72,7 @@ export function KYCApplication() {
 
       if (!res.ok) {
         alert(`Error ${res.status}: ${data.error}`);
-        console.log("Issues:", data.issues);
+        console.error("Issues:", data.issues);
         return;
       }
       // Verification successful, inform the user and then redirect to dashboard
