@@ -7,6 +7,7 @@ import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
 import sql from "../database/client";
 
 export async function kycHandler(req: Request, res: Response) {
+  // get user id
   const firebase_id = (req as any).user?.uid;
 
   if (!firebase_id) {
@@ -14,6 +15,7 @@ export async function kycHandler(req: Request, res: Response) {
     return;
   }
 
+  // Get the image of the ID in the req
   const files = req.files as {
     passportPhoto?: Express.Multer.File[];
     driverLicensePhoto?: Express.Multer.File[];
@@ -28,6 +30,7 @@ export async function kycHandler(req: Request, res: Response) {
     return;
   }
 
+  // get the text inputs
   const parseResult = kycSchema.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({
@@ -37,6 +40,7 @@ export async function kycHandler(req: Request, res: Response) {
     return;
   }
 
+  // construct a new formData to send to the mock API
   const validatedData: kycInput = parseResult.data;
   const form = new FormData();
 
@@ -84,7 +88,7 @@ export async function kycHandler(req: Request, res: Response) {
       {
         headers: {
           ...form.getHeaders(),
-          Authorization: `Bearer ${process.env.MOCK_KYC_API_TOKEN}`,
+          Authorization: `Bearer ${process.env.MOCK_KYC_API_TOKEN}`, // add the secret token
         },
       }
     );
