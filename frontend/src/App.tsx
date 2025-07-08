@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import "./styles/App.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { KYCApplication } from "./pages/KYCApplication";
+import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
           <Route path="/kyc" element={<KYCApplication />} />
+          <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
         </Route>
       </Route>
     </Routes>

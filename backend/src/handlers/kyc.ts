@@ -7,7 +7,6 @@ import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
 import sql from "../database/client";
 
 export async function kycHandler(req: Request, res: Response) {
-  console.log("reached backend");
   const firebase_id = (req as any).user?.uid;
 
   if (!firebase_id) {
@@ -33,7 +32,7 @@ export async function kycHandler(req: Request, res: Response) {
   if (!parseResult.success) {
     res.status(400).json({
       error: "Validation failed",
-      issues: parseResult.error.issues as ZodIssue[],
+      details: parseResult.error.issues as ZodIssue[],
     });
     return;
   }
@@ -95,7 +94,7 @@ export async function kycHandler(req: Request, res: Response) {
     } else {
       res.status(400).json({
         error: "Verification failed",
-        result: response.data,
+        details: response.data,
       });
       return;
     }

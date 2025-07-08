@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { auth } from "../services/firebase";
+import { useNavigate } from "react-router-dom";
 
 // TODO: Selfie Capture and error handling
 
 export function KYCApplication() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
+  const navigate = useNavigate();
   const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
   const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,28 +54,36 @@ export function KYCApplication() {
 
     const idToken = await user.getIdToken();
 
-    await fetch(backendUrl + "/api/kyc", {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        // Does not use the fecth wrapper here
-        // because I can't add "Content-Type" here,
-        // the browser will set it correctly
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Success:", data);
+    // Send request to the backend
+    try {
+      const res = await fetch(backendUrl + "/api/kyc", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          // Does not use the fecth wrapper here
+          // because I can't add "Content-Type" here,
+          // the browser will set it correctly
+        },
       });
+      const data = await res.json();
 
-    for (const [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
+      if (!res.ok) {
+        alert(`Error ${res.status}: ${data.error}`);
+        console.log("Issues:", data.issues);
+        return;
+      }
+      // Verification successful, inform the user and then redirect to dashboard
+      navigate("/kyc/success");
+    } catch (err) {
+      console.error("Network error", err);
+      alert("Something went wrong. Please try again later.");
+      return;
     }
 
-    console.log("UID: " + auth.currentUser?.uid);
-    console.log("email: " + auth.currentUser?.email);
-    console.log(backendUrl);
+    // for (const [key, value] of formData.entries()) {
+    //   console.log(`${key}: ${value}`);
+    // }
   };
 
   return (
