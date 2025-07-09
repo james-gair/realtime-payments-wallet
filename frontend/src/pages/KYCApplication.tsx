@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { auth } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
+import { WebcamCapture } from "../components/WebcameCapture";
 
 // TODO: Selfie Capture and error handling
 
 export function KYCApplication() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
   const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
+
   const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    console.log(selfieFile);
+    console.log(licenseFile);
 
     // Input fileds check:
     // Either passport or driver's license should be selected
@@ -18,20 +25,30 @@ export function KYCApplication() {
       alert("Please select an ID type");
       return;
     }
+
+    if (!selfieFile) {
+      alert("Please upload a selfie photo with ID.");
+      return;
+    }
+    formData.append("selfieWithId", selfieFile);
+
+    const licencephoto =
+      licenseFile ||
+      formData.get("passportPhoto") ||
+      formData.get("driverLicensePhoto");
+
+    if (!licencephoto) {
+      alert("Please upload the ID photo");
+      return;
+    }
     // All the fields under the selected ID type should be filled out
     if (idType === "passport") {
       const passportNumber = formData.get("passportNumber")?.toString().trim();
       const countryOfIssue = formData.get("countryOfIssue")?.toString().trim();
       const passportExpiry = formData.get("passportExpiry")?.toString().trim();
-      const passportPhoto = formData.get("passportPhoto");
 
-      if (
-        !passportNumber ||
-        !countryOfIssue ||
-        !passportExpiry ||
-        !passportPhoto
-      ) {
-        alert("Please complete all passport fields and upload a photo.");
+      if (!passportNumber || !countryOfIssue || !passportExpiry) {
+        alert("Please complete all passport fields.");
         return;
       }
     }
@@ -40,12 +57,9 @@ export function KYCApplication() {
       const licenseNumber = formData.get("licenseNumber")?.toString().trim();
       const stateOfIssue = formData.get("stateOfIssue")?.toString().trim();
       const licenseExpiry = formData.get("licenseExpiry")?.toString().trim();
-      const licensePhoto = formData.get("driverLicensePhoto");
 
-      if (!licenseNumber || !stateOfIssue || !licenseExpiry || !licensePhoto) {
-        alert(
-          "Please complete all driver's license fields and upload a photo."
-        );
+      if (!licenseNumber || !stateOfIssue || !licenseExpiry) {
+        alert("Please complete all driver's license fields.");
         return;
       }
     }
@@ -54,7 +68,9 @@ export function KYCApplication() {
     if (!user) throw new Error("not authenticated");
 
     const idToken = await user.getIdToken();
-
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
     // Send request to the backend
     try {
       const res = await fetch(backendUrl + "/api/kyc", {
@@ -82,10 +98,6 @@ export function KYCApplication() {
       alert("Something went wrong. Please try again later.");
       return;
     }
-
-    // for (const [key, value] of formData.entries()) {
-    //   console.log(`${key}: ${value}`);
-    // }
   };
 
   return (
@@ -188,21 +200,37 @@ export function KYCApplication() {
                 />
               </label>
 
-              <input
-                type="file"
-                id="passportPhoto"
-                name="passportPhoto"
-                accept="image/*"
-                className="sr-only inline-block m-10"
-                required
-              />
+              {isMobile ? (
+                <WebcamCapture
+                  label="Passport"
+                  onCapture={(file) => setLicenseFile(file)}
+                />
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    id="passportPhoto"
+                    name="passportPhoto"
+                    accept="image/*"
+                    className="sr-only inline-block m-10"
+                    required
+                  />
+                  <label
+                    htmlFor="passportPhoto"
+                    className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
+                  >
+                    Upload a photo of the front of your passport
+                  </label>
 
-              <label
-                htmlFor="passportPhoto"
-                className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
-              >
-                Upload a photo of the front of the passport
-              </label>
+                  <div>
+                    <p className="font-medium">Take a selfie holding your ID</p>
+                    <WebcamCapture
+                      label="SelfieWithID"
+                      onCapture={(file) => setSelfieFile(file)}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -234,21 +262,37 @@ export function KYCApplication() {
                 />
               </label>
 
-              <input
-                type="file"
-                id="driverLicensePhoto"
-                name="driverLicensePhoto"
-                accept="image/*"
-                className="sr-only inline-block m-10"
-                required
-              />
+              {isMobile ? (
+                <WebcamCapture
+                  label="DriverLicense"
+                  onCapture={(file) => setLicenseFile(file)}
+                />
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    id="driverLicensePhoto"
+                    name="driverLicensePhoto"
+                    accept="image/*"
+                    className="sr-only inline-block m-10"
+                    required
+                  />
+                  <label
+                    htmlFor="driverLicensePhoto"
+                    className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
+                  >
+                    Upload a photo of the front of your driver's license
+                  </label>
 
-              <label
-                htmlFor="driverLicensePhoto"
-                className="mt-4 px-4 py-2 bg-gray-300 rounded inline-block hover:cursor-pointer"
-              >
-                Upload a photo of the front of your driver's license
-              </label>
+                  <div>
+                    <p className="font-medium">Take a selfie holding your ID</p>
+                    <WebcamCapture
+                      label="SelfieWithID"
+                      onCapture={(file) => setSelfieFile(file)}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
 

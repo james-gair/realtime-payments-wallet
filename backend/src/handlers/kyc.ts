@@ -14,19 +14,23 @@ export async function kycHandler(req: Request, res: Response) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
   }
-
+  console.log("reached kyc");
   // Get the image of the ID in the req
   const files = req.files as {
     passportPhoto?: Express.Multer.File[];
     driverLicensePhoto?: Express.Multer.File[];
+    selfieWithId?: Express.Multer.File[];
   };
 
   const passportPhoto = files.passportPhoto?.[0];
   const driverLicensePhoto = files.driverLicensePhoto?.[0];
   const file = passportPhoto || driverLicensePhoto;
+  const selfieWithIdFile = files.selfieWithId?.[0];
 
-  if (!file) {
-    res.status(400).json({ error: "No file uploaded" });
+  if (!file || !selfieWithIdFile) {
+    res
+      .status(400)
+      .json({ error: "Both the ID and SelfieWithId are required" });
     return;
   }
 
@@ -76,6 +80,10 @@ export async function kycHandler(req: Request, res: Response) {
 
   form.append("photo", file.buffer, {
     filename: file.originalname,
+    contentType: file.mimetype,
+  });
+  form.append("selfieWithId", selfieWithIdFile.buffer, {
+    filename: selfieWithIdFile.originalname,
     contentType: file.mimetype,
   });
 

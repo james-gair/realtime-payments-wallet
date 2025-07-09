@@ -8,7 +8,10 @@ const router = Router();
 router.post(
   "/verify",
   authenticateToken,
-  upload.single("photo"),
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "selfieWithId", maxCount: 1 },
+  ]),
   kycVerifyHandler
 );
 export default router;

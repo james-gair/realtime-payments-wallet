@@ -11,6 +11,7 @@ router.post(
   upload.fields([
     { name: "passportPhoto", maxCount: 1 },
     { name: "driverLicensePhoto", maxCount: 1 },
+    { name: "selfieWithId", maxCount: 1 },
   ]),
   kycHandler
 );

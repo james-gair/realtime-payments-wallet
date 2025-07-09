@@ -10,7 +10,7 @@ export interface KYCVerifyResultResponse {
 
 export interface KYCVerifyInputErrorResponse {
   error: string;
-  issues: ZodIssue[];
+  issues: ZodIssue[] | string;
 }
 
 export type KYCVerifyResponse =

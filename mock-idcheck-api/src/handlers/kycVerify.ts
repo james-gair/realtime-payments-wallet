@@ -15,12 +15,23 @@ export function kycVerifyHandler(
   // In this mock API we don't do anything with this pic
   // In real world, a third party app will check it
   // console.log({
-  //   fieldname: req.file?.fieldname,
-  //   originalname: req.file?.originalname,
-  //   mimetype: req.file?.mimetype,
-  //   size: req.file?.size,
-  // });
+  const files = req.files as {
+    photo?: Express.Multer.File[];
+    selfieWithId?: Express.Multer.File[];
+  };
 
+  const idPhoto = files.photo?.[0];
+  const selfie = files.selfieWithId?.[0];
+
+  if (!idPhoto || !selfie) {
+    res
+      .status(400)
+      .json({
+        error: "Validation failed",
+        issues: "Both ID photo and selfie are required",
+      });
+    return;
+  }
   // check the inputs
   const parseResult = KYCVerifySchema.safeParse(req.body);
   if (!parseResult.success) {
