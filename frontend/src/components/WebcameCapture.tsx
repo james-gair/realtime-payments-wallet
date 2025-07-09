@@ -11,6 +11,9 @@ export function WebcamCapture({
   onCapture,
   label,
 }: {
+  // a function passed by the parent component
+  // so that we can use it here to save the file
+  // in the parent component
   onCapture: (file: File) => void;
   label: string;
 }) {
@@ -20,7 +23,8 @@ export function WebcamCapture({
   const capture = () => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (!imageSrc) return;
-
+    // imageSrc is a based 64 encoded image looks like url
+    // use fetch here to treat it like a url to convert it to a file object
     fetch(imageSrc)
       .then((res) => res.blob())
       .then((blob) => {
