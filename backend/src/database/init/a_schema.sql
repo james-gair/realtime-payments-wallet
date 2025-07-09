@@ -1,6 +1,7 @@
 CREATE TABLE Account (
   account_id SERIAL PRIMARY KEY,
   firebase_id TEXT NOT NULL,
+  username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL,
   phone TEXT NOT NULL,
   dob DATE NOT NULL,
