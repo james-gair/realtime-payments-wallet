@@ -12,46 +12,71 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async () => {
+    setError("");
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
+      return;
+    }
+    if (!username.trim()) {
+      setError("Username is required!");
+      return;
+    }
+    if (username.trim().length < 3) {
+      setError("Username must be at least 3 characters long!");
       return;
     }
 
+    // 1. Check username availability
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      const checkRes = await fetch(
+        `http://localhost:4000/api/check-username?username=${encodeURIComponent(username)}`,
+        { method: "GET" }
+      );
+      if (!checkRes.ok) {
+        const errorData = await checkRes.json().catch(() => ({}));
+        setError(errorData.error || "Username is not available");
+        return;
+      }
+    } catch (err) {
+      setError("Failed to check username availability. Please try again.");
+      return;
+    }
+
+    // 2. Create Firebase user
+    let userCredential;
+    try {
+      userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
-      await sendEmailVerification(userCredential.user); //send email verification to the user
-        
+      await sendEmailVerification(userCredential.user);
+    } catch (error: any) {
+      setError("Registration failed: " + error.message);
+      return;
+    }
+
+    // 3. Register in backend
     try {
       const response = await authFetch("http://localhost:4000/api/register", {
         method: "POST",
-        body: JSON.stringify({ phone, email, dob }),
+        body: JSON.stringify({ phone, email, dob, username }),
       });
-
       if (!response.ok) {
-        // Handle HTTP errors
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.error || "Registration failed");
         return;
-      } else {
-        const data = await response.json();
-        console.log("Success:", data);
       }
+      navigate("/EmailConfirmation");
     } catch (error) {
-      console.error("Fetch error:", error);
-    }
-
-      navigate("/EmailConfirmation"); // Navigate to email confirmation page
-    } catch (error: any) {
-      alert("Registration failed: " + error.message);
+      setError("Failed to register user. Please try again.");
     }
   };
 
@@ -66,6 +91,27 @@ function Register() {
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="space-y-6">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm/6 font-medium text-gray-900"
+            >
+              Username
+            </label>
+            <div className="mt-2">
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-black sm:text-sm/6"
+              />
+            </div>
+          </div>
+
           <div>
             <label
               htmlFor="email"
@@ -167,6 +213,10 @@ function Register() {
               />
             </div>
           </div>
+
+          {error && (
+            <div className="text-center text-sm text-red-600">{error}</div>
+          )}
 
           <div>
             <button
