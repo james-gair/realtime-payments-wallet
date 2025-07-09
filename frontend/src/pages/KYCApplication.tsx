@@ -32,20 +32,17 @@ export function KYCApplication() {
     }
     formData.append("selfieWithId", selfieFile);
 
-    const licencephoto =
-      licenseFile ||
-      formData.get("passportPhoto") ||
-      formData.get("driverLicensePhoto");
-
-    if (!licencephoto) {
-      alert("Please upload the ID photo");
-      return;
-    }
     // All the fields under the selected ID type should be filled out
     if (idType === "passport") {
       const passportNumber = formData.get("passportNumber")?.toString().trim();
       const countryOfIssue = formData.get("countryOfIssue")?.toString().trim();
       const passportExpiry = formData.get("passportExpiry")?.toString().trim();
+      if (!formData.get("passportPhoto") && !licenseFile) {
+        alert("Please upload your passport photo");
+        return;
+      }
+      if (!formData.get("passportPhoto") && licenseFile)
+        formData.append("passportPhoto", licenseFile);
 
       if (!passportNumber || !countryOfIssue || !passportExpiry) {
         alert("Please complete all passport fields.");
@@ -57,6 +54,13 @@ export function KYCApplication() {
       const licenseNumber = formData.get("licenseNumber")?.toString().trim();
       const stateOfIssue = formData.get("stateOfIssue")?.toString().trim();
       const licenseExpiry = formData.get("licenseExpiry")?.toString().trim();
+      if (!formData.get("driverLicensePhoto") && !licenseFile) {
+        alert("Please upload your driver's license photo");
+        return;
+      }
+
+      if (!formData.get("driverLicensePhoto") && licenseFile)
+        formData.append("driverLicensePhoto", licenseFile);
 
       if (!licenseNumber || !stateOfIssue || !licenseExpiry) {
         alert("Please complete all driver's license fields.");
@@ -68,9 +72,9 @@ export function KYCApplication() {
     if (!user) throw new Error("not authenticated");
 
     const idToken = await user.getIdToken();
-    for (const [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
+    // for (const [key, value] of formData.entries()) {
+    //   console.log(`${key}: ${value}`);
+    // }
     // Send request to the backend
     try {
       const res = await fetch(backendUrl + "/api/kyc", {
