@@ -8,9 +8,12 @@ import { authFetch } from "../services/firebaseFetch";
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    setError("");
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
@@ -23,19 +26,26 @@ function LoginPage() {
           // Handle HTTP errors
           const errorData = await response.json();
           console.error("Error response:", errorData);
+          setError(errorData.error || "Login failed");
           return;
         } else {
           const data = await response.json();
           console.log("Success:", data);
+          // Store user info in localStorage for use in other components - do we need this?
+          // if (data.user) {
+          //   localStorage.setItem('userInfo', JSON.stringify(data.user));
+          // }
         }
       } catch (error) {
         console.error("Fetch error:", error);
+        setError("Failed to login");
+        return;
       }
 
       // need to put multi factor authentication before acessing the dashboard
       navigate("/dashboard");
     } catch (error: any) {
-      alert("Login failed: " + error.message);
+      setError("Login failed: " + error.message);
     }
   };
 
@@ -101,6 +111,10 @@ function LoginPage() {
               />
             </div>
           </div>
+
+          {error && (
+            <div className="text-center text-sm text-red-600">{error}</div>
+          )}
 
           <div>
             <button
