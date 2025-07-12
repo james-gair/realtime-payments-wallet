@@ -1,6 +1,7 @@
 // import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
-import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
+import { InboxArrowDownIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
 
 // TypeScript interfaces for backend integration
@@ -151,7 +152,7 @@ const formatBalance = (balance: number, currency: string): string => {
 
 function Dashboard() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-
+  const navigate = useNavigate();
   // done
   const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -176,23 +177,28 @@ function Dashboard() {
     setCurrentCardIndex(index);
   };
 
-
   // const [test,setTest] = useState([]);
 
   const fetchCards = async () => {
-    const response = await authFetch("http://localhost:4000/api/dashboard/wallet", {
-      method: "GET",
-    });
+    const response = await authFetch(
+      "http://localhost:4000/api/dashboard/wallet",
+      {
+        method: "GET",
+      }
+    );
     const data = await response.json();
-    setCards(data.wallets)
+    setCards(data.wallets);
   };
 
   const fetchTransactions = async () => {
-    const response = await authFetch("http://localhost:4000/api/dashboard/transactions", {
-      method: "GET",
-    });
+    const response = await authFetch(
+      "http://localhost:4000/api/dashboard/transactions",
+      {
+        method: "GET",
+      }
+    );
     const data = await response.json();
-    setTransactions(data.transactions)
+    setTransactions(data.transactions);
   };
 
   useEffect(() => {
@@ -454,10 +460,21 @@ function Dashboard() {
                   />
                 </svg>
                 <span className="font-medium">Send Money</span>
+                {/* TODO: Add send money page */}
               </button>
               <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
+                {/* TODO: Add request money page */}
+              </button>
+              <button
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
+                onClick={() => {
+                  navigate("/add-money");
+                }}
+              >
+                <PlusIcon className="w-5 h-5" />
+                <span className="font-medium">Add Money</span>
               </button>
             </div>
           </div>
@@ -559,7 +576,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default Dashboard;
