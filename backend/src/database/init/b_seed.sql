@@ -1,7 +1,7 @@
-INSERT INTO Account (account_id, firebase_id, email, phone, dob) VALUES
-  (1, 'xQAGaT5lXreLsvTUeLimeVC6zKL2', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
+INSERT INTO Account (account_id, firebase_id, username, email, phone, dob) VALUES
+  (1, 'xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
   (3, 'ImwaeGpTjUhxe5GStIi1nwbYDj72', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
-  (2, 'IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z');
+  (2, 'IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z');
 /* 
 pword for test is testtest
 pword for no is nononono
