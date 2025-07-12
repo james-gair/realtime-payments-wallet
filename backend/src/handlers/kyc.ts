@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { ZodIssue } from "zod";
-import { kycInput, kycSchema } from "../schemas/kyc.schema";
 import FormData from "form-data";
 import axios from "axios";
 import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
-import sql from "../database/client";
+import { verifyKyc } from "../services/verifyKyc";
+import { constructKycFormData } from "../utils/constructKycFormData";
+import { updataKycVerificationStatus } from "../utils/updateKycVerificationStatus";
 
 export async function kycHandler(req: Request, res: Response) {
   // get user id
@@ -15,103 +15,36 @@ export async function kycHandler(req: Request, res: Response) {
     return;
   }
   console.log("reached kyc");
-  // Get the image of the ID in the req
-  const files = req.files as {
-    passportPhoto?: Express.Multer.File[];
-    driverLicensePhoto?: Express.Multer.File[];
-    selfieWithId?: Express.Multer.File[];
-  };
-
-  const passportPhoto = files.passportPhoto?.[0];
-  const driverLicensePhoto = files.driverLicensePhoto?.[0];
-  const file = passportPhoto || driverLicensePhoto;
-  const selfieWithIdFile = files.selfieWithId?.[0];
-
-  if (!file || !selfieWithIdFile) {
-    res
-      .status(400)
-      .json({ error: "Both the ID and SelfieWithId are required" });
+  // construct the formData sending to the mock API to verify
+  let form: FormData;
+  try {
+    form = constructKycFormData(req);
+  } catch (err: any) {
+    const respondError: { error: string; details?: any } = {
+      error: err.message,
+    };
+    if (err.details) {
+      respondError.details = err.details;
+    }
+    res.status(400).json({ error: err.message });
     return;
   }
-
-  // get the text inputs
-  const parseResult = kycSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    res.status(400).json({
-      error: "Validation failed",
-      details: parseResult.error.issues as ZodIssue[],
-    });
-    return;
-  }
-
-  // construct a new formData to send to the mock API
-  const validatedData: kycInput = parseResult.data;
-  const form = new FormData();
-
-  form.append("idType", validatedData.idType);
-  form.append("fullName", validatedData.fullName);
-  form.append("dateOfBirth", validatedData.dateOfBirth.toString());
-
-  if (validatedData.idType === "passport") {
-    if (
-      !validatedData.passportNumber ||
-      !validatedData.countryOfIssue ||
-      !validatedData.passportExpiry
-    ) {
-      res.status(400).json({ error: "Missing passport details" });
-      return;
-    }
-    form.append("passportNumber", validatedData.passportNumber);
-    form.append("countryOfIssue", validatedData.countryOfIssue);
-    form.append("expiryDate", validatedData.passportExpiry.toString());
-  } else {
-    if (
-      !validatedData.licenseNumber ||
-      !validatedData.stateOfIssue ||
-      !validatedData.licenseExpiry
-    ) {
-      res.status(400).json({ error: "Missing license details" });
-      return;
-    }
-    form.append("licenseNumber", validatedData.licenseNumber);
-    form.append("stateOfIssue", validatedData.stateOfIssue);
-    form.append("expiryDate", validatedData.licenseExpiry.toString());
-  }
-
-  form.append("photo", file.buffer, {
-    filename: file.originalname,
-    contentType: file.mimetype,
-  });
-  form.append("selfieWithId", selfieWithIdFile.buffer, {
-    filename: selfieWithIdFile.originalname,
-    contentType: file.mimetype,
-  });
 
   // Call mock API to verify the user
   let verificationResult: KYCVerifyResultResponse;
   try {
-    const response = await axios.post<KYCVerifyResultResponse>(
-      "http://mock-idcheck-api:4001/api/kyc/verify",
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-          Authorization: `Bearer ${process.env.MOCK_KYC_API_TOKEN}`, // add the secret token
-        },
-      }
-    );
-
-    if (response.status === 200 && response.data.result === "verified") {
-      verificationResult = response.data;
-    } else {
+    verificationResult = await verifyKyc(form);
+    console.log("mock api res: ", verificationResult.result);
+    if (verificationResult.result === "rejected") {
       res.status(400).json({
         error: "Verification failed",
-        details: response.data,
+        details: verificationResult,
       });
       return;
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      // i.e. validation error
       if (error.response) {
         console.error("Mock API responded with error:", error.response.data);
         res.status(error.response.status).json({
@@ -135,24 +68,22 @@ export async function kycHandler(req: Request, res: Response) {
 
   // Update the database
   try {
-    const result = await sql`
-      UPDATE Account
-      SET verified = true
-      WHERE firebase_id = ${firebase_id}
-    `;
-
-    if (result.count === 0) {
-      res.status(404).json({ error: "User not found in database" });
+    console.log("verified, to the databse");
+    const updated = await updataKycVerificationStatus(firebase_id);
+    if (updated) {
+      res.status(200).json({
+        message: "User verified successfully",
+        result: verificationResult,
+      });
+      return;
+    } else {
+      res.status(404).json({
+        error: "User not found in database",
+      });
       return;
     }
-
-    res.status(200).json({
-      message: "User verified successfully",
-      result: verificationResult,
-    });
-    return;
   } catch (dbError) {
-    console.error("Failed to update verification status:", dbError);
+    console.error("Failed to update verification status in database:", dbError);
     res.status(500).json({ error: "Database update failed" });
     return;
   }
