@@ -5,6 +5,7 @@ import userRouter from "./routes/users";
 import userLogin from "./routes/login";
 import fxRatesRouter from "./routes/fxRates";
 import userDashboard from "./routes/dashboard";
+import profileRouter from "./routes/profile";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -21,6 +22,7 @@ export function createApp() {
   app.use("/api", userLogin);
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
+  app.use("/api", profileRouter);
 
   return app;
 }
