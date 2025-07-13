@@ -15,12 +15,13 @@ export async function kycHandler(req: Request, res: Response) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
   }
-  console.log("reached kyc");
+
   // construct the formData sending to the mock API to verify
   let form: FormData;
   try {
     form = constructKycFormData(req);
   } catch (err: any) {
+    console.error(err);
     const respondError: { error: string; details?: any } = {
       error: err.message,
     };
@@ -35,7 +36,6 @@ export async function kycHandler(req: Request, res: Response) {
   let verificationResult: KYCVerifyResultResponse;
   try {
     verificationResult = await verifyKyc(form);
-    console.log("mock api res: ", verificationResult.result);
     if (verificationResult.result === "rejected") {
       res.status(400).json({
         error: "Verification failed",
@@ -69,7 +69,6 @@ export async function kycHandler(req: Request, res: Response) {
 
   // Update the database
   try {
-    console.log("verified, to the databse");
     const updated = await updataKycVerificationStatus(firebase_id);
     const saved = await saveVerifiedAccountIdInDb(
       verificationResult.validatedData,

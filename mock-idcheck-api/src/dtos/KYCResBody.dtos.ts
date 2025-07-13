@@ -5,7 +5,7 @@ export interface KYCVerifyResultResponse {
   result: "verified" | "rejected";
   validatedData: KYCVerifyInput;
   verifiedAt: string; // ISO timestamp string
-  idType: "passport" | "drivers_license";
+  idType: "passport" | "driver_license";
 }
 
 export interface KYCVerifyInputErrorResponse {

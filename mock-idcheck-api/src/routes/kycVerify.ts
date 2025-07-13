@@ -9,7 +9,7 @@ router.post(
   "/verify",
   authenticateToken,
   upload.fields([
-    { name: "photo", maxCount: 1 },
+    { name: "idPhoto", maxCount: 1 },
     { name: "selfieWithId", maxCount: 1 },
   ]),
   kycVerifyHandler

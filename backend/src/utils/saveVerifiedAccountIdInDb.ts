@@ -1,8 +1,8 @@
 import sql from "../database/client";
-import { KYCVerifyInput } from "../dtos/KYCVerifyResponse";
+import { KycInput } from "../schemas/kyc.schema";
 
 export async function saveVerifiedAccountIdInDb(
-  kyc: KYCVerifyInput,
+  kyc: KycInput,
   firebase_id: string
 ) {
   // find the corresponding account_id
@@ -17,13 +17,6 @@ export async function saveVerifiedAccountIdInDb(
 
   const account_id = account[0].account_id;
 
-  const id_number =
-    kyc.idType === "passport" ? kyc.passportNumber : kyc.licenseNumber;
-
-  if (!id_number) {
-    throw new Error("Missing ID number");
-  }
-
   return await sql`
     INSERT INTO account_identity (
       account_id,
@@ -31,19 +24,17 @@ export async function saveVerifiedAccountIdInDb(
       date_of_birth,
       id_type,
       id_number,
-      expiry_date,
-      country_of_issue,
-      state_of_issue,
+      id_expiry_date,
+      place_of_issue,
       verified_at
     ) VALUES (
       ${account_id},
       ${kyc.fullName},
       ${kyc.dateOfBirth},
       ${kyc.idType},
-      ${id_number},
-      ${kyc.expiryDate},
-      ${kyc.countryOfIssue ?? null},
-      ${kyc.stateOfIssue ?? null},
+      ${kyc.idNumber},
+      ${kyc.idExpDate},
+      ${kyc.placeOfIssue},
       ${new Date()}
     )
     RETURNING *

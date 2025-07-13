@@ -13,11 +13,10 @@ CREATE TABLE account_identity (
   account_id INTEGER PRIMARY KEY REFERENCES Account(account_id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   date_of_birth DATE NOT NULL,
-  id_type TEXT NOT NULL CHECK (id_type IN ('passport', 'drivers_license')),
+  id_type TEXT NOT NULL CHECK (id_type IN ('passport', 'driver_license')),
   id_number TEXT NOT NULL,
-  expiry_date DATE NOT NULL,
-  country_of_issue TEXT,
-  state_of_issue TEXT,
+  id_expiry_date DATE NOT NULL,
+  place_of_issue TEXT NOT NULL,
   verified_at TIMESTAMP NOT NULL
 );
 
