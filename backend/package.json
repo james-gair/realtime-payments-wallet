@@ -20,7 +20,9 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
-    "postgres": "^3.4.7"
+    "node-emoji": "^2.2.0",
+    "postgres": "^3.4.7",
+    "string-to-color": "^2.2.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
