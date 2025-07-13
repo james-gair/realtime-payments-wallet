@@ -1,7 +1,5 @@
-import { Request } from "express";
 import { kycSchema } from "../../schemas/kyc.schema";
 import { constructKycFormData } from "../../utils/constructKycFormData";
-import { success } from "zod/v4";
 
 jest.mock("../../schemas/kyc.schema", () => ({
   kycSchema: {
@@ -24,8 +22,7 @@ const mockFile = {
 
 const mockReq = {
   files: {
-    passportPhoto: [mockFile],
-    driverLicensePhoto: [mockFile],
+    idPhoto: [mockFile],
     selfieWithId: [mockFile],
   },
 } as any;
@@ -38,8 +35,7 @@ describe("constructFormData", () => {
     const mockReqWithoutIdPhoto = {
       ...mockReq,
       files: {
-        passportPhoto: [],
-        driverLicensePhoto: [],
+        idPhoto: [],
         selfieWithId: [mockFile],
       },
     };
@@ -54,8 +50,7 @@ describe("constructFormData", () => {
     const mockReqWithoutIdPhoto = {
       ...mockReq,
       files: {
-        passportPhoto: [mockFile],
-        driverLicensePhoto: [mockFile],
+        idPhoto: [mockFile],
         selfieWithId: [],
       },
     };
@@ -87,63 +82,5 @@ describe("constructFormData", () => {
       expect(err.message).toBe("Validation failed");
       expect(err.details).toEqual(expect.any(Array));
     }
-  });
-
-  it("missing text field for driver license, return the err", () => {
-    (kycSchema.safeParse as jest.Mock).mockReturnValue({
-      success: true,
-      data: {
-        idType: "drivers_license",
-        fullName: "Emily Chen",
-        dateOfBirth: "1994-06-15",
-        licenseNumber: "NSW1234567",
-        stateOfIssue: "NSW",
-        // no license expiry date
-      },
-    });
-    try {
-      constructKycFormData(mockReq);
-    } catch (err: any) {
-      expect(err.message).toBe("Missing license details");
-    }
-  });
-
-  it("missing text field for passport, return the err", () => {
-    (kycSchema.safeParse as jest.Mock).mockReturnValue({
-      success: true,
-      data: {
-        idType: "passport",
-        fullName: "David Tran",
-        dateOfBirth: "1990-12-03",
-        // no passport number
-        countryOfIssue: "Australia",
-        passportExpiry: "2029-03-15",
-      },
-    });
-    try {
-      constructKycFormData(mockReq);
-    } catch (err: any) {
-      expect(err.message).toBe("Missing passport details");
-    }
-  });
-
-  it("missing text field, return the err", () => {
-    (kycSchema.safeParse as jest.Mock).mockReturnValue({
-      success: true,
-      data: {
-        idType: "drivers_license",
-        fullName: "Emily Chen",
-        dateOfBirth: "1994-06-15",
-        licenseNumber: "NSW1234567",
-        stateOfIssue: "NSW",
-        licenseExpiry: "2094-06-15",
-      },
-    });
-
-    const form = constructKycFormData(mockReq);
-    expect(form).toBeDefined();
-
-    const headers = form.getHeaders();
-    expect(headers).toHaveProperty("content-type");
   });
 });

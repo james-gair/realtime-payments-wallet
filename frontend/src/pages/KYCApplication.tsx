@@ -11,20 +11,25 @@ export function KYCApplication() {
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-  const [idType, setIdType] = useState<"passport" | "driverLicense" | "">("");
+  const [idType, setIdType] = useState<"passport" | "driver_license" | "">("");
 
   const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    console.log(selfieFile);
-    console.log(licenseFile);
+    const originalFormData = new FormData(event.currentTarget);
+    const formData = new FormData();
 
-    // Input fileds check:
-    // Either passport or driver's license should be selected
-    if (idType === "") {
+    if (!idType) {
       alert("Please select an ID type");
       return;
+    } else {
+      formData.append("idType", idType);
     }
+
+    const dob = originalFormData.get("dateOfBirth");
+    if (dob) formData.append("dateOfBirth", dob);
+
+    const fullname = originalFormData.get("fullName");
+    if (fullname) formData.append("fullName", fullname);
 
     if (!selfieFile) {
       alert("Please upload a selfie photo with ID.");
@@ -34,38 +39,72 @@ export function KYCApplication() {
 
     // All the fields under the selected ID type should be filled out
     if (idType === "passport") {
-      const passportNumber = formData.get("passportNumber")?.toString().trim();
-      const countryOfIssue = formData.get("countryOfIssue")?.toString().trim();
-      const passportExpiry = formData.get("passportExpiry")?.toString().trim();
-      if (!formData.get("passportPhoto") && !licenseFile) {
+      const passportNumber = originalFormData
+        .get("passportNumber")
+        ?.toString()
+        .trim();
+      const countryOfIssue = originalFormData
+        .get("countryOfIssue")
+        ?.toString()
+        .trim();
+      const passportExpiry = originalFormData
+        .get("passportExpiry")
+        ?.toString()
+        .trim();
+
+      if (!originalFormData.get("passportPhoto") && !licenseFile) {
         alert("Please upload your passport photo");
         return;
       }
-      if (!formData.get("passportPhoto") && licenseFile)
-        formData.append("passportPhoto", licenseFile);
+      const file = originalFormData.get("passportPhoto");
+      console.log("file type:", typeof file);
+      if (file) {
+        formData.append("idPhoto", file);
+      } else if (licenseFile) {
+        formData.append("idPhoto", licenseFile);
+      }
 
       if (!passportNumber || !countryOfIssue || !passportExpiry) {
         alert("Please complete all passport fields.");
         return;
       }
-    }
-
-    if (idType === "driverLicense") {
-      const licenseNumber = formData.get("licenseNumber")?.toString().trim();
-      const stateOfIssue = formData.get("stateOfIssue")?.toString().trim();
-      const licenseExpiry = formData.get("licenseExpiry")?.toString().trim();
-      if (!formData.get("driverLicensePhoto") && !licenseFile) {
+      formData.append("idNumber", passportNumber);
+      formData.append("idExpDate", passportExpiry);
+      formData.append("placeOfIssue", countryOfIssue);
+    } else if (idType === "driver_license") {
+      const licenseNumber = originalFormData
+        .get("licenseNumber")
+        ?.toString()
+        .trim();
+      const stateOfIssue = originalFormData
+        .get("stateOfIssue")
+        ?.toString()
+        .trim();
+      const licenseExpiry = originalFormData
+        .get("licenseExpiry")
+        ?.toString()
+        .trim();
+      if (!originalFormData.get("driverLicensePhoto") && !licenseFile) {
         alert("Please upload your driver's license photo");
         return;
       }
 
-      if (!formData.get("driverLicensePhoto") && licenseFile)
-        formData.append("driverLicensePhoto", licenseFile);
+      const file = originalFormData.get("driverLicensePhoto");
+      console.log("file type:", typeof file);
+      if (file) {
+        formData.append("idPhoto", file);
+      } else if (licenseFile) {
+        formData.append("idPhoto", licenseFile);
+      }
 
       if (!licenseNumber || !stateOfIssue || !licenseExpiry) {
         alert("Please complete all driver's license fields.");
         return;
       }
+
+      formData.append("idNumber", licenseNumber);
+      formData.append("idExpDate", licenseExpiry);
+      formData.append("placeOfIssue", stateOfIssue);
     }
 
     const user = auth.currentUser;
@@ -168,8 +207,8 @@ export function KYCApplication() {
                   type="radio"
                   name="idType"
                   value="drivers_license" // complies with the id check api
-                  checked={idType === "driverLicense"}
-                  onChange={() => setIdType("driverLicense")}
+                  checked={idType === "driver_license"}
+                  onChange={() => setIdType("driver_license")}
                 />
                 Driver's License
               </label>
@@ -238,7 +277,7 @@ export function KYCApplication() {
             </div>
           )}
 
-          {idType === "driverLicense" && (
+          {idType === "driver_license" && (
             <div className="space-y-4 border p-4 rounded">
               <label>
                 License Number

@@ -1,16 +1,16 @@
 import sql from "../../database/client";
-import { KYCVerifyInput } from "../../dtos/KYCVerifyResponse";
+import { KycInput } from "../../schemas/kyc.schema";
 import { saveVerifiedAccountIdInDb } from "../../utils/saveVerifiedAccountIdInDb";
 
 jest.mock("../../database/client");
 
-const kyc: KYCVerifyInput = {
+const kyc: KycInput = {
   idType: "passport",
   fullName: "David Tran",
   dateOfBirth: new Date("1990-12-03"),
-  passportNumber: "P987654321",
-  countryOfIssue: "Australia",
-  expiryDate: new Date("2029-03-15"),
+  idNumber: "P987654321",
+  placeOfIssue: "Australia",
+  idExpDate: new Date("2029-03-15"),
 };
 
 describe("saveVerifiedAccountIdInDb", () => {
@@ -27,17 +27,17 @@ describe("saveVerifiedAccountIdInDb", () => {
   });
 
   it("throw error when passport/driver license number misisng", async () => {
-    const kycNoIdNum: KYCVerifyInput = {
+    const kycNoIdNum: KycInput = {
       idType: "passport",
       fullName: "David Tran",
       dateOfBirth: new Date("1990-12-03"),
-      passportNumber: "",
-      countryOfIssue: "Australia",
-      expiryDate: new Date("2029-03-15"),
+      idNumber: "",
+      placeOfIssue: "Australia",
+      idExpDate: new Date("2029-03-15"),
     };
     (sql as any as jest.Mock).mockReturnValue(["account_id"]);
     try {
-      await saveVerifiedAccountIdInDb(kyc, "firebase_id");
+      await saveVerifiedAccountIdInDb(kycNoIdNum, "firebase_id");
     } catch (err: any) {
       expect(err.message).toBe("Missing ID number");
     }

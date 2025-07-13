@@ -1,6 +1,5 @@
-import { Request, Response } from "express";
 import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import FormData from "form-data";
 
 export async function verifyKyc(form: FormData) {
