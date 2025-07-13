@@ -5,6 +5,7 @@ import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
 import { verifyKyc } from "../services/verifyKyc";
 import { constructKycFormData } from "../utils/constructKycFormData";
 import { updataKycVerificationStatus } from "../utils/updateKycVerificationStatus";
+import { saveVerifiedAccountIdInDb } from "../utils/saveVerifiedAccountIdInDb";
 
 export async function kycHandler(req: Request, res: Response) {
   // get user id
@@ -70,7 +71,11 @@ export async function kycHandler(req: Request, res: Response) {
   try {
     console.log("verified, to the databse");
     const updated = await updataKycVerificationStatus(firebase_id);
-    if (updated) {
+    const saved = await saveVerifiedAccountIdInDb(
+      verificationResult.validatedData,
+      firebase_id
+    );
+    if (updated && saved) {
       res.status(200).json({
         message: "User verified successfully",
         result: verificationResult,
@@ -84,7 +89,7 @@ export async function kycHandler(req: Request, res: Response) {
     }
   } catch (dbError) {
     console.error("Failed to update verification status in database:", dbError);
-    res.status(500).json({ error: "Database update failed" });
+    res.status(500).json({ error: "Database operation failed" });
     return;
   }
 }

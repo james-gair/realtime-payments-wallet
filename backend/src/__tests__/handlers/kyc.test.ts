@@ -4,6 +4,7 @@ import * as formUtils from "../../utils/constructKycFormData";
 import * as kycServices from "../../services/verifyKyc";
 import { AxiosError } from "axios";
 import * as kycDbUtils from "../../utils/updateKycVerificationStatus";
+import * as saveIdUtils from "../../utils/saveVerifiedAccountIdInDb";
 
 const mockReq = {
   user: {
@@ -23,6 +24,7 @@ const mockRes = createMockRes();
 jest.mock("../../utils/constructKycFormData");
 jest.mock("../../services/verifyKyc");
 jest.mock("../../utils/updateKycVerificationStatus");
+jest.mock("../../utils/saveVerifiedAccountIdInDb");
 
 describe("kyc", () => {
   beforeEach(() => {
@@ -140,7 +142,9 @@ describe("kyc", () => {
     });
 
     (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
-
+    (saveIdUtils.saveVerifiedAccountIdInDb as jest.Mock).mockReturnValue([
+      "account_id",
+    ]);
     await kycHandler(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.json).toHaveBeenCalledWith(
@@ -189,7 +193,28 @@ describe("kyc", () => {
     await kycHandler(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: "Database update failed" })
+      expect.objectContaining({ error: "Database operation failed" })
+    );
+  });
+
+  it("send 500, if db throws error", async () => {
+    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+      new FormData()
+    );
+
+    (kycServices.verifyKyc as jest.Mock).mockReturnValue({
+      result: "verified",
+    });
+
+    (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
+    (saveIdUtils.saveVerifiedAccountIdInDb as jest.Mock).mockRejectedValue(
+      new Error("db error")
+    );
+
+    await kycHandler(mockReq, mockRes);
+    expect(mockRes.status).toHaveBeenCalledWith(500);
+    expect(mockRes.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: "Database operation failed" })
     );
   });
 });

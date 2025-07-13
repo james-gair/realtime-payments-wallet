@@ -1,8 +1,8 @@
-interface KYCVerifyInput {
+export interface KYCVerifyInput {
   idType: "passport" | "drivers_license";
   fullName: string;
-  dateOfBirth: Date;
-  expiryDate: Date;
+  dateOfBirth: Date | string;
+  expiryDate: Date | string;
   passportNumber?: string | undefined;
   licenseNumber?: string | undefined;
   stateOfIssue?: string | undefined;

@@ -9,6 +9,18 @@ CREATE TABLE Account (
   verified BOOLEAN DEFAULT FALSE
 );
 
+CREATE TABLE account_identity (
+  account_id INTEGER PRIMARY KEY REFERENCES Account(account_id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  date_of_birth DATE NOT NULL,
+  id_type TEXT NOT NULL CHECK (id_type IN ('passport', 'drivers_license')),
+  id_number TEXT NOT NULL,
+  expiry_date DATE NOT NULL,
+  country_of_issue TEXT,
+  state_of_issue TEXT,
+  verified_at TIMESTAMP NOT NULL
+);
+
 -- Currencies table
 CREATE TABLE Currency (
   currency_id SERIAL PRIMARY KEY,
@@ -54,3 +66,4 @@ CREATE TABLE Transactions (
   sender SERIAL REFERENCES Wallet(wallet_id),
   recipient SERIAL REFERENCES Wallet(wallet_id)
 );
+
