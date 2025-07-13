@@ -11,7 +11,7 @@ export function errorHandler(
     res.status(400).json({ error: "Multer error: " + err.message });
     return;
   } else if (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
     return;
   }
   next();
