@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
+import { useNavigate } from 'react-router-dom';
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -149,6 +150,8 @@ const formatBalance = (balance: number, currency: string): string => {
 
 function Dashboard() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  // remove after debugging
+  const navigate = useNavigate();
 
   // done
   const [cards, setCards] = useState<Card[]>([]);
@@ -396,7 +399,9 @@ function Dashboard() {
               <h3 className="font-semibold text-gray-900">
                 Recent Transactions
               </h3>
-              <button className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
+              <button 
+                onClick={() => navigate("/Transactions")}
+                className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
                 View All →
               </button>
             </div>

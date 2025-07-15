@@ -19,8 +19,8 @@ INSERT INTO Wallet (wallet_id, account, currency, balance) VALUES
 
 INSERT INTO Transactions (transaction_id, name, amount, 
                           category, sender, recipient) VALUES
-    (1, 'Figma', 15, 'stuff', 1, 4),
-    (2, 'Grammarly', 20, 'stuff', 1, 4),
-    (3, 'Blender', 300, 'stuff', 1, 4),
-    (4, 'Netflix', 30, 'stuff', 4, 1),
-    (5, 'Spotify', 20, 'stuff', 1, 4);
+    (1, 'Figma', 15, '{"design","software","subscription"}', 1, 4),
+    (2, 'Grammarly', 20, '{"software","subscription", "language"}', 1, 4),
+    (3, 'Blender', 300, '{"technology","kitchen"}', 1, 4),
+    (4, 'Netflix', 30, '{"stuff","subscription","entertainment"}', 4, 1),
+    (5, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4);
