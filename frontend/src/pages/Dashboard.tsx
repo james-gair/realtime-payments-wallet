@@ -9,8 +9,6 @@ interface Card {
   id: number;
   currency: string;
   balance: number;
-  cardNumber: string;
-  expiryDate: string;
   gradient: string;
   symbol: string;
 }

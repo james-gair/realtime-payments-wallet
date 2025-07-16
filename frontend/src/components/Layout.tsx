@@ -12,6 +12,7 @@ import {
   GlobeAltIcon,
   HomeIcon,
   PlusIcon,
+  UserIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Profile", href: "/profile", icon: UserIcon },
 ];
 
 function classNames(...classes: string[]) {

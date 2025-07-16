@@ -4,64 +4,87 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime); 
 
+interface wallet {
+  id: number;
+  currency: string;
+  balance: number;
+  symbol: string;
+}
+
+interface wallet_gradient extends wallet {
+  gradient: string;
+}
+
+interface transaction {
+  id: number;
+  name: string;
+  amount: string;
+  time: string;
+  category?: string;
+}
+
+interface transaction_icon extends transaction {
+  color: string;
+  icon: string;
+}
+
+
+// add colours for wallet here
+const wallet_palette = [
+  "from-emerald-400 to-emerald-600", "from-blue-400 to-blue-600", "from-purple-400 to-purple-600"
+];
+
+const transaction_palette = [
+  "bg-orange-100", "bg-red-100", "bg-green-100"
+];
+
 export async function getUserWallet(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
     
+    // get data from db excluding colour 
     try {
-      // need to add a method to asign colours
-      const wallets = await sql`
+      const wallets: wallet[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
-        c.code AS currency, w.balance, w.card_number AS cardNumber, w.expiry_date AS expiryDate, c.symbol,
-        CASE (ROW_NUMBER() OVER (ORDER BY w.wallet_id) % 5)
-          WHEN 1 THEN 'from-purple-400 to-purple-600'
-          WHEN 2 THEN 'from-blue-400 to-blue-600'
-          WHEN 3 THEN 'from-emerald-400 to-emerald-600'
-        END AS gradient
+        c.code AS currency, w.balance, c.symbol
         FROM Wallet w 
         JOIN Account a ON w.account = a.account_id 
         JOIN Currency c ON w.currency = c.currency_id
         WHERE a.firebase_id = ${auth_id}
       `;
 
+      // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
+      const wallets_colour: wallet_gradient[] = wallets.map((w, c) => ({
+        ...w,
+        gradient: wallet_palette[c % wallet_palette.length]
+      }));
+
       res.json({
-        wallets
+        wallets: wallets_colour
       });
 
       return;
   } catch (error) {
-    console.error("Error adding user:", error);
-    res.status(500).send({ error: "Failed to add user" });
+    console.error("Error retrieving wallet data", error);
+    res.status(500).send({ error: "Failed to retrieve wallets" });
     return;
   }
 }
+
+import * as emoji from "node-emoji";
 
 export async function getUserTransactions(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
     
     try {
       // need to add a method to asign colours
-      const transactions = await sql`
+      const transactions : transaction[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
         transactions.name,
         CASE 
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
-        transactions.event_time as time, transactions.category,
-        CASE (ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) % 5)
-          WHEN 1 THEN 'from-purple-400 to-purple-600'
-          WHEN 2 THEN 'from-blue-400 to-blue-600'
-          WHEN 3 THEN 'from-emerald-400 to-emerald-600'
-          WHEN 4 THEN 'from-emerald-400 to-emerald-600'
-          ELSE 'from-emerald-400 to-emerald-600'
-        END AS color,
-        CASE (ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) % 5)
-          WHEN 1 THEN '🎨'
-          WHEN 2 THEN '1🎨1'
-          WHEN 3 THEN '11🎨'
-          WHEN 4 THEN '11🎨'
-          ELSE '11🎨'
-        END AS icon
+        transactions.event_time as time, transactions.category
         FROM Transactions transactions
         JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
         JOIN Account sender_account on sender_wallet.account = sender_account.account_id
@@ -72,13 +95,15 @@ export async function getUserTransactions(req: Request, res: Response) {
       `;
 
       // uses dayjs package to get time since this transaction
-      const relative_time = transactions.map(tx => ({
+      const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
         ...tx,
         time: dayjs(tx.time).fromNow(),
+        color: transaction_palette[c % transaction_palette.length],
+        icon: "❓"
       }));
 
       res.json({
-        transactions: relative_time
+        transactions: transactions_time
       });
 
       return;

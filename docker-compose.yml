@@ -39,5 +39,17 @@ services:
     depends_on:
       - backend
 
+  mock-idcheck-api:
+    build: ./mock-idcheck-api
+    container_name: mock_idcheck_api
+    restart: always
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./mock-idcheck-api:/app
+      - /app/node_modules
+    env_file:
+      - .env
+
 volumes:
   pgdata:

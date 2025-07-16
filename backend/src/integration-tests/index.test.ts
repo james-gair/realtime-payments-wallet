@@ -5,14 +5,13 @@ import request from "supertest";
 /**
  * Delete this after starting the actual project
  */
-describe("/api/todo", () => {
+describe("placeholder", () => {
   let app: Express;
   beforeAll(() => {
     app = createApp();
   });
 
-  it("should return an empty array", async () => {
-    const res = await request(app).get("/api/todos");
-    expect(res.body).toStrictEqual([]);
+  it("testing", async () => {
+    expect(true).toStrictEqual(true);
   });
 });
