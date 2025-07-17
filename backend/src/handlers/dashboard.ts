@@ -113,3 +113,28 @@ export async function getUserTransactions(req: Request, res: Response) {
     return;
   }
 }
+
+export async function postCreateWallet(req: Request, res: Response) {
+  //console.log("postCreateWallet called");
+  const firebaseId = (req as any).user.uid;
+  const { currencyCode } = req.body;
+
+  try {
+    await sql`
+      INSERT INTO Wallet (account, currency, balance, monthly_limit)
+      VALUES (
+        (SELECT account_id FROM Account WHERE firebase_id = ${firebaseId}),
+        (SELECT currency_id FROM Currency WHERE code = ${currencyCode}),
+        0,
+        10000
+      )
+    `;
+
+    res.status(201).json({ message: "wallet created" });
+    return;
+  } catch (err) {
+    console.error("err wallet creation", err);
+    res.status(500).json({ error: "fail create wallet" });
+    return;
+  }
+}
