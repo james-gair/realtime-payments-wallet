@@ -1,6 +1,7 @@
 // import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
 
 // TypeScript interfaces for backend integration
@@ -198,6 +199,29 @@ function Dashboard() {
     fetchTransactions();
   }, []);
 
+  const addUSDWallet = async () => {
+  try {
+    const response = await authFetch("http://localhost:4000/api/dashboard/wallet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ currencyCode: "USD" }),
+    });
+    
+    if (response.ok) {
+      await fetchCards();
+      alert("USD wallet created");
+    } else {
+      const errorData = await response.json();
+      alert(`failed create wallet: ${errorData.error || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error("err creating wallet:", error);
+    alert("err creating wallet");
+  }
+};
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -387,6 +411,13 @@ function Dashboard() {
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
+              <button 
+                onClick={addUSDWallet}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
+                <PlusIcon className="w-5 h-5" />
+                <span className="font-medium">Add USD Wallet</span>
+              </button>
             </div>
           </div>
 
@@ -456,6 +487,13 @@ function Dashboard() {
               <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
+              </button>
+              <button
+                onClick={addUSDWallet}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
+                <PlusIcon className="w-5 h-5" />
+                <span className="font-medium">Add USD Wallet</span>
               </button>
             </div>
           </div>
