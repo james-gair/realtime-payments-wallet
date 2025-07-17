@@ -5,10 +5,11 @@ export async function getUserProfile(req: Request, res: Response) {
   const firebaseId = (req as any).user.uid;
   console.log("firebaseId from token:", firebaseId);
 
+
   try {
     const result = await sql`
       SELECT account_id, email, phone, address
-      FROM Account
+      FROM account
       WHERE firebase_id = ${firebaseId}
     `;
     console.log("Database query result:", result);

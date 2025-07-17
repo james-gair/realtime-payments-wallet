@@ -28,7 +28,7 @@ function Profile() {
   useEffect(() => {
     async function fetchUserProfile() {
       try {
-        const res = await authFetch("/api/profile");
+        const res = await authFetch("http://localhost:4000/api/profile");
         const text = await res.text();
         console.log("Raw profile response text:", text);
         const data = JSON.parse(text);
