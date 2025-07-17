@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch"; 
 
 function Profile() {
-  // Holds current user info from the database
+  
   const [currentUser, setCurrentUser] = useState({
     email: "",
     contact: "",
     address: "",
   });
 
-  // Form input states
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [address, setAddress] = useState("");
@@ -47,50 +46,65 @@ function Profile() {
     fetchUserProfile();
   }, []);
 
-  const handleSave = () => {
-    setError("");
-    setSuccess("");
+  const handleSave = async () => {
+  setError("");
+  setSuccess("");
 
-    if (!email && !contact && !address) {
-      setError("Please fill in at least one field to update.");
+  const updates: { email?: string; phone?: string; address?: string } = {};
+
+  if (email && email !== currentUser.email) {
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
-
-    if (email && (email === currentUser.email || !isValidEmail(email))) {
-      setError(
-        email === currentUser.email
-          ? "This is already your current email."
-          : "Please enter a valid email address."
-      );
+    updates.email = email;
+  }
+  if (contact && contact !== currentUser.contact) {
+    if (!isValidPhone(contact)) {
+      setError("Please enter a valid contact number.");
       return;
     }
+    updates.phone = contact;
+  }
+  if (address && address !== currentUser.address) {
+    updates.address = address;
+  }
 
-    if (
-      contact &&
-      (contact === currentUser.contact || !isValidPhone(contact))
-    ) {
-      setError(
-        contact === currentUser.contact
-          ? "This is already your current contact number."
-          : "Please enter a valid contact number."
-      );
-      return;
+  if (Object.keys(updates).length === 0) {
+    setError("No changes detected to update.");
+    return;
+  }
+
+  try {
+    const res = await authFetch("http://localhost:4000/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Failed to update profile");
     }
 
-    if (address && address === currentUser.address) {
-      setError("This is already your current billing address.");
-      return;
-    }
+    const updatedProfile = await res.json();
 
-    // You can replace this with an actual PATCH call to update the user profile
-    console.log("Saving profile:", { email, contact, address });
+    setCurrentUser({
+      email: updatedProfile.email,
+      contact: updatedProfile.phone,
+      address: updatedProfile.address,
+    });
 
     setSuccess("Profile updated successfully!");
     setEmail("");
     setContact("");
     setAddress("");
-  };
-
+  } catch (err: any) {
+    setError(err.message || "Failed to update profile");
+  }
+};
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
