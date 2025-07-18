@@ -1,6 +1,10 @@
 // import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
-import { InboxArrowDownIcon, PlusIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
+import {
+  InboxArrowDownIcon,
+  PlusIcon,
+  ArrowsRightLeftIcon,
+} from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
 
 // TypeScript interfaces for backend integration
@@ -175,27 +179,32 @@ function Dashboard() {
     setCurrentCardIndex(index);
   };
 
-
   // const [test,setTest] = useState([]);
 
   const fetchCards = async () => {
-    const response = await authFetch("http://localhost:4000/api/dashboard/wallet", {
-      method: "GET",
-    });
+    const response = await authFetch(
+      "http://localhost:4000/api/dashboard/wallet",
+      {
+        method: "GET",
+      }
+    );
     const data = await response.json();
-    setCards(data.wallets)
+    setCards(data.wallets);
   };
 
   const fetchTransactions = async () => {
-    const response = await authFetch("http://localhost:4000/api/dashboard/transactions", {
-      method: "GET",
-    });
+    const response = await authFetch(
+      "http://localhost:4000/api/dashboard/transactions",
+      {
+        method: "GET",
+      }
+    );
     const data = await response.json();
-    setTransactions(data.transactions)
+    setTransactions(data.transactions);
   };
 
-  const audWallet = cards.find(card => card.currency === 'AUD');
-  const usdWallet = cards.find(card => card.currency === 'USD');
+  const audWallet = cards.find((card) => card.currency === "AUD");
+  const usdWallet = cards.find((card) => card.currency === "USD");
   const hasUSDWallet = !!usdWallet;
 
   useEffect(() => {
@@ -204,62 +213,68 @@ function Dashboard() {
   }, []);
 
   const exchangeCurrency = async () => {
-  const amount = parseFloat(exchangeAmount);
-  
-  if (!amount || amount <= 0) {
-    alert("Please enter a valid amount");
-    return;
-  }
+    const amount = parseFloat(exchangeAmount);
 
-  try {
-    const response = await authFetch("http://localhost:4000/api/dashboard/exchange", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fromCurrencyCode: "AUD",
-        toCurrencyCode: "USD",
-        fromAmount: amount
-      }),
-    });
-    
-    if (response.ok) {
-      await fetchCards();
-      setExchangeAmount("");
-      alert(`Successfully exchanged A$${amount} to USD!`);
-    } else {
-      const errorData = await response.json();
-      alert(`Exchange failed: ${errorData.error || 'Unknown error'}`);
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid amount");
+      return;
     }
-  } catch (error) {
-    console.error("Error exchanging currency:", error);
-    alert("Error exchanging currency. Please try again.");
-  }
-};
+
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/exchange",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fromCurrencyCode: "AUD",
+            toCurrencyCode: "USD",
+            fromAmount: amount,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        await fetchCards();
+        setExchangeAmount("");
+        alert(`Successfully exchanged A$${amount} to USD!`);
+      } else {
+        const errorData = await response.json();
+        alert(`Exchange failed: ${errorData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error exchanging currency:", error);
+      alert("Error exchanging currency. Please try again.");
+    }
+  };
 
   const addUSDWallet = async () => {
-  try {
-    const response = await authFetch("http://localhost:4000/api/dashboard/wallet", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ currencyCode: "USD" }),
-    });
-    
-    if (response.ok) {
-      await fetchCards();
-      alert("USD wallet created");
-    } else {
-      const errorData = await response.json();
-      alert(`failed create wallet: ${errorData.error || 'Unknown error'}`);
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/wallet",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ currencyCode: "USD" }),
+        }
+      );
+
+      if (response.ok) {
+        await fetchCards();
+        alert("USD wallet created");
+      } else {
+        const errorData = await response.json();
+        alert(`failed create wallet: ${errorData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("err creating wallet:", error);
+      alert("err creating wallet");
     }
-  } catch (error) {
-    console.error("err creating wallet:", error);
-    alert("err creating wallet");
-  }
-};
+  };
 
   return (
     <div className="space-y-6">
@@ -450,7 +465,7 @@ function Dashboard() {
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
-              <button 
+              <button
                 onClick={addUSDWallet}
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
               >
@@ -538,73 +553,81 @@ function Dashboard() {
           </div>
           {/* Currency Exchange */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Buy USD</h3>
-          <ArrowsRightLeftIcon className="w-5 h-5 text-gray-500" />
-          </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Buy USD</h3>
+              <ArrowsRightLeftIcon className="w-5 h-5 text-gray-500" />
+            </div>
 
-        <div className="space-y-4">
-          <div>
-      <label className="block text-sm text-gray-600 mb-2">
-        From: AUD {audWallet && `(Balance: A$${formatBalance(audWallet.balance, 'AUD')})`}
-      </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">A$</span>
-        <input
-          type="number"
-          value={exchangeAmount}
-          onChange={(e) => setExchangeAmount(e.target.value)}
-          placeholder="0.00"
-          className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          min="0"
-          step="0.01"
-        />
-      </div>
-    </div>
-    
-    <div className="text-center text-sm text-gray-500">
-      <ArrowsRightLeftIcon className="w-4 h-4 mx-auto mb-1" />
-    </div>
-    
-    <div>
-      <label className="block text-sm text-gray-600 mb-2">
-        To: USD {usdWallet && `(Balance: $${formatBalance(usdWallet.balance, 'USD')})`}
-      </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-        <input
-          type="text"
-          // make this dynamic by passing the exchange rate as well ??
-          value={exchangeAmount ? (parseFloat("0.00")).toFixed(2) : ""}
-          readOnly
-          placeholder="0.00"
-          className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-        />
-      </div>
-    </div>
-    
-    <button
-      onClick={exchangeCurrency}
-      disabled={!exchangeAmount || !audWallet || !hasUSDWallet}
-      className="w-full flex items-center justify-center space-x-2 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-all"
-    >
-      <ArrowsRightLeftIcon className="w-4 h-4" />
-      <span className="font-medium">Exchange</span>
-    </button>
-    
-    {!hasUSDWallet && (
-      <p className="text-xs text-red-500 text-center">
-        You need a USD wallet to exchange currencies
-      </p>
-    )}
-    
-    {!audWallet && (
-      <p className="text-xs text-red-500 text-center">
-        You need an AUD wallet to exchange currencies
-      </p>
-    )}
-  </div>
-</div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  From: AUD{" "}
+                  {audWallet &&
+                    `(Balance: A$${formatBalance(audWallet.balance, "AUD")})`}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    A$
+                  </span>
+                  <input
+                    type="number"
+                    value={exchangeAmount}
+                    onChange={(e) => setExchangeAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              <div className="text-center text-sm text-gray-500">
+                <ArrowsRightLeftIcon className="w-4 h-4 mx-auto mb-1" />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  To: USD{" "}
+                  {usdWallet &&
+                    `(Balance: $${formatBalance(usdWallet.balance, "USD")})`}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="text"
+                    // make this dynamic by passing the exchange rate as well ??
+                    value={exchangeAmount ? parseFloat("0.00").toFixed(2) : ""}
+                    readOnly
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={exchangeCurrency}
+                disabled={!exchangeAmount || !audWallet || !hasUSDWallet}
+                className="w-full flex items-center justify-center space-x-2 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-all"
+              >
+                <ArrowsRightLeftIcon className="w-4 h-4" />
+                <span className="font-medium">Exchange</span>
+              </button>
+
+              {!hasUSDWallet && (
+                <p className="text-xs text-red-500 text-center">
+                  You need a USD wallet to exchange currencies
+                </p>
+              )}
+
+              {!audWallet && (
+                <p className="text-xs text-red-500 text-center">
+                  You need an AUD wallet to exchange currencies
+                </p>
+              )}
+            </div>
+          </div>
           {/* Available Pie Chart */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -703,7 +726,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default Dashboard;
