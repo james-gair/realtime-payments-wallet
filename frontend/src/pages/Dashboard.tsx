@@ -194,7 +194,6 @@ function Dashboard() {
     setTransactions(data.transactions)
   };
 
-  // Get AUD wallet balance for display
   const audWallet = cards.find(card => card.currency === 'AUD');
   const usdWallet = cards.find(card => card.currency === 'USD');
   const hasUSDWallet = !!usdWallet;
@@ -226,8 +225,8 @@ function Dashboard() {
     });
     
     if (response.ok) {
-      await fetchCards(); // Refresh wallet balances
-      setExchangeAmount(""); // Clear the input
+      await fetchCards();
+      setExchangeAmount("");
       alert(`Successfully exchanged A$${amount} to USD!`);
     } else {
       const errorData = await response.json();
