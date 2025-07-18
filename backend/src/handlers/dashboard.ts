@@ -138,3 +138,80 @@ export async function postCreateWallet(req: Request, res: Response) {
     return;
   }
 }
+
+export async function postExchangeCurrency(req: Request, res: Response) {
+  const firebaseId = (req as any).user.uid;
+
+  // Fixed for now; will be pulled from forex API in later development
+  const exchangeRate = 1.5;
+  const { fromCurrencyCode, toCurrencyCode, fromAmount } = req.body;
+
+  if (fromAmount <= 0) {
+    res.status(400).json({ error: "negative amount err" });
+    return;
+  }
+
+  try {
+    await sql.begin(async (sql) => {
+      // Find the user's account
+      const [account] = await sql`
+        SELECT account_id FROM Account WHERE firebase_id = ${firebaseId}
+      `;
+      if (!account) throw new Error("acc not found");
+
+      // Get currency IDs
+      const [fromCurrency] = await sql`
+        SELECT currency_id FROM Currency WHERE code = ${fromCurrencyCode}
+      `;
+      const [toCurrency] = await sql`
+        SELECT currency_id FROM Currency WHERE code = ${toCurrencyCode}
+      `;
+      if (!fromCurrency || !toCurrency) {
+        throw new Error("currency not found/not supported");
+      }
+
+      // Lock wallet rows for update
+      const [fromWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${account.account_id} AND currency = ${fromCurrency.currency_id}
+        FOR UPDATE
+      `;
+      const [toWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${account.account_id} AND currency = ${toCurrency.currency_id}
+        FOR UPDATE
+      `;
+      if (!fromWallet || !toWallet) {
+        throw new Error("wallets for both currency types must exist");
+      }
+
+      // Check balance
+      if (fromWallet.balance < fromAmount) {
+        throw new Error("balance insufficient");
+      }
+
+      // Calculate target currency amount
+      const toAmount = parseFloat((fromAmount * exchangeRate).toFixed(2));
+
+      // Deduct from source wallet
+      await sql`
+        UPDATE Wallet
+        SET balance = balance - ${fromAmount}
+        WHERE wallet_id = ${fromWallet.wallet_id}
+      `;
+
+      // Add to target wallet
+      await sql`
+        UPDATE Wallet
+        SET balance = balance + ${toAmount}
+        WHERE wallet_id = ${toWallet.wallet_id}
+      `;
+    });
+
+    res.status(200).json({ message: "exchanged successfully" });
+
+  } catch (err: any) {
+    console.error("exchange err:", err);
+    res.status(500).json({ error: err.message || "exchange failed" });
+  }
+}
