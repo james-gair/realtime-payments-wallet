@@ -143,7 +143,7 @@ export async function postExchangeCurrency(req: Request, res: Response) {
   const firebaseId = (req as any).user.uid;
 
   // Fixed for now; will be pulled from forex API in later development
-  const exchangeRate = 1.5;
+  const exchangeRate = 0.65;
   const { fromCurrencyCode, toCurrencyCode, fromAmount } = req.body;
 
   if (fromAmount <= 0) {
