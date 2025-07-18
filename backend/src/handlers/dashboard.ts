@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import sql from "../database/client";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { fetchSpecificExchangeRate } from "./fxRates";
 dayjs.extend(relativeTime); 
 
 interface wallet {
@@ -143,8 +144,8 @@ export async function postExchangeCurrency(req: Request, res: Response) {
   const firebaseId = (req as any).user.uid;
 
   // Fixed for now; will be pulled from forex API in later development
-  const exchangeRate = 0.65;
   const { fromCurrencyCode, toCurrencyCode, fromAmount } = req.body;
+  const exchangeRate = await fetchSpecificExchangeRate(fromCurrencyCode, toCurrencyCode);
 
   if (fromAmount <= 0) {
     res.status(400).json({ error: "negative amount err" });
