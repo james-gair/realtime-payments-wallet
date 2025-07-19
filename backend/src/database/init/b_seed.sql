@@ -7,13 +7,13 @@ pword for test is testtest
 pword for no is nononono
 */
 INSERT INTO Currency (currency_id, code, symbol) VALUES
-  (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'YEN', '¥');
+  (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
 
 
 INSERT INTO Wallet (wallet_id, account, currency, balance) VALUES
     (20, 1, 1, 1000),
     (2, 1, 2, 1000),
-    (3, 1, 3, 100),
+    (3, 1, 3, 10000),
     (11, 3, 1, 1000),
     (12, 3, 2, 500),
     (13, 3, 3, 100),

@@ -153,14 +153,13 @@ export async function postExchangeCurrency(req: Request, res: Response) {
   }
 
   try {
+    // runs quaries as a single transaction ???
     await sql.begin(async (sql) => {
-      // Find the user's account
       const [account] = await sql`
         SELECT account_id FROM Account WHERE firebase_id = ${firebaseId}
       `;
       if (!account) throw new Error("acc not found");
 
-      // Get currency IDs
       const [fromCurrency] = await sql`
         SELECT currency_id FROM Currency WHERE code = ${fromCurrencyCode}
       `;
@@ -186,22 +185,19 @@ export async function postExchangeCurrency(req: Request, res: Response) {
         throw new Error("wallets for both currency types must exist");
       }
 
-      // Check balance
       if (fromWallet.balance < fromAmount) {
         throw new Error("balance insufficient");
       }
 
-      // Calculate target currency amount
       const toAmount = parseFloat((fromAmount * exchangeRate).toFixed(2));
 
-      // Deduct from source wallet
+      // update wallet balances
       await sql`
         UPDATE Wallet
         SET balance = balance - ${fromAmount}
         WHERE wallet_id = ${fromWallet.wallet_id}
       `;
 
-      // Add to target wallet
       await sql`
         UPDATE Wallet
         SET balance = balance + ${toAmount}
