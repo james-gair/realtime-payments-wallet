@@ -384,14 +384,14 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Card Details */}
+                      {/* Card Details
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-white text-opacity-90 text-sm font-mono tracking-wider">
                             {card.cardNumber}
                           </div>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 ))}

@@ -6,7 +6,10 @@ CREATE TABLE Account (
   phone TEXT NOT NULL,
   dob DATE NOT NULL,
   address TEXT,
-  verified BOOLEAN DEFAULT FALSE
+  verified BOOLEAN DEFAULT FALSE,
+  zai_user_id TEXT UNIQUE,
+  first_name TEXT,
+  last_name TEXT
 );
 
 CREATE TABLE account_identity (
