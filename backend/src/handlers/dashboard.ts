@@ -74,6 +74,7 @@ import * as emoji from "node-emoji";
 
 export async function getUserTransactions(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
+    const offset = 0;
     
     try {
       // need to add a method to asign colours
@@ -92,7 +93,10 @@ export async function getUserTransactions(req: Request, res: Response) {
         JOIN Account recipient_account on recipient_wallet.account = recipient_account.account_id
         WHERE sender_account.firebase_id = ${auth_id}
         OR recipient_account.firebase_id = ${auth_id}
+        ORDER BY transactions.event_time DESC, transactions.transaction_id DESC
+        LIMIT 20 OFFSET ${offset}
       `;
+      //need to up limit to 20 after testing
 
       // uses dayjs package to get time since this transaction
       const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
@@ -105,6 +109,10 @@ export async function getUserTransactions(req: Request, res: Response) {
       res.json({
         transactions: transactions_time
       });
+      // res.json({
+      //   transactions
+      // });
+      console.log(transactions_time)
 
       return;
   } catch (error) {

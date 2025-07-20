@@ -407,7 +407,8 @@ function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              {transactions.map((transaction) => (
+              {/* added slice to only show first 5 transactions */}
+              {transactions.slice(0, 5).map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-all"
