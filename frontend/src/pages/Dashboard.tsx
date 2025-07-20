@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { InboxArrowDownIcon } from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime); 
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -424,7 +427,7 @@ function Dashboard() {
                         {transaction.name}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {transaction.time}
+                        {dayjs(transaction.time).fromNow()}
                       </span>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { authFetch } from "../services/firebaseFetch";
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("");
   
   const fetchTransactions = async () => {
     const response = await authFetch("http://localhost:4000/api/dashboard/transactions", {
@@ -18,7 +19,7 @@ function Transactions() {
     fetchTransactions();
   }, []);
 
-  const filtered = transactions.filter((t) => {
+  const filteredTransactions = transactions.filter((t) => {
     const term = searchTerm.trim().toLowerCase();
     
     if (!term) return true;
@@ -34,16 +35,44 @@ function Transactions() {
     return nameMatch || categoryMatch;
   });
 
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    switch (sortOption) {
+      case 'name-asc':
+        return a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+
+      case 'date-asc':
+        return new Date(a.time) - new Date(b.time);
+      case 'date-desc':
+        return new Date(b.time) - new Date(a.time);
+
+      case 'amount-asc':
+        return Math.abs(a.amount) - Math.abs(b.amount);
+      case 'amount-desc':
+        return Math.abs(b.amount) - Math.abs(a.amount);
+
+      default:
+        return 0;
+    }
+  });
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex justify-center p-6">
+        <div className="flex gap-4 mb-4">
           <input
             type="text"
             placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border border-gray-300 p-4 rounded w-full"
+            className="border border-gray-300 p-2 rounded-xl w-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition"
           />
+          <button
+            onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Advanced Search
+          </button>
         </div>
       <div className="bg-white rounded-xl border border-gray-200 p-2">
         <div className="flex items-center justify-between mb-4">
@@ -51,13 +80,15 @@ function Transactions() {
             Transactions
           </h3>
         <select
-            // value={sortOption}
-            // onChange={(e) => setSortOption(e.target.value)}
-            className="border border-gray-300 rounded p-2"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className={`border border-gray-300 rounded p-2 w-80 ${
+            sortOption === '' ? 'text-gray-500' : 'text-gray'
+            }`}
           >
             <option value="" hidden>Sort by</option>
-            <option value="name-asc">Name Ascending</option>
-            <option value="name-desc">Name Descending</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
             <option value="date-asc">Date Earliest</option>
             <option value="date-desc">Date Latest</option>
             <option value="amount-asc">Amount Ascending</option>
@@ -65,34 +96,49 @@ function Transactions() {
           </select>
         </div>
 
-        <div className="grid grid-cols-4 font-semibold text-gray-800 p-4 px-2 hover:bg-gray-50">
+        <div className="rounded grid grid-cols-[1fr_2fr_2fr_1.5fr_1fr] font-semibold text-gray-800 px-2 py-2 ml-2 hover:bg-gray-50">
           <div>Name</div>
           <div>Time</div>
           <div>Category</div>
+          <div>Incoming/Outgoing</div>
           <div className="text-right">Amount</div>
         </div>
 
     <div className="space-y-2">
-      {filtered.map((transaction) => (
+      {sortedTransactions.map((transaction) => (
       <div
         key={transaction.id}
-        className="grid grid-cols-4 items-center px-2 py-2 rounded-lg hover:bg-gray-50 transition-all"
+        className="grid grid-cols-[1fr_2fr_2fr_1.5fr_1fr] items-center px-2 py-2 ml-2 rounded hover:bg-gray-50 transition-all"
       >
         <div 
           className="text-sm text-400">{transaction.name}
         </div>
         <div 
-          className="text-sm text-gray-500">{transaction.time}
+          className="text-sm text-gray-500"> 
+          <div>
+            {new Date(transaction.time).toLocaleDateString("en-GB", {
+              year: 'numeric',
+              day: '2-digit',
+              month: '2-digit',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </div>
         </div>
         <div 
           className="text-sm text-gray-500">{transaction.category?.join(", ")}
         </div>
-        <div 
-          className={`text-sm text-right px-2 py-1 rounded-md font-medium inline-block
+        <div
+          className={`text-sm px-2 py-1 rounded-xl font-medium inline-block
             ${transaction.amount >= 0
             ? 'bg-green-100 text-green-700'
-            : 'bg-red-100 text-red-700'}`}
-        >{transaction.amount}
+            : 'bg-red-100 text-red-700'}`}>
+          {transaction.amount > 0 ? "Incoming" : "Outgoing"}
+        </div>
+        <div 
+          className={`text-sm text-right px-2 py-1 rounded-xl font-medium inline-block`}
+        >{"$" + Math.abs(transaction.amount)}
         </div>
         <div className="col-span-full flex justify-end mt-2">
           <div className="w-full border-b border-gray-200" />   

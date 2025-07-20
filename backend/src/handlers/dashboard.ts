@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-dayjs.extend(relativeTime); 
+
+// Relative time logic moved to frontend
+// import dayjs from 'dayjs';
+// import relativeTime from 'dayjs/plugin/relativeTime';
+// dayjs.extend(relativeTime); 
 
 interface wallet {
   id: number;
@@ -101,7 +103,8 @@ export async function getUserTransactions(req: Request, res: Response) {
       // uses dayjs package to get time since this transaction
       const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
         ...tx,
-        time: dayjs(tx.time).fromNow(),
+        // delete when cleaning up
+        // time: dayjs(tx.time).fromNow(),
         color: transaction_palette[c % transaction_palette.length],
         icon: "❓"
       }));
@@ -109,9 +112,6 @@ export async function getUserTransactions(req: Request, res: Response) {
       res.json({
         transactions: transactions_time
       });
-      // res.json({
-      //   transactions
-      // });
       console.log(transactions_time)
 
       return;
