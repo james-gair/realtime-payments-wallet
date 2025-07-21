@@ -87,7 +87,8 @@ export async function getUserTransactions(req: Request, res: Response) {
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
-        transactions.event_time as time, transactions.category
+        transactions.event_time as time, 
+        transactions.category
         FROM Transactions transactions
         JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
         JOIN Account sender_account on sender_wallet.account = sender_account.account_id
