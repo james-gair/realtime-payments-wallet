@@ -1,7 +1,9 @@
--- INSERT INTO Account (account_id, firebase_id, username, email, phone, dob) VALUES
---   (1, 'xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
---   (3, 'ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
---   (2, 'IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z');
+INSERT INTO Account (firebase_id, username, email, phone, dob, verified, zai_user_id, first_name, last_name) VALUES
+-- The below users do not have Zai accounts yet.
+  -- ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', 'Test', 'User'),
+  -- ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', 'Test', 'User'),
+  -- ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', 'No', 'User'),
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'Edwin', 'N');
 /* 
 pword for test is testtest
 pword for no is nononono
@@ -10,7 +12,8 @@ INSERT INTO Currency (currency_id, code, symbol) VALUES
   (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
 
 
--- INSERT INTO Wallet (wallet_id, account, currency, balance) VALUES
+INSERT INTO Wallet (zai_wallet_id, account, currency, balance) VALUES
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 1, 1, 0); -- default wallet for Edwin
 --     (20, 1, 1, 1000),
 --     (2, 1, 2, 1000),
 --     (3, 1, 3, 10000),

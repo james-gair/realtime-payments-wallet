@@ -233,25 +233,8 @@ export class ZaiService {
   }
 
   /**
-   * Create a wallet account for a user
-   */
-  async createWalletAccount(userId: string): Promise<any> {
-    try {
-      const response = await this.apiClient.post(
-        `/users/${userId}/wallet_accounts`,
-        {
-          currency: "AUD", // Default currency - you may want to make this configurable
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Failed to create wallet account:", error);
-      throw new Error("Failed to create wallet account");
-    }
-  }
-
-  /**
-   * Get user's wallet balance
+   * Get user's wallet accounts details.
+   * A wallet is created by default when a user is created.
    */
   async getWalletBalance(userId: string): Promise<any> {
     try {

@@ -202,7 +202,20 @@ function Dashboard() {
       }
     );
     const data = await response.json();
-    setCards(data.wallets);
+    if (data.wallets.length === 0) {
+      // if no wallets, create a default one
+      setCards([
+        {
+          id: 1,
+          currency: "AUD",
+          balance: 0,
+          gradient: "from-emerald-400 to-emerald-600",
+          symbol: "A$",
+        },
+      ]);
+    } else {
+      setCards(data.wallets);
+    }
   };
 
   const fetchTransactions = async () => {
@@ -523,6 +536,11 @@ function Dashboard() {
             </div>
 
             <div className="space-y-4">
+              {transactions.length === 0 && (
+                <div className="text-gray-500 text-center py-4">
+                  No transactions yet
+                </div>
+              )}
               {transactions.map((transaction) => (
                 <div
                   key={transaction.id}
