@@ -2,7 +2,11 @@ import { Route, Routes } from "react-router-dom";
 import NavbarLayout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddMoney from "./pages/AddMoney";
+import { BillConfirmation } from "./pages/BillConfirmation";
+import { BillPayments } from "./pages/BillPayments";
+import { CreateBillWrapper } from "./pages/CreateBillWrapper";
 import Dashboard from "./pages/Dashboard";
+import { EditBillWrapper } from "./pages/EditBillWrapper";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailSent from "./pages/EmailSent";
 import Forex from "./pages/Forex";
@@ -33,6 +37,16 @@ function App() {
           <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/bill-payments" element={<BillPayments />} />
+          <Route
+            path="/bill-payments/confirmation/:id"
+            element={<BillConfirmation />}
+          />
+          <Route path="/bill-payments/edit/:id" element={<EditBillWrapper />} />
+          <Route
+            path="/bill-payments/paybill"
+            element={<CreateBillWrapper />}
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />

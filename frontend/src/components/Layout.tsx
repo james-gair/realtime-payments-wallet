@@ -9,6 +9,7 @@ import {
 import {
   Bars3Icon,
   CreditCardIcon,
+  DocumentTextIcon,
   GlobeAltIcon,
   HomeIcon,
   PlusIcon,
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Profile", href: "/profile", icon: UserIcon },
 ];
 

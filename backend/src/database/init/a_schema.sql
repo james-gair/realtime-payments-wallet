@@ -20,7 +20,7 @@ CREATE TABLE account_identity (
   id_number TEXT NOT NULL,
   id_expiry_date DATE NOT NULL,
   place_of_issue TEXT NOT NULL,
-  verified_at TIMESTAMP NOT NULL
+  verified_at TIMESTAMPTZ NOT NULL
 );
 
 -- Currencies table
@@ -69,3 +69,46 @@ CREATE TABLE Transactions (
   recipient SERIAL REFERENCES Wallet(wallet_id)
 );
 
+
+CREATE TYPE payment_type AS ENUM ('one-time', 'recurring');
+CREATE TYPE payment_frequency AS ENUM ('weekly', 'fortnightly', 'monthly');
+CREATE TYPE payment_status AS ENUM ('active', 'completed', 'cancelled');
+CREATE TYPE pay_method AS ENUM ('bankAcct', 'bpay');
+
+CREATE TABLE bill_payments (
+  id SERIAL PRIMARY KEY,
+  account_id INTEGER NOT NULL,          -- user who scheduled the bill
+  wallet_id INTEGER NOT NULL,           -- which wallet to deduct from
+  amount NUMERIC(10,2) NOT NULL,
+  pay_method pay_method NOT NULL,
+
+  biller_bsb VARCHAR(6),
+  biller_bank_account_number VARCHAR(20),
+-- OR
+  biller_bpay_code VARCHAR(10),
+  biller_bpay_ref VARCHAR(20),
+
+  biller_display_name VARCHAR(40),        -- optional
+  bill_display_name VARCHAR(40),          -- for user labeling (e.g., 'Internet')
+
+  type payment_type NOT NULL,
+  first_payment_date TIMESTAMPTZ NOT NULL DEFAULT now(), -- the initial payment time
+  frequency payment_frequency,
+  CHECK (
+    (type = 'one-time' AND frequency IS NULL) OR
+    (type = 'recurring' AND frequency IS NOT NULL)
+  ),
+
+  created_at TIMESTAMPTZ DEFAULT now(),
+  last_paid_at TIMESTAMPTZ,                  -- updated after each run (esp. recurring)
+
+  status payment_status DEFAULT 'active',
+  next_run_at TIMESTAMPTZ, -- for reccuring payment and scheduled payments
+
+ ----sprint 3 part----
+
+  reminder BOOLEAN DEFAULT false,
+  remind_before_num_days INTEGER CHECK (remind_before_num_days >= 1)
+
+  -----------------------
+);
