@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   GlobeAltIcon,
   UserIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -22,8 +23,8 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
   { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Profile", href: "/profile", icon: UserIcon },
-
 ];
 
 function classNames(...classes: string[]) {

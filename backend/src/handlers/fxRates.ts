@@ -25,3 +25,26 @@ export async function getExchangeRates(req: Request, res: Response) {
     return res.status(500).json({ error: "Failed to fetch exchange rates" });
   }
 }
+
+// for actual currency exchange
+export async function fetchSpecificExchangeRate(fromCurrencyCode: string, toCurrencyCode: string): Promise<number> {
+  const API_KEY = process.env.EXCHANGE_RATE_API_KEY;
+  const url = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/${fromCurrencyCode}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const rate = data.conversion_rates?.[toCurrencyCode];
+
+    if (!rate) {
+      throw new Error(`exchange rate not found for ${fromCurrencyCode} to ${toCurrencyCode}`);
+    }
+
+    return rate;
+  } catch (err) {
+    console.error("fetchExchangeRate ere:", err);
+    throw new Error("exchange rate fetch fail");
+  }
+}
+

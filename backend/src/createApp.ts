@@ -4,7 +4,9 @@ import userLogin from "./routes/login";
 import fxRatesRouter from "./routes/fxRates";
 import userDashboard from "./routes/dashboard";
 import kycRouter from "./routes/kyc";
+import billPaymentsRouter from "./routes/billPayment";
 import { errorHandler } from "./middleware/errorHandler";
+import profileRouter from "./routes/profile";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -18,10 +20,12 @@ export function createApp() {
   // Delete this after starting the actual project
   app.use("/api", userLogin);
   // app.use("/api", userDashboard);
+  app.use("/api", billPaymentsRouter);
   app.use("/api", kycRouter);
-  app.use(errorHandler);
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
+  app.use("/api", profileRouter);
+  app.use(errorHandler);
 
   return app;
 }

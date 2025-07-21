@@ -1,70 +1,110 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { authFetch } from "../services/firebaseFetch"; 
 
 function Profile() {
-  // Example user data — replace with fetched user data
-  const currentUser = {
-    email: "alice@example.com",
-    contact: "+1234567890",
-    billingAddress: "123 E St, Sydney, NSW",
-  };
+  
+  const [currentUser, setCurrentUser] = useState({
+    email: "",
+    contact: "",
+    address: "",
+  });
 
-  // States for new input
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
-  const [billingAddress, setBillingAddress] = useState("");
+  const [address, setAddress] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Validation helpers
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const isValidPhone = (phone: string) =>
     /^(\+?\d{10,15})$/.test(phone);
 
-  const handleSave = () => {
-    setError("");
-    setSuccess("");
+  // Load profile from backend
+  useEffect(() => {
+    async function fetchUserProfile() {
+      try {
+        const res = await authFetch("http://localhost:4000/api/profile");
+        const text = await res.text();
+        console.log("Raw profile response text:", text);
+        const data = JSON.parse(text);
 
-    if (!email && !contact && !billingAddress) {
-      setError("Please fill in at least one field to update.");
-      return;
+        setCurrentUser({
+          email: data.email,
+          contact: data.phone,
+          address: data.address,
+        });
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+        setError("Failed to load profile.");
+      }
     }
 
-    if (email && (email === currentUser.email || !isValidEmail(email))) {
-      setError(
-        email === currentUser.email
-          ? "This is already your current email."
-          : "Please enter a valid email address."
-      );
+    fetchUserProfile();
+  }, []);
+
+  const handleSave = async () => {
+  setError("");
+  setSuccess("");
+
+  const updates: { email?: string; phone?: string; address?: string } = {};
+
+  if (email && email !== currentUser.email) {
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
-
-    if (
-      contact &&
-      (contact === currentUser.contact || !isValidPhone(contact))
-    ) {
-      setError(
-        contact === currentUser.contact
-          ? "This is already your current contact number."
-          : "Please enter a valid contact number."
-      );
+    updates.email = email;
+  }
+  if (contact && contact !== currentUser.contact) {
+    if (!isValidPhone(contact)) {
+      setError("Please enter a valid contact number.");
       return;
     }
+    updates.phone = contact;
+  }
+  if (address && address !== currentUser.address) {
+    updates.address = address;
+  }
 
-    if (billingAddress && billingAddress === currentUser.billingAddress) {
-      setError("This is already your current billing address.");
-      return;
+  if (Object.keys(updates).length === 0) {
+    setError("No changes detected to update.");
+    return;
+  }
+
+  try {
+    const res = await authFetch("http://localhost:4000/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Failed to update profile");
     }
 
-    // put  API calls 
-    console.log("Saving profile:", { email, contact, billingAddress });
+    const updatedProfile = await res.json();
+
+    setCurrentUser({
+      email: updatedProfile.email,
+      contact: updatedProfile.phone,
+      address: updatedProfile.address,
+    });
+
     setSuccess("Profile updated successfully!");
     setEmail("");
     setContact("");
-    setBillingAddress("");
-  };
-
+    setAddress("");
+  } catch (err: any) {
+    setError(err.message || "Failed to update profile");
+  }
+};
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
@@ -110,14 +150,13 @@ function Profile() {
             Billing Address
           </label>
           <p className="text-sm text-gray-500 mb-2">
-            Current:{" "}
-            <span className="font-medium">{currentUser.billingAddress}</span>
+            Current: <span className="font-medium">{currentUser.address}</span>
           </p>
           <input
             type="text"
             placeholder="Enter new Billing Address"
-            value={billingAddress}
-            onChange={(e) => setBillingAddress(e.target.value)}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
           />
         </div>

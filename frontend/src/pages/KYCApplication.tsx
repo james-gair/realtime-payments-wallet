@@ -2,6 +2,7 @@ import { useState } from "react";
 import { auth } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import { WebcamCapture } from "../components/WebcameCapture";
+import { ErrorModal } from "../components/ErrorModal";
 
 // TODO: Selfie Capture and error handling
 
@@ -12,6 +13,7 @@ export function KYCApplication() {
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
   const [idType, setIdType] = useState<"passport" | "driver_license" | "">("");
+  const [errorMessage, setErrorMessage] = useState<string | null>("");
 
   const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -19,7 +21,7 @@ export function KYCApplication() {
     const formData = new FormData();
 
     if (!idType) {
-      alert("Please select an ID type");
+      setErrorMessage("Please select an ID type");
       return;
     } else {
       formData.append("idType", idType);
@@ -32,7 +34,7 @@ export function KYCApplication() {
     if (fullname) formData.append("fullName", fullname);
 
     if (!selfieFile) {
-      alert("Please upload a selfie photo with ID.");
+      setErrorMessage("Please upload a selfie photo with ID.");
       return;
     }
     formData.append("selfieWithId", selfieFile);
@@ -53,7 +55,7 @@ export function KYCApplication() {
         .trim();
 
       if (!originalFormData.get("passportPhoto") && !licenseFile) {
-        alert("Please upload your passport photo");
+        setErrorMessage("Please upload your passport photo");
         return;
       }
       const file = originalFormData.get("passportPhoto");
@@ -65,7 +67,7 @@ export function KYCApplication() {
       }
 
       if (!passportNumber || !countryOfIssue || !passportExpiry) {
-        alert("Please complete all passport fields.");
+        setErrorMessage("Please complete all passport fields.");
         return;
       }
       formData.append("idNumber", passportNumber);
@@ -85,7 +87,7 @@ export function KYCApplication() {
         ?.toString()
         .trim();
       if (!originalFormData.get("driverLicensePhoto") && !licenseFile) {
-        alert("Please upload your driver's license photo");
+        setErrorMessage("Please upload your driver's license photo");
         return;
       }
 
@@ -98,7 +100,7 @@ export function KYCApplication() {
       }
 
       if (!licenseNumber || !stateOfIssue || !licenseExpiry) {
-        alert("Please complete all driver's license fields.");
+        setErrorMessage("Please complete all driver's license fields.");
         return;
       }
 
@@ -130,7 +132,7 @@ export function KYCApplication() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(`Error ${res.status}: ${data.error}`);
+        setErrorMessage(`Error ${res.status}: ${data.error}`);
         console.error("Issues:", data.issues);
         return;
       }
@@ -138,13 +140,13 @@ export function KYCApplication() {
       navigate("/kyc/success");
     } catch (err) {
       console.error("Network error", err);
-      alert("Something went wrong. Please try again later.");
+      setErrorMessage("Something went wrong. Please try again later.");
       return;
     }
   };
 
   return (
-    <div className="m-10 bg-white">
+    <div className="m-10 bg-white relative">
       <section aria-labelledby="kyc-section-heading">
         <h2 id="kyc-section-heading" className="text-lg font-semibold">
           Before you can transfer money into your wallet, we need to verify your
@@ -343,10 +345,16 @@ export function KYCApplication() {
             type="submit"
             className="mt-6 bg-blue-500 text-white py-2 px-6 rounded font-semibold hover:cursor-pointer"
           >
-            Sibmit
+            Submit
           </button>
         </form>
       </section>
+      {errorMessage && (
+        <ErrorModal
+          errorMessage={errorMessage}
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
     </div>
   );
 }

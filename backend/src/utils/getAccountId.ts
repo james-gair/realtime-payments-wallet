@@ -1,0 +1,13 @@
+import sql from "../database/client";
+
+export async function getAccountId(firebase_id: string): Promise<string> {
+  const account = await sql`
+    SELECT account_id FROM Account WHERE firebase_id = ${firebase_id}
+  `;
+
+  if (account.length === 0) {
+    throw new Error("Account not found for this Firebase ID");
+  }
+
+  return account[0].account_id.toString();
+}
