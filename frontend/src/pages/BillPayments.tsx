@@ -12,7 +12,23 @@ export function BillPayments() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>("");
   const [bills, setBills] = useState<UpcomingBill[]>([]);
-  const handlePayBills = () => {
+  const handlePayBills = async () => {
+    try {
+      const res = await authFetch(`${backendUrl}/api/bill-payments/kyc-status`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.redirectTo) {
+          navigate(data.redirectTo);
+        }
+        setErrorMessage(`Error ${res.status}: ${data.error}`);
+        console.error("Issues:", data.issues);
+        return;
+      }
+    } catch (err) {
+      console.error("Network error", err);
+      setErrorMessage("Something went wrong. Please try again later.");
+    }
     navigate("/bill-payments/paybill");
   };
 

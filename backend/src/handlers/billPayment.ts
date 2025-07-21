@@ -40,10 +40,13 @@ export async function payBill(req: Request, res: Response) {
 
   const data = parseResult.data;
 
-  /**
-   * TODO: pay the pay-now bills and mark it as complete if successed
-   *
+  /******************
+   * TODO: pay the NOT scheduled bills and mark it as complete if successed
+   *******************
    */
+  // After scuccessfully paid, if this is a recurring bill and NOT scheduled,
+  // set the next run at to the next run time:
+  const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
 
   // Save the bill payment to db:
   // get the account_id:
@@ -80,7 +83,7 @@ export async function payBill(req: Request, res: Response) {
     ${data.billDisplayName ?? null},
     ${data.type},
     ${data.firstPaymentDate},
-    ${data.firstPaymentDate},
+    ${nextRunAt || data.firstPaymentDate},
     ${data.frequency ?? null},
     ${data.reminder ?? false},
     ${data.reminderDays ?? null}
@@ -88,7 +91,7 @@ export async function payBill(req: Request, res: Response) {
   RETURNING id;
 `;
 
-  console.log(result);
+  //console.log(result);
   res.status(200).json({ billId: result[0].id });
   return;
 }
@@ -191,14 +194,14 @@ export async function getAvailableWallets(req: Request, res: Response) {
 
     const wallets = await sql`
       SELECT 
-        w.wallet_id, 
+        w.wallet_id AS "walletId", 
         w.balance,
-        c.code AS currency_code
+        c.code AS currency
       FROM Wallet w
       JOIN Currency c ON w.currency = c.currency_id
       WHERE w.account = ${account_id}
     `;
-    console.log(wallets);
+    ////console.log(wallets);
     res.status(200).json(wallets);
     return;
   } catch (err) {
@@ -209,8 +212,11 @@ export async function getAvailableWallets(req: Request, res: Response) {
 }
 
 export async function getSavedBillById(req: Request, res: Response) {
+  const firebase_id = (req as any).user?.uid;
+  const account_id = await getAccountId(firebase_id);
   const billId = Number(req.params.id);
-
+  //console.log(account_id);
+  //console.log(billId);
   if (isNaN(billId)) {
     res.status(400).json({ error: "Invalid bill ID." });
     return;
@@ -247,12 +253,17 @@ export async function getSavedBillById(req: Request, res: Response) {
         JOIN Currency c ON w.currency = c.currency_id
         WHERE bp.status = 'active'
           AND bp.id = ${billId}
+          AND bp.account_id = ${account_id}
       `;
 
       return rows;
     });
-
-    res.status(200).send(results);
+    //console.log(results);
+    if (results.length === 0) {
+      res.status(404).json({ error: "Bill not found." });
+      return;
+    }
+    res.status(200).json(results[0]);
   } catch (err) {
     console.error("Failed to fetch bill", err);
     res.status(500).json({ error: "Failed to fetch bill." });
@@ -262,7 +273,7 @@ export async function getSavedBillById(req: Request, res: Response) {
 export async function updateBillInfo(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
   const billId = Number(req.params.id);
-  console.log(billId);
+  //console.log(billId);
   if (!firebase_id) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
@@ -293,6 +304,9 @@ export async function updateBillInfo(req: Request, res: Response) {
     res.status(404).json({ error: "Bill not found or access denied." });
     return;
   }
+
+  const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
+
   try {
     const result = await sql`
       UPDATE bill_payments
@@ -308,7 +322,7 @@ export async function updateBillInfo(req: Request, res: Response) {
         bill_display_name = ${data.billDisplayName ?? null},
         type = ${data.type},
         first_payment_date = ${data.firstPaymentDate ?? null},
-        next_run_at = ${data.firstPaymentDate ?? null},
+        next_run_at = ${nextRunAt},
         frequency = ${data.frequency ?? null},
         reminder = ${data.reminder ?? false},
         remind_before_num_days = ${data.reminderDays ?? null}
@@ -323,4 +337,35 @@ export async function updateBillInfo(req: Request, res: Response) {
     res.status(500).json({ error: "Failed to update bill." });
     return;
   }
+}
+
+function toDateStringOnly(date: Date): string {
+  return date.toISOString().split("T")[0]; // "2025-07-21"
+}
+
+function getNextRunAtIfDueToday(data: BillInputs): string | null {
+  const isToday =
+    toDateStringOnly(new Date(data.firstPaymentDate)) ===
+    toDateStringOnly(new Date());
+
+  if (data.type === "recurring" && isToday) {
+    const nextDate = new Date();
+
+    switch (data.frequency) {
+      case "weekly":
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case "fortnightly":
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case "monthly":
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      default:
+        throw new Error("Invalid frequency: " + data.frequency);
+    }
+    return nextDate.toISOString();
+  }
+
+  return null;
 }

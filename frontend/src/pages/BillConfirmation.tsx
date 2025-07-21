@@ -28,8 +28,8 @@ export function BillConfirmation() {
         console.log(data);
         if (!res.ok) {
           setErrorMessage(data.error || "Failed to fetch bill.");
-        } else if (Array.isArray(data) && data.length === 1) {
-          setBill(data[0]);
+        } else if (data) {
+          setBill(data);
         } else {
           setErrorMessage("No bill found with that ID.");
         }

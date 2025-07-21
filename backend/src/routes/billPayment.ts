@@ -1,17 +1,24 @@
 import { Router } from "express";
-import { getUserWallet, getUserTransactions } from "../handlers/dashboard";
 import { authenticateFirebaseToken } from "../middleware/auth";
 import {
   cancelUpcomingBillById,
+  getAvailableWallets,
   getSavedBillById,
   getUpcomingBills,
   payBill,
   updateBillInfo,
 } from "../handlers/billPayment";
 import multer from "multer";
+import { checkKycStatus } from "../middleware/checkKycStatus";
 
 const upload = multer();
 const router = Router();
+
+router.get(
+  "/bill-payments/kyc-status",
+  authenticateFirebaseToken as any,
+  checkKycStatus
+);
 
 // For creating a bill payment, with all the settings
 router.post(
@@ -40,7 +47,7 @@ router.get(
 router.get(
   "/bill-payments/wallets",
   authenticateFirebaseToken as any,
-  getUserWallet
+  getAvailableWallets
 );
 
 // For editing an upcoming payment
