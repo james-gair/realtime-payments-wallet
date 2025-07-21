@@ -15,6 +15,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import Contacts from "./pages/Contacts";
+import { BillPayments } from "./pages/BillPayments";
+import { BillConfirmation } from "./pages/BillConfirmation";
+import { EditBillWrapper } from "./pages/EditBillWrapper";
+import { CreateBillWrapper } from "./pages/CreateBillWrapper";
 
 function App() {
   return (
@@ -32,6 +36,16 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/bill-payments" element={<BillPayments />} />
+          <Route
+            path="/bill-payments/confirmation/:id"
+            element={<BillConfirmation />}
+          />
+          <Route path="/bill-payments/edit/:id" element={<EditBillWrapper />} />
+          <Route
+            path="/bill-payments/paybill"
+            element={<CreateBillWrapper />}
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/kyc" element={<KYCApplication />} />
