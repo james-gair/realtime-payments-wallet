@@ -10,8 +10,10 @@ import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import Transactions from "./pages/Transactions";
+import RequestPayment from "./pages/RequestPayment";
 import "./styles/App.css";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SentPayments from "./pages/SentPayments";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import Contacts from "./pages/Contacts";
@@ -36,6 +38,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/request-payment" element={<RequestPayment />} />
+          <Route path ="/sent-payments" element={<SentPayments />} />
           <Route path="/bill-payments" element={<BillPayments />} />
           <Route
             path="/bill-payments/confirmation/:id"

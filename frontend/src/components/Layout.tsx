@@ -16,6 +16,8 @@ import {
   UserGroupIcon,
   DocumentTextIcon,
   ArrowPathIcon,
+  PaperAirplaneIcon,
+
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -28,6 +30,7 @@ const navigation = [
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
+  { name: "Payment Requests", href: "/sent-payments", icon: PaperAirplaneIcon },
   { name: "Transactions", href: "/transactions", icon: ArrowPathIcon }
 ];
 
