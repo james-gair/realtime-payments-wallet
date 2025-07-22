@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+
 import { fetchSpecificExchangeRate } from "./fxRates";
-dayjs.extend(relativeTime); 
+// Relative time logic moved to frontend
+// import dayjs from 'dayjs';
+// import relativeTime from 'dayjs/plugin/relativeTime';
+// dayjs.extend(relativeTime); 
 
 interface wallet {
   id: number;
@@ -75,6 +77,7 @@ import * as emoji from "node-emoji";
 
 export async function getUserTransactions(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
+    const offset = 0;
     
     try {
       // need to add a method to asign colours
@@ -85,7 +88,8 @@ export async function getUserTransactions(req: Request, res: Response) {
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
-        transactions.event_time as time, transactions.category
+        transactions.event_time as time, 
+        transactions.category
         FROM Transactions transactions
         JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
         JOIN Account sender_account on sender_wallet.account = sender_account.account_id
@@ -93,12 +97,16 @@ export async function getUserTransactions(req: Request, res: Response) {
         JOIN Account recipient_account on recipient_wallet.account = recipient_account.account_id
         WHERE sender_account.firebase_id = ${auth_id}
         OR recipient_account.firebase_id = ${auth_id}
+        ORDER BY transactions.event_time DESC, transactions.transaction_id DESC
+        LIMIT 20 OFFSET ${offset}
       `;
+      //need to up limit to 20 after testing
 
       // uses dayjs package to get time since this transaction
       const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
         ...tx,
-        time: dayjs(tx.time).fromNow(),
+        // delete when cleaning up
+        // time: dayjs(tx.time).fromNow(),
         color: transaction_palette[c % transaction_palette.length],
         icon: "❓"
       }));
@@ -106,6 +114,7 @@ export async function getUserTransactions(req: Request, res: Response) {
       res.json({
         transactions: transactions_time
       });
+      console.log(transactions_time)
 
       return;
   } catch (error) {

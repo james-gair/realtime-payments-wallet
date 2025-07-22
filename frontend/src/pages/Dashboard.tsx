@@ -6,6 +6,10 @@ import {
   ArrowsRightLeftIcon,
 } from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime); 
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -549,7 +553,9 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button 
+              onClick={() => navigate("/request-payment")}
+              className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
@@ -569,13 +575,16 @@ function Dashboard() {
               <h3 className="font-semibold text-gray-900">
                 Recent Transactions
               </h3>
-              <button className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
+              <button 
+                onClick={() => navigate("/Transactions")}
+                className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
                 View All →
               </button>
             </div>
 
             <div className="space-y-4">
-              {transactions.map((transaction) => (
+              {/* added slice to only show first 5 transactions */}
+              {transactions.slice(0, 5).map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-all"
@@ -591,12 +600,14 @@ function Dashboard() {
                         {transaction.name}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {transaction.time}
+                        {dayjs(transaction.time).fromNow()}
                       </span>
                     </div>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {transaction.amount}
+                    {transaction.amount < 0
+                      ? `-$${Math.abs(transaction.amount).toFixed(2)}`
+                      : `$${transaction.amount}`}
                   </span>
                 </div>
               ))}
@@ -626,7 +637,9 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button 
+              onClick={() => navigate("/request-payment")}
+              className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
