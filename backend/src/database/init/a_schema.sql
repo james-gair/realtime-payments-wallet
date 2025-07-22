@@ -66,8 +66,8 @@ CREATE TABLE Transactions (
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
   event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
-  sender SERIAL REFERENCES Wallet(wallet_id),
-  recipient SERIAL REFERENCES Wallet(wallet_id)
+  sender INTEGER REFERENCES Wallet(wallet_id),
+  recipient INTEGER REFERENCES Wallet(wallet_id)
 );
 
 
