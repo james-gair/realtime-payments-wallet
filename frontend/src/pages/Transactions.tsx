@@ -51,11 +51,13 @@ function Transactions() {
     const categories = t.category || [];
 
     const nameMatch = name.toLowerCase().startsWith(term);
-    const categoryMatch = categories.some(category =>
-      typeof category === "string" && category.toLowerCase().startsWith(term)
-    );
+    // const categoryMatch = categories.some(category =>
+    //   typeof category === "string" && category.toLowerCase().startsWith(term)
+    // );
 
-    const textMatch = (!term || nameMatch || categoryMatch) && categories.includes(filterCategory.toLowerCase());
+    const textMatch = (!term || nameMatch)
+    // const textMatch = (!term || nameMatch || categoryMatch)
+    const catMat = ((categories.includes(filterCategory.toLowerCase())) || filterCategory == "");
 
     const date = new Date(t.date || t.time || "");
     const from = fromDate ? new Date(fromDate) : null;
@@ -66,7 +68,7 @@ function Transactions() {
 
     const amountInRange = (!fromAmount || fromAmount <= Math.abs(t.amount)) && (!toAmount || toAmount >= Math.abs(t.amount));
 
-    return textMatch && dateInRange && amountInRange;
+    return textMatch && dateInRange && amountInRange && catMat;
   });
 
   const sortedTransactions = (arr) => {
@@ -194,7 +196,7 @@ function Transactions() {
           <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
-              className={`border border-gray-300 rounded p-2 w-32 ${
+              className={`border border-gray-300 rounded p-2 w-48 text-center ${
               sortOption === '' ? 'text-gray-500' : 'text-gray'
               }`}
             >
@@ -253,8 +255,8 @@ function Transactions() {
         </div>
         <div 
           className="text-sm text-right px-2 py-1 rounded-xl font-medium inline-block"
-        >{transaction.amount < 0
-          ? `($${Math.abs(transaction.amount).toFixed(2)})`
+        > {transaction.amount < 0
+          ? `-$${Math.abs(transaction.amount).toFixed(2)}`
           : `$${transaction.amount}`}
         </div>
         <div className="col-span-full flex justify-end mt-2">
