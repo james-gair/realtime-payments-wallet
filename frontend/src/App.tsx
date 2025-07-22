@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AddMoney from "./pages/AddMoney";
 import { BillConfirmation } from "./pages/BillConfirmation";
 import { BillPayments } from "./pages/BillPayments";
+import Contacts from "./pages/Contacts";
 import { CreateBillWrapper } from "./pages/CreateBillWrapper";
 import Dashboard from "./pages/Dashboard";
 import { EditBillWrapper } from "./pages/EditBillWrapper";
@@ -16,7 +17,9 @@ import LoginPage from "./pages/LoginPage";
 import Payments from "./pages/Payments";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import RequestPayment from "./pages/RequestPayment";
 import ResetPassword from "./pages/ResetPassword";
+import SentPayments from "./pages/SentPayments";
 import Transactions from "./pages/Transactions";
 import "./styles/App.css";
 
@@ -31,12 +34,14 @@ function App() {
       <Route path="/emailConfirmation" element={<EmailConfirmation />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/transactions" element={<Transactions />} />
         <Route element={<NavbarLayout />}>
+          <Route path="/transactions" element={<Transactions />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/request-payment" element={<RequestPayment />} />
+          <Route path="/sent-payments" element={<SentPayments />} />
           <Route path="/bill-payments" element={<BillPayments />} />
           <Route
             path="/bill-payments/confirmation/:id"
@@ -48,6 +53,7 @@ function App() {
             element={<CreateBillWrapper />}
           />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/contacts" element={<Contacts />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
         </Route>

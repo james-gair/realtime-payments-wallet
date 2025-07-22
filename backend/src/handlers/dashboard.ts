@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+
 import { fetchSpecificExchangeRate } from "./fxRates";
-dayjs.extend(relativeTime); 
+// Relative time logic moved to frontend
+// import dayjs from 'dayjs';
+// import relativeTime from 'dayjs/plugin/relativeTime';
+// dayjs.extend(relativeTime); 
 
 interface wallet {
   id: number;
@@ -75,6 +77,7 @@ import * as emoji from "node-emoji";
 
 export async function getUserTransactions(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
+    const offset = 0;
     
     try {
       // need to add a method to asign colours
@@ -85,7 +88,8 @@ export async function getUserTransactions(req: Request, res: Response) {
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
-        transactions.event_time as time, transactions.category
+        transactions.event_time as time, 
+        transactions.category
         FROM Transactions transactions
         JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
         JOIN Account sender_account on sender_wallet.account = sender_account.account_id
@@ -93,12 +97,16 @@ export async function getUserTransactions(req: Request, res: Response) {
         JOIN Account recipient_account on recipient_wallet.account = recipient_account.account_id
         WHERE sender_account.firebase_id = ${auth_id}
         OR recipient_account.firebase_id = ${auth_id}
+        ORDER BY transactions.event_time DESC, transactions.transaction_id DESC
+        LIMIT 20 OFFSET ${offset}
       `;
+      //need to up limit to 20 after testing
 
       // uses dayjs package to get time since this transaction
       const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
         ...tx,
-        time: dayjs(tx.time).fromNow(),
+        // delete when cleaning up
+        // time: dayjs(tx.time).fromNow(),
         color: transaction_palette[c % transaction_palette.length],
         icon: "❓"
       }));
@@ -106,6 +114,7 @@ export async function getUserTransactions(req: Request, res: Response) {
       res.json({
         transactions: transactions_time
       });
+      console.log(transactions_time)
 
       return;
   } catch (error) {
@@ -210,5 +219,80 @@ export async function postExchangeCurrency(req: Request, res: Response) {
   } catch (err: any) {
     console.error("exchange err:", err);
     res.status(500).json({ error: err.message || "exchange failed" });
+  }
+}
+
+
+export async function postTransferCurrency(req: Request, res: Response) {
+  const senderFirebaseId = (req as any).user.uid;
+  const { recipientUsername, currencyCode, amount } = req.body;
+
+  if (amount <= 0) {
+    res.status(400).json({ error: "enter postive transfer amount" });
+    return;
+  }
+
+  try {
+    await sql.begin(async (sql) => {
+      const [senderAccount] = await sql`
+        SELECT account_id FROM Account WHERE firebase_id = ${senderFirebaseId}
+      `;
+      if (!senderAccount) throw new Error("ERR");
+
+      const [recipientAccount] = await sql`
+        SELECT account_id FROM Account WHERE username = ${recipientUsername}
+      `;
+      if (!recipientAccount) throw new Error("no such user to transfer money to");
+
+      const [currency] = await sql`
+        SELECT currency_id FROM Currency WHERE code = ${currencyCode}
+      `;
+      if (!currency) throw new Error("currency invalid or not supported");
+
+      const [senderWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${senderAccount.account_id} AND currency = ${currency.currency_id}
+        FOR UPDATE
+      `;
+
+      if (!senderWallet) {
+        throw new Error(`you don't have a ${currencyCode} wallet`);
+      }
+
+      const [recipientWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${recipientAccount.account_id} AND currency = ${currency.currency_id}
+        FOR UPDATE
+      `;
+      if (!recipientWallet) {
+        throw new Error(`target user has no wallet of ${currencyCode}`);
+      }
+
+      if (senderWallet.balance < amount) {
+        throw new Error("insufficient balance");
+      }
+
+      // balance update
+      await sql`
+        UPDATE Wallet
+        SET balance = balance - ${amount}
+        WHERE wallet_id = ${senderWallet.wallet_id}
+      `;
+
+      await sql`
+        UPDATE Wallet
+        SET balance = balance + ${amount}
+        WHERE wallet_id = ${recipientWallet.wallet_id}
+      `;
+
+      // TODO
+      // !!!! THIS NEEDS TO BE INSERTED INTO TRANSACTION RECORD AS WELL
+    });
+
+    res.status(200).json({ message: "transfer successful" });
+
+  } catch (err: any) {
+    console.error("transfer err:", err);
+    res.status(500).json({ error: err.message || "transfer failed" });
   }
 }

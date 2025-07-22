@@ -35,7 +35,7 @@ export interface BillInputs {
 }
 
 interface Wallet {
-  id: string;
+  walletId: string;
   currency: string;
   balance: string;
 }
@@ -70,6 +70,7 @@ export function BillForm({
   // Calculate how many full days are left until the scheduled date.
   // If the date is invalid or in the past, the result is 0.
   // Reminder options are only shown if this value is > 0.
+  console.log(scheduledDate);
   const maxReminderDays = scheduledDate
     ? Math.max(
         0,
@@ -81,9 +82,10 @@ export function BillForm({
     : 0;
 
   useEffect(() => {
-    if (billData?.firstPaymentDate) {
+    console.log(billData);
+    if (billData?.nextRunAt) {
       setIsScheduled(true);
-      setScheduledDate(billData.firstPaymentDate);
+      setScheduledDate(billData.nextRunAt);
     }
   }, [billData]);
 
@@ -93,7 +95,7 @@ export function BillForm({
       try {
         const res = await authFetch(`${backendUrl}/api/bill-payments/wallets`);
         const data = await res.json();
-        console.log(data);
+        console.log("wallets: ", data);
         if (!res.ok) {
           setFieldErrors((prev) => ({
             ...prev,
@@ -102,7 +104,9 @@ export function BillForm({
           return;
         }
 
-        setWallets(data.wallets);
+        if (Array.isArray(data) && data.length > 0) {
+          setWallets(data);
+        }
       } catch (err) {
         console.error("Network error", err);
         setFieldErrors((prev) => ({
@@ -203,7 +207,7 @@ export function BillForm({
             className="mt-3 block border px-2 py-1 rounded"
           >
             {wallets.map((wallet) => (
-              <option key={wallet.id} value={wallet.id}>
+              <option key={wallet.walletId} value={wallet.walletId}>
                 Balance: {wallet.currency} {wallet.balance}
               </option>
             ))}
@@ -381,7 +385,9 @@ export function BillForm({
               name="scheduleEnabled"
               className="mt-1"
               checked={isScheduled}
-              onChange={(e) => setIsScheduled(e.target.checked)}
+              onChange={(e) => {
+                setIsScheduled(e.target.checked);
+              }}
             />
             <div>
               <label htmlFor="firstPaymentDate" className="font-medium">
@@ -441,44 +447,43 @@ export function BillForm({
           </section>
 
           {/* Reminder */}
-          {isScheduled && maxReminderDays > 0 && (
-            <section className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={isReminder}
-                onChange={(e) => setIsReminder(e.target.checked)}
-                name="reminderEnabled"
-                className="mt-1"
-              />
-              <div>
-                <label className="font-medium">Set a reminder</label>
-                <p className="italic text-sm text-gray-500">
-                  We’ll notify you before the scheduled or recurring payment is
-                  sent.
-                </p>
-                {isReminder && (
-                  <div className="mt-1 flex items-center gap-2">
-                    <label className="text-sm">Remind me</label>
-                    <input
-                      type="number"
-                      defaultValue={billData?.reminderDays}
-                      name="reminderDays"
-                      min="1"
-                      max={maxReminderDays}
-                      className="w-16 border px-2 py-1 rounded"
-                    />
-                    <span className="text-sm">days before</span>
-                  </div>
-                )}
 
-                {fieldErrors.reminderDays && (
-                  <p className="text-sm text-red-600">
-                    {fieldErrors.reminderDays}
-                  </p>
-                )}
-              </div>
-            </section>
-          )}
+          <section className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={isReminder}
+              onChange={(e) => setIsReminder(e.target.checked)}
+              name="reminderEnabled"
+              className="mt-1"
+            />
+            <div>
+              <label className="font-medium">Set a reminder</label>
+              <p className="italic text-sm text-gray-500">
+                We’ll notify you before the scheduled or recurring payment is
+                sent.
+              </p>
+              {isReminder && (
+                <div className="mt-1 flex items-center gap-2">
+                  <label className="text-sm">Remind me</label>
+                  <input
+                    type="number"
+                    defaultValue={billData?.reminderDays}
+                    name="reminderDays"
+                    min="1"
+                    max={maxReminderDays}
+                    className="w-16 border px-2 py-1 rounded"
+                  />
+                  <span className="text-sm">days before</span>
+                </div>
+              )}
+
+              {fieldErrors.reminderDays && (
+                <p className="text-sm text-red-600">
+                  {fieldErrors.reminderDays}
+                </p>
+              )}
+            </div>
+          </section>
         </div>
         <div className="flex flex-row items-center gap-3">
           <button
@@ -489,6 +494,7 @@ export function BillForm({
           </button>
           {Object.keys(fieldErrors).length > 0 && (
             <span className="text-sm text-red-600">
+              {Object.keys(fieldErrors)}
               There are some issues in the form. Please review and try again.
             </span>
           )}

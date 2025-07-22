@@ -23,10 +23,15 @@ INSERT INTO Wallet (zai_wallet_id, account, currency, balance) VALUES
 --     (4, 2, 2, 100),
 --     (5, 2, 3, 100);
 
--- INSERT INTO Transactions (transaction_id, name, amount, 
---                           category, sender, recipient) VALUES
---     (1, 'Figma', 15, 'stuff', 1, 4),
---     (2, 'Grammarly', 20, 'stuff', 1, 4),
---     (3, 'Blender', 300, 'stuff', 1, 4),
---     (4, 'Netflix', 30, 'stuff', 4, 1),
---     (5, 'Spotify', 20, 'stuff', 1, 4);
+INSERT INTO Transactions (event_time, transaction_id, name, amount, 
+                          category, sender, recipient) VALUES
+    ('2000-12-01T00:00:00.000Z', 1, 'Figma', 15, '{"design","software","subscription"}', 1, 4),
+    ('2012-11-06T02:00:00.000Z', 2, 'Grammarly', 20, '{"software","subscription", "language"}', 1, 4),
+    ('2000-12-01T00:00:00.000Z', 3, 'Blender', 300, '{"technology","kitchen"}', 1, 4),
+    ('2010-12-01T00:00:00.000Z', 4, 'Netflix', 30, '{"stuff","subscription","entertainment"}', 4, 1),
+    ('2025-7-18T12:00:00.000Z', 5, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
+    ('2025-7-18T12:30:00.000Z', 6, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
+    ('2025-7-18T12:00:00.000Z', 7, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
+    ('2025-7-18T09:05:00.000Z', 8, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
+    ('2025-7-18T18:24:00.000Z', 9, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
+    ('2025-7-18T22:19:00.000Z', 10, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4);

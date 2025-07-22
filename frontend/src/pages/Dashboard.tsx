@@ -4,9 +4,12 @@ import {
   InboxArrowDownIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
+dayjs.extend(relativeTime);
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -155,7 +158,6 @@ const formatBalance = (balance: number, currency: string): string => {
 function Dashboard() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const navigate = useNavigate();
-
   // done
   const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -163,6 +165,10 @@ function Dashboard() {
   const [exchangeAmount, setExchangeAmount] = useState("");
   const [fromCurrency, setFromCurrency] = useState("AUD");
   const [toCurrency, setToCurrency] = useState("USD");
+
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferCurrency, setTransferCurrency] = useState("AUD");
+  const [recipientUsername, setRecipientUsername] = useState("");
 
   // add all supported currencies to here, check correct
   // currency code
@@ -249,6 +255,11 @@ function Dashboard() {
   const getToSymbol = () =>
     availableCurrencies.find((c) => c.code === toCurrency)?.symbol || "";
 
+  const getTransferWallet = () =>
+    userWallets.find((w) => w.code === transferCurrency)?.wallet;
+  const getTransferSymbol = () =>
+    availableCurrencies.find((c) => c.code === transferCurrency)?.symbol || "";
+
   useEffect(() => {
     fetchCards();
     fetchTransactions();
@@ -296,6 +307,52 @@ function Dashboard() {
     } catch (error) {
       console.error("Error exchanging currency:", error);
       alert("Error exchanging currency. Please try again.");
+    }
+  };
+
+  const transferMoney = async () => {
+    const amount = parseFloat(transferAmount);
+
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    if (!recipientUsername.trim()) {
+      alert("Please enter a recipient username");
+      return;
+    }
+
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/transfer",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recipientUsername: recipientUsername.trim(),
+            currencyCode: transferCurrency,
+            amount: amount,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        await fetchCards(); // Refresh wallet balances
+        setTransferAmount("");
+        setRecipientUsername("");
+        alert(
+          `Successfully transferred ${getTransferSymbol()}${amount} to ${recipientUsername}!`
+        );
+      } else {
+        const errorData = await response.json();
+        alert(`Transfer failed: ${errorData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error transferring money:", error);
+      alert("Error transferring money. Please try again.");
     }
   };
 
@@ -510,7 +567,10 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/request-payment")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
@@ -530,18 +590,22 @@ function Dashboard() {
               <h3 className="font-semibold text-gray-900">
                 Recent Transactions
               </h3>
-              <button className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/Transactions")}
+                className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer"
+              >
                 View All →
               </button>
             </div>
 
             <div className="space-y-4">
+              {/* added slice to only show first 5 transactions */}
               {transactions.length === 0 && (
                 <div className="text-gray-500 text-center py-4">
                   No transactions yet
                 </div>
               )}
-              {transactions.map((transaction) => (
+              {transactions.slice(0, 5).map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-all"
@@ -557,12 +621,14 @@ function Dashboard() {
                         {transaction.name}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {transaction.time}
+                        {dayjs(transaction.time).fromNow()}
                       </span>
                     </div>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {transaction.amount}
+                    {transaction.amount < 0
+                      ? `-$${Math.abs(transaction.amount).toFixed(2)}`
+                      : `$${transaction.amount}`}
                   </span>
                 </div>
               ))}
@@ -593,7 +659,10 @@ function Dashboard() {
                 <span className="font-medium">Send Money</span>
                 {/* TODO: Add send money page */}
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/request-payment")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
                 {/* TODO: Add request money page */}
@@ -724,6 +793,122 @@ function Dashboard() {
               {userWallets.length < 2 && (
                 <p className="text-xs text-red-500 text-center">
                   You need at least 2 different currency wallets to exchange
+                </p>
+              )}
+            </div>
+          </div>
+          {/* Money Transfer */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Send Money</h3>
+              <svg
+                className="w-5 h-5 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+            </div>
+
+            <div className="space-y-4">
+              {/* Recipient Username */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  To Username
+                </label>
+                <input
+                  type="text"
+                  value={recipientUsername}
+                  onChange={(e) => setRecipientUsername(e.target.value)}
+                  placeholder="Enter username"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Currency Selection */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Currency
+                </label>
+                <select
+                  value={transferCurrency}
+                  onChange={(e) => setTransferCurrency(e.target.value)}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+                >
+                  {userWallets.map((wallet) => (
+                    <option key={wallet.code} value={wallet.code}>
+                      {wallet.code} - {wallet.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Amount Input */}
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {getTransferSymbol()}
+                  </span>
+                  <input
+                    type="number"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                {/* Balance Display */}
+                {getTransferWallet() && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Your Balance: {getTransferSymbol()}
+                    {formatBalance(
+                      getTransferWallet()!.balance,
+                      transferCurrency
+                    )}
+                  </p>
+                )}
+              </div>
+
+              {/* Transfer Button */}
+              <button
+                onClick={transferMoney}
+                disabled={
+                  !transferAmount ||
+                  !recipientUsername.trim() ||
+                  !getTransferWallet() ||
+                  userWallets.length === 0
+                }
+                className="w-full flex items-center justify-center space-x-2 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-all"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                <span className="font-medium">
+                  Send {getTransferSymbol()}
+                  {transferAmount || "0"} to {recipientUsername || "user"}
+                </span>
+              </button>
+
+              {userWallets.length === 0 && (
+                <p className="text-xs text-red-500 text-center">
+                  You need at least one wallet to transfer money
                 </p>
               )}
             </div>

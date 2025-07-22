@@ -23,13 +23,12 @@ export function EditBillWrapper() {
 
       const data = await res.json();
       console.log(data);
-      if (!data || !data[0]) {
+      if (!data) {
         setErrorMessage("Failed to fetch this bill's info.");
         return;
       }
-      setBillData(data[0]); // assuming array with one item
+      setBillData(data);
     };
-
     fetchBill();
   }, [backendUrl, id]);
 
