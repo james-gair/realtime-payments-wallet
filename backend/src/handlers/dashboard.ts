@@ -212,3 +212,78 @@ export async function postExchangeCurrency(req: Request, res: Response) {
     res.status(500).json({ error: err.message || "exchange failed" });
   }
 }
+
+
+export async function postTransferCurrency(req: Request, res: Response) {
+  const senderFirebaseId = (req as any).user.uid;
+  const { recipientUsername, currencyCode, amount } = req.body;
+
+  if (amount <= 0) {
+    res.status(400).json({ error: "enter postive transfer amount" });
+    return;
+  }
+
+  try {
+    await sql.begin(async (sql) => {
+      const [senderAccount] = await sql`
+        SELECT account_id FROM Account WHERE firebase_id = ${senderFirebaseId}
+      `;
+      if (!senderAccount) throw new Error("ERR");
+
+      const [recipientAccount] = await sql`
+        SELECT account_id FROM Account WHERE username = ${recipientUsername}
+      `;
+      if (!recipientAccount) throw new Error("no such user to transfer money to");
+
+      const [currency] = await sql`
+        SELECT currency_id FROM Currency WHERE code = ${currencyCode}
+      `;
+      if (!currency) throw new Error("currency invalid or not supported");
+
+      const [senderWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${senderAccount.account_id} AND currency = ${currency.currency_id}
+        FOR UPDATE
+      `;
+
+      if (!senderWallet) {
+        throw new Error(`you don't have a ${currencyCode} wallet`);
+      }
+
+      const [recipientWallet] = await sql`
+        SELECT * FROM Wallet
+        WHERE account = ${recipientAccount.account_id} AND currency = ${currency.currency_id}
+        FOR UPDATE
+      `;
+      if (!recipientWallet) {
+        throw new Error(`target user has no wallet of ${currencyCode}`);
+      }
+
+      if (senderWallet.balance < amount) {
+        throw new Error("insufficient balance");
+      }
+
+      // balance update
+      await sql`
+        UPDATE Wallet
+        SET balance = balance - ${amount}
+        WHERE wallet_id = ${senderWallet.wallet_id}
+      `;
+
+      await sql`
+        UPDATE Wallet
+        SET balance = balance + ${amount}
+        WHERE wallet_id = ${recipientWallet.wallet_id}
+      `;
+
+      // TODO
+      // !!!! THIS NEEDS TO BE INSERTED INTO TRANSACTION RECORD AS WELL
+    });
+
+    res.status(200).json({ message: "transfer successful" });
+
+  } catch (err: any) {
+    console.error("transfer err:", err);
+    res.status(500).json({ error: err.message || "transfer failed" });
+  }
+}
