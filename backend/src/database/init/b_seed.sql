@@ -17,7 +17,7 @@ INSERT INTO Wallet (wallet_id, account, currency, balance) VALUES
     (11, 3, 1, 1000),
     (12, 3, 2, 500),
     (13, 3, 3, 100),
-    (4, 2, 2, 100),
+    (4, 2, 1, 500),
     (5, 2, 3, 100);
 
 INSERT INTO Transactions (event_time, transaction_id, name, amount, 
