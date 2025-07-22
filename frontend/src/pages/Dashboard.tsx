@@ -156,7 +156,7 @@ const formatBalance = (balance: number, currency: string): string => {
 };
 
 function Dashboard() {
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  // const [currentCardIndex, setCurrentCardIndex] = useState(0);
   // remove after debugging
   const navigate = useNavigate();
 
@@ -554,7 +554,9 @@ function Dashboard() {
                     </div>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {transaction.amount}
+                    {transaction.amount < 0
+                      ? `-$${Math.abs(transaction.amount).toFixed(2)}`
+                      : `$${transaction.amount}`}
                   </span>
                 </div>
               ))}

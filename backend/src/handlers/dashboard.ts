@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 
+import { fetchSpecificExchangeRate } from "./fxRates";
 // Relative time logic moved to frontend
 // import dayjs from 'dayjs';
 // import relativeTime from 'dayjs/plugin/relativeTime';
