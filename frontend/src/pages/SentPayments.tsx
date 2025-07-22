@@ -26,34 +26,29 @@ const SentPayments: React.FC = () => {
   };
 
   const handleSubmitPayment = () => {
-    // Logic for settling payment here
     alert(`Payment to ${selectedPayment.recipient} settled.`);
     setIsModalOpen(false);
   };
 
   return (
-    <div className="space-y-8">
-      {/* Payment Requests Section */}
+    <div className="space-y-10 px-6 py-8 max-w-4xl mx-auto">
+      {/* Section: Payment Requests */}
       <div>
-        <h2 className="text-2xl font-bold text-center">Payment Requests</h2>
-        <div className="overflow-hidden bg-white shadow sm:rounded-lg">
-          <ul role="list" className="divide-y divide-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Incoming Payment Requests</h2>
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <ul role="list" className="divide-y divide-gray-100">
             {paymentRequests.map((payment) => (
               <li
                 key={payment.id}
-                className="flex justify-between gap-x-6 px-6 py-5 cursor-pointer hover:bg-gray-100"
                 onClick={() => handleClickPaymentRequest(payment)}
+                className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
               >
-                <div className="flex gap-x-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
-                      {payment.recipient}
-                    </p>
-                    <p className="truncate text-sm text-gray-500">{payment.description}</p>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{payment.recipient}</p>
+                  <p className="text-sm text-gray-500 truncate">{payment.description}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <span className="text-lg font-semibold text-gray-900">${payment.amount}</span>
+                  <span className="text-base font-semibold text-gray-900">${payment.amount}</span>
                 </div>
               </li>
             ))}
@@ -61,23 +56,22 @@ const SentPayments: React.FC = () => {
         </div>
       </div>
 
-      {/* Sent Payments Section */}
+      {/* Section: Sent Payments */}
       <div>
-        <h2 className="text-2xl font-bold text-center">Sent Payment Requests</h2>
-        <div className="overflow-hidden bg-white shadow sm:rounded-lg">
-          <ul role="list" className="divide-y divide-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Sent Payments</h2>
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <ul role="list" className="divide-y divide-gray-100">
             {sentPayments.map((payment) => (
-              <li key={payment.id} className="flex justify-between gap-x-6 px-6 py-5">
-                <div className="flex gap-x-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
-                      {payment.recipient}
-                    </p>
-                    <p className="truncate text-sm text-gray-500">{payment.description}</p>
-                  </div>
+              <li
+                key={payment.id}
+                className="flex justify-between items-center gap-x-6 px-6 py-4"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{payment.recipient}</p>
+                  <p className="text-sm text-gray-500 truncate">{payment.description}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <span className="text-lg font-semibold text-gray-900">${payment.amount}</span>
+                  <span className="text-base font-semibold text-gray-900">${payment.amount}</span>
                 </div>
               </li>
             ))}
@@ -85,34 +79,28 @@ const SentPayments: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal for Settling Payment Request */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center bg-gray-900 bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-xl font-bold text-center">Settle Payment</h3>
-            <div className="mt-4">
-              <p>
-                <strong>Recipient:</strong> {selectedPayment?.recipient}
-              </p>
-              <p>
-                <strong>Amount:</strong> ${selectedPayment?.amount}
-              </p>
-              <p>
-                <strong>Description:</strong> {selectedPayment?.description}
-              </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 px-4">
+          <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-4">Settle Payment</h3>
+            <div className="space-y-2 text-sm text-gray-700">
+              <p><span className="font-medium">Recipient:</span> {selectedPayment?.recipient}</p>
+              <p><span className="font-medium">Amount:</span> ${selectedPayment?.amount}</p>
+              <p><span className="font-medium">Description:</span> {selectedPayment?.description}</p>
             </div>
-            <div className="mt-4 flex gap-x-4 justify-center">
+            <div className="mt-6 flex justify-between">
               <button
                 onClick={handleSubmitPayment}
-                className="px-4 py-2 bg-green-500 text-white rounded-md"
+                className="w-full mr-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition"
               >
                 Settle
               </button>
               <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md"
+                className="w-full ml-2 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition"
               >
-                Close
+                Cancel
               </button>
             </div>
           </div>

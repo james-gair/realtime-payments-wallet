@@ -504,7 +504,9 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button 
+              onClick={() => navigate("/request-payment")}
+              className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
@@ -586,7 +588,9 @@ function Dashboard() {
                 </svg>
                 <span className="font-medium">Send Money</span>
               </button>
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button 
+              onClick={() => navigate("/request-payment")}
+              className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer">
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
