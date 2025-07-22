@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   GlobeAltIcon,
   UserIcon,
+  UserGroupIcon,
   DocumentTextIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
+  { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
   { name: "Transactions", href: "/transactions", icon: ArrowPathIcon }
 ];
 

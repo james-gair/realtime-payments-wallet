@@ -14,6 +14,7 @@ import "./styles/App.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
+import Contacts from "./pages/Contacts";
 import { BillPayments } from "./pages/BillPayments";
 import { BillConfirmation } from "./pages/BillConfirmation";
 import { EditBillWrapper } from "./pages/EditBillWrapper";
@@ -46,6 +47,7 @@ function App() {
             element={<CreateBillWrapper />}
           />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/contacts" element={<Contacts />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
         </Route>
