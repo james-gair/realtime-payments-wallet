@@ -149,8 +149,8 @@ export function KYCApplication() {
     <div className="m-10 bg-white relative">
       <section aria-labelledby="kyc-section-heading">
         <h2 id="kyc-section-heading" className="text-lg font-semibold">
-          Before you can transfer money into your wallet, we need to verify your
-          identity.
+          To keep your account secure, we need to verify your identity before
+          you can send or receive money.
         </h2>
         <p className="text-sm text-gray-600 mt-1">
           This helps us keep your account secure and comply with Australian

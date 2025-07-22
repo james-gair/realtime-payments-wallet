@@ -6,6 +6,10 @@ import {
   ArrowsRightLeftIcon,
 } from "@heroicons/react/24/outline";
 import { authFetch } from "../services/firebaseFetch";
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime); 
 
 // TypeScript interfaces for backend integration
 interface Card {
@@ -152,6 +156,10 @@ const formatBalance = (balance: number, currency: string): string => {
 };
 
 function Dashboard() {
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  // remove after debugging
+  const navigate = useNavigate();
+
 
   // done
   const [cards, setCards] = useState<Card[]>([]);
@@ -516,13 +524,16 @@ function Dashboard() {
               <h3 className="font-semibold text-gray-900">
                 Recent Transactions
               </h3>
-              <button className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
+              <button 
+                onClick={() => navigate("/Transactions")}
+                className="text-sm text-gray-500 hover:text-black transition-colors hover:cursor-pointer">
                 View All →
               </button>
             </div>
 
             <div className="space-y-4">
-              {transactions.map((transaction) => (
+              {/* added slice to only show first 5 transactions */}
+              {transactions.slice(0, 5).map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-all"
@@ -538,7 +549,7 @@ function Dashboard() {
                         {transaction.name}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {transaction.time}
+                        {dayjs(transaction.time).fromNow()}
                       </span>
                     </div>
                   </div>

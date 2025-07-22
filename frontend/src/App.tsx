@@ -31,8 +31,8 @@ function App() {
       <Route path="/emailConfirmation" element={<EmailConfirmation />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/transactions" element={<Transactions />} />
         <Route element={<NavbarLayout />}>
+          <Route path="/transactions" element={<Transactions />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />

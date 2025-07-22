@@ -12,7 +12,7 @@ function Forex() {
     const fetchRates = async () => {
       try {
         const res = await authFetch("http://localhost:4000/api/fx-rates", {
-             method: "GET",
+          method: "GET",
         });
 
         const data = await res.json();
