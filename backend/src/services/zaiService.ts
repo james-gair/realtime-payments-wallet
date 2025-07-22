@@ -206,6 +206,7 @@ export class ZaiService {
   }
 
   /**
+   * TODO: This is not used yet.
    * Submit identity verification data to Zai
    */
   async submitIdentityVerification(
@@ -232,6 +233,17 @@ export class ZaiService {
     }
   }
 
+  // TODO: This is only used for testing before production.
+  async verifyUser(userId: string): Promise<any> {
+    try {
+      const response = await this.apiClient.patch(`/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to verify user:", error);
+      throw new Error("Failed to verify user");
+    }
+  }
+
   /**
    * Get user's wallet accounts details.
    * A wallet is created by default when a user is created.
@@ -245,6 +257,33 @@ export class ZaiService {
     } catch (error) {
       console.error("Failed to get wallet balance:", error);
       throw new Error("Failed to retrieve wallet balance");
+    }
+  }
+
+  async createVirtualAccount(walletId: string): Promise<any> {
+    try {
+      const response = await this.apiClient.post(
+        `/wallet_accounts/${walletId}/virtual_accounts`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Failed to create virtual account:", error);
+      throw new Error("Failed to create virtual account");
+    }
+  }
+
+  /**
+   * Get wallet NPP details.
+   */
+  async getWalletNppDetails(walletId: string): Promise<any> {
+    try {
+      const response = await this.apiClient.get(
+        `/wallet_accounts/${walletId}/npp_details`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Failed to get wallet NPP details:", error);
+      throw new Error("Failed to retrieve wallet NPP details");
     }
   }
 
