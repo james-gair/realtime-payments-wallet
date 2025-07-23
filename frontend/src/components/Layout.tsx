@@ -9,7 +9,6 @@ import {
 import {
   ArrowPathIcon,
   Bars3Icon,
-  CreditCardIcon,
   DocumentTextIcon,
   GlobeAltIcon,
   HomeIcon,
@@ -26,7 +25,7 @@ import logo from "../assets/logo.png";
 const navigation = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
   { name: "Profile", href: "/profile", icon: UserIcon },
-  { name: "Payments", href: "/payments", icon: CreditCardIcon },
+  // { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
