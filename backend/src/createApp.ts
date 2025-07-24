@@ -8,6 +8,7 @@ import billPaymentsRouter from "./routes/billPayment";
 import { errorHandler } from "./middleware/errorHandler";
 import profileRouter from "./routes/profile";
 import dotenv from "dotenv";
+import savedContactsRouter from "./routes/savedContacts";
 
 dotenv.config();
 export function createApp() {
@@ -25,6 +26,7 @@ export function createApp() {
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
   app.use("/api", profileRouter);
+  app.use("/api", savedContactsRouter);
   app.use(errorHandler);
 
   return app;
