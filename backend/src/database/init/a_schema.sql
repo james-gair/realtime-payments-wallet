@@ -1,4 +1,4 @@
-CREATE TABLE Account (
+CREATE TABLE account (
   account_id SERIAL PRIMARY KEY,
   firebase_id TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL UNIQUE,
@@ -20,15 +20,30 @@ CREATE TABLE account_identity (
   verified_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE saved_contacts (
+  id SERIAL PRIMARY KEY,
+  account_id INTEGER NOT NULL REFERENCES Account(account_id) ON DELETE CASCADE, -- who saved the contact
+  contact_account_id INTEGER REFERENCES Account(account_id) ON DELETE SET NULL, -- if linked to an account
+  nickname TEXT,
+  name TEXT NOT NULL,
+  added_by TEXT NOT NULL,    -- 'username', 'email', 'phone', 'bank_account'
+  added_value TEXT NOT NULL, -- the value used to add the contact (e.g. username, email, phone, bank acct)
+  email TEXT,                -- for PayID/email (optional, for display)
+  phone TEXT,                -- for PayID/phone (optional, for display)
+  bank_account TEXT,         -- for bank account (optional, for display)
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (account_id, added_by, added_value)
+);
+
 -- Currencies table
-CREATE TABLE Currency (
+CREATE TABLE currency (
   currency_id SERIAL PRIMARY KEY,
   code VARCHAR(10) NOT NULL UNIQUE,  -- e.g. "AUD", "USD"
   symbol VARCHAR(10) NOT NULL UNIQUE
 );
 
 -- Wallets table
-CREATE TABLE Wallet (
+CREATE TABLE wallet (
   wallet_id SERIAL PRIMARY KEY,  
   account INTEGER NOT NULL,
   currency INTEGER NOT NULL,
@@ -56,7 +71,7 @@ BEFORE UPDATE ON Wallet
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TABLE Transactions (
+CREATE TABLE transactions (
   transaction_id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
