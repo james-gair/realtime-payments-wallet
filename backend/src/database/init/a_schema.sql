@@ -6,7 +6,10 @@ CREATE TABLE Account (
   phone TEXT NOT NULL,
   dob DATE NOT NULL,
   address TEXT,
-  verified BOOLEAN DEFAULT FALSE
+  verified BOOLEAN DEFAULT FALSE,
+  zai_user_id TEXT UNIQUE,
+  first_name TEXT,
+  last_name TEXT
 );
 
 CREATE TABLE account_identity (
@@ -29,7 +32,8 @@ CREATE TABLE Currency (
 
 -- Wallets table
 CREATE TABLE Wallet (
-  wallet_id SERIAL PRIMARY KEY,  
+  wallet_id SERIAL PRIMARY KEY,
+  zai_wallet_id TEXT NOT NULL UNIQUE,
   account INTEGER NOT NULL,
   currency INTEGER NOT NULL,
   balance NUMERIC(18, 2) DEFAULT 0 CHECK (balance >= 0),
@@ -62,8 +66,8 @@ CREATE TABLE Transactions (
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
   event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
-  sender SERIAL REFERENCES Wallet(wallet_id),
-  recipient SERIAL REFERENCES Wallet(wallet_id)
+  sender INTEGER REFERENCES Wallet(wallet_id),
+  recipient INTEGER REFERENCES Wallet(wallet_id)
 );
 
 

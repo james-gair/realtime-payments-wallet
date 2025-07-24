@@ -1,13 +1,14 @@
-import express from "express";
 import cors from "cors";
-import userLogin from "./routes/login";
-import fxRatesRouter from "./routes/fxRates";
-import userDashboard from "./routes/dashboard";
-import kycRouter from "./routes/kyc";
-import billPaymentsRouter from "./routes/billPayment";
-import { errorHandler } from "./middleware/errorHandler";
-import profileRouter from "./routes/profile";
 import dotenv from "dotenv";
+import express from "express";
+import { errorHandler } from "./middleware/errorHandler";
+import billPaymentsRouter from "./routes/billPayment";
+import userDashboard from "./routes/dashboard";
+import fxRatesRouter from "./routes/fxRates";
+import kycRouter from "./routes/kyc";
+import userLogin from "./routes/login";
+import paymentsRouter from "./routes/payments";
+import profileRouter from "./routes/profile";
 
 dotenv.config();
 export function createApp() {
@@ -25,6 +26,7 @@ export function createApp() {
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
   app.use("/api", profileRouter);
+  app.use("/api", paymentsRouter);
   app.use(errorHandler);
 
   return app;

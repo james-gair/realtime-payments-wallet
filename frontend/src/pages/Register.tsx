@@ -13,6 +13,8 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
   const [error, setError] = useState("");
@@ -32,11 +34,21 @@ function Register() {
       setError("Username must be at least 3 characters long!");
       return;
     }
+    if (!firstName.trim()) {
+      setError("First name is required!");
+      return;
+    }
+    if (!lastName.trim()) {
+      setError("Last name is required!");
+      return;
+    }
 
     // 1. Check username availability
     try {
       const checkRes = await fetch(
-        `http://localhost:4000/api/check-username?username=${encodeURIComponent(username)}`,
+        `http://localhost:4000/api/check-username?username=${encodeURIComponent(
+          username
+        )}`,
         { method: "GET" }
       );
       if (!checkRes.ok) {
@@ -67,7 +79,14 @@ function Register() {
     try {
       const response = await authFetch("http://localhost:4000/api/register", {
         method: "POST",
-        body: JSON.stringify({ phone, email, dob, username }),
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          email,
+          dob,
+          username,
+        }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -91,6 +110,50 @@ function Register() {
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="firstName"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                First Name
+              </label>
+              <div className="mt-2">
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  required
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-black sm:text-sm/6"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="lastName"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                Last Name
+              </label>
+              <div className="mt-2">
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-black sm:text-sm/6"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label
               htmlFor="username"
