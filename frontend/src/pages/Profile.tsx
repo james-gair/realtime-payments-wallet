@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { authFetch } from "../services/firebaseFetch"; 
+import { authFetch } from "../services/firebaseFetch";
 
 function Profile() {
-  
   const [currentUser, setCurrentUser] = useState({
     email: "",
     contact: "",
@@ -20,8 +19,7 @@ function Profile() {
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const isValidPhone = (phone: string) =>
-    /^(\+?\d{10,15})$/.test(phone);
+  const isValidPhone = (phone: string) => /^(\+?\d{10,15})$/.test(phone);
 
   // Load profile from backend
   useEffect(() => {
@@ -47,64 +45,64 @@ function Profile() {
   }, []);
 
   const handleSave = async () => {
-  setError("");
-  setSuccess("");
+    setError("");
+    setSuccess("");
 
-  const updates: { email?: string; phone?: string; address?: string } = {};
+    const updates: { email?: string; phone?: string; address?: string } = {};
 
-  if (email && email !== currentUser.email) {
-    if (!isValidEmail(email)) {
-      setError("Please enter a valid email address.");
+    if (email && email !== currentUser.email) {
+      if (!isValidEmail(email)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+      updates.email = email;
+    }
+    if (contact && contact !== currentUser.contact) {
+      if (!isValidPhone(contact)) {
+        setError("Please enter a valid contact number.");
+        return;
+      }
+      updates.phone = contact;
+    }
+    if (address && address !== currentUser.address) {
+      updates.address = address;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      setError("No changes detected to update.");
       return;
     }
-    updates.email = email;
-  }
-  if (contact && contact !== currentUser.contact) {
-    if (!isValidPhone(contact)) {
-      setError("Please enter a valid contact number.");
-      return;
+
+    try {
+      const res = await authFetch("http://localhost:4000/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+
+      const updatedProfile = await res.json();
+
+      setCurrentUser({
+        email: updatedProfile.email,
+        contact: updatedProfile.phone,
+        address: updatedProfile.address,
+      });
+
+      setSuccess("Profile updated successfully!");
+      setEmail("");
+      setContact("");
+      setAddress("");
+    } catch (err: any) {
+      setError(err.message || "Failed to update profile");
     }
-    updates.phone = contact;
-  }
-  if (address && address !== currentUser.address) {
-    updates.address = address;
-  }
-
-  if (Object.keys(updates).length === 0) {
-    setError("No changes detected to update.");
-    return;
-  }
-
-  try {
-    const res = await authFetch("http://localhost:4000/api/profile", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updates),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Failed to update profile");
-    }
-
-    const updatedProfile = await res.json();
-
-    setCurrentUser({
-      email: updatedProfile.email,
-      contact: updatedProfile.phone,
-      address: updatedProfile.address,
-    });
-
-    setSuccess("Profile updated successfully!");
-    setEmail("");
-    setContact("");
-    setAddress("");
-  } catch (err: any) {
-    setError(err.message || "Failed to update profile");
-  }
-};
+  };
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
@@ -168,7 +166,7 @@ function Profile() {
         {/* Save Button */}
         <button
           onClick={handleSave}
-          className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-all"
+          className="w-full bg-black text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800 transition-all"
         >
           Save
         </button>

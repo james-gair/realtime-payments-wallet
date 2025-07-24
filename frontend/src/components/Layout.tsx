@@ -7,17 +7,16 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 import {
-  Bars3Icon,
-  CreditCardIcon,
-  HomeIcon,
-  XMarkIcon,
-  GlobeAltIcon,
-  UserIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
   ArrowPathIcon,
+  Bars3Icon,
+  DocumentTextIcon,
+  GlobeAltIcon,
+  HomeIcon,
   PaperAirplaneIcon,
-
+  PlusIcon,
+  UserGroupIcon,
+  UserIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -26,12 +25,13 @@ import logo from "../assets/logo.png";
 const navigation = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
   { name: "Profile", href: "/profile", icon: UserIcon },
-  { name: "Payments", href: "/payments", icon: CreditCardIcon },
+  // { name: "Payments", href: "/payments", icon: CreditCardIcon },
+  { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
   { name: "Payment Requests", href: "/sent-payments", icon: PaperAirplaneIcon },
-  { name: "Transactions", href: "/transactions", icon: ArrowPathIcon }
+  { name: "Transactions", href: "/transactions", icon: ArrowPathIcon },
 ];
 
 function classNames(...classes: string[]) {

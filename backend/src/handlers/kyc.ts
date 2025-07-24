@@ -1,11 +1,13 @@
+import axios from "axios";
 import { Request, Response } from "express";
 import FormData from "form-data";
-import axios from "axios";
+import sql from "../database/client";
 import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
 import { verifyKyc } from "../services/verifyKyc";
+import { zaiService } from "../services/zaiService";
 import { constructKycFormData } from "../utils/constructKycFormData";
-import { updataKycVerificationStatus } from "../utils/updateKycVerificationStatus";
 import { saveVerifiedAccountIdInDb } from "../utils/saveVerifiedAccountIdInDb";
+import { updataKycVerificationStatus } from "../utils/updateKycVerificationStatus";
 
 export async function kycHandler(req: Request, res: Response) {
   // get user id
@@ -75,8 +77,61 @@ export async function kycHandler(req: Request, res: Response) {
       firebase_id
     );
     if (updated && saved) {
+      // ---> NEW LOGIC STARTS HERE <---
+      // After local KYC success, create the Zai wallet
+      try {
+        // 1. Get the user's account details from our DB
+        const userResult = await sql`
+          SELECT account_id, zai_user_id FROM Account WHERE firebase_id = ${firebase_id}
+        `;
+
+        if (userResult.length === 0) {
+          throw new Error("Could not find user in database after KYC update.");
+        }
+
+        const user = userResult[0];
+        if (!user.zai_user_id) {
+          throw new Error(
+            "User does not have a Zai User ID. Cannot create wallet."
+          );
+        }
+
+        // 2. The wallet is created by default. Fetch its details.
+        const walletDetails = await zaiService.getWalletBalance(
+          user.zai_user_id
+        );
+        const zaiWallet = walletDetails.wallet_accounts;
+
+        // 3. Save the new wallet details into our Wallet table
+        // We'll assume the primary currency is AUD for now
+        const currencyResult =
+          await sql`SELECT currency_id FROM Currency WHERE code = 'AUD'`;
+        if (currencyResult.length === 0) {
+          // This should not happen if the DB is seeded correctly
+          throw new Error("AUD currency not found in database.");
+        }
+        const audCurrencyId = currencyResult[0].currency_id;
+
+        await sql`
+          INSERT INTO Wallet (zai_wallet_id, account, currency, balance)
+          VALUES (${zaiWallet.id}, ${user.account_id}, ${audCurrencyId}, ${zaiWallet.balance})
+        `;
+
+        console.log(
+          `Successfully created Zai wallet ${zaiWallet.id} for user ${user.account_id}`
+        );
+      } catch (walletError: any) {
+        // If wallet creation fails, log it but don't fail the entire request.
+        // The user is still KYC'd on our end.
+        console.error(
+          "Critical: Failed to create Zai wallet for a verified user:",
+          walletError
+        );
+      }
+      // ---> NEW LOGIC ENDS HERE <---
+
       res.status(200).json({
-        message: "User verified successfully",
+        message: "User verified and wallet created successfully",
         result: verificationResult,
       });
       return;

@@ -1,26 +1,27 @@
 import { Route, Routes } from "react-router-dom";
 import NavbarLayout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AddMoney from "./pages/AddMoney";
+import { BillConfirmation } from "./pages/BillConfirmation";
+import { BillPayments } from "./pages/BillPayments";
+import Contacts from "./pages/Contacts";
+import { CreateBillWrapper } from "./pages/CreateBillWrapper";
 import Dashboard from "./pages/Dashboard";
+import { EditBillWrapper } from "./pages/EditBillWrapper";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailSent from "./pages/EmailSent";
-import LoginPage from "./pages/LoginPage";
-import Payments from "./pages/Payments";
 import Forex from "./pages/Forex";
-import Profile from "./pages/Profile";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import Transactions from "./pages/Transactions";
-import RequestPayment from "./pages/RequestPayment";
-import "./styles/App.css";
-import ProtectedRoute from "./components/ProtectedRoute";
-import SentPayments from "./pages/SentPayments";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
-import Contacts from "./pages/Contacts";
-import { BillPayments } from "./pages/BillPayments";
-import { BillConfirmation } from "./pages/BillConfirmation";
-import { EditBillWrapper } from "./pages/EditBillWrapper";
-import { CreateBillWrapper } from "./pages/CreateBillWrapper";
+import LoginPage from "./pages/LoginPage";
+import Payments from "./pages/Payments";
+import Profile from "./pages/Profile";
+import Register from "./pages/Register";
+import RequestPayment from "./pages/RequestPayment";
+import ResetPassword from "./pages/ResetPassword";
+import SentPayments from "./pages/SentPayments";
+import Transactions from "./pages/Transactions";
+import "./styles/App.css";
 
 function App() {
   return (
@@ -36,10 +37,11 @@ function App() {
         <Route element={<NavbarLayout />}>
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
           <Route path="/request-payment" element={<RequestPayment />} />
-          <Route path ="/sent-payments" element={<SentPayments />} />
+          <Route path="/sent-payments" element={<SentPayments />} />
           <Route path="/bill-payments" element={<BillPayments />} />
           <Route
             path="/bill-payments/confirmation/:id"

@@ -1,7 +1,10 @@
-INSERT INTO account (account_id, firebase_id, username, email, phone, dob) VALUES
-  (1, 'xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
-  (3, 'ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z'),
-  (2, 'IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z');
+
+INSERT INTO acount (firebase_id, username, email, phone, dob, verified, zai_user_id, first_name, last_name) VALUES
+-- The below users do not have Zai accounts yet.
+  ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, null, 'Test', 'User'),
+  ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, null, 'Test', 'User'),
+  ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, null, 'No', 'User'),
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'Edwin', 'N');
 /* 
 pword for test is testtest
 pword for no is nononono
@@ -29,25 +32,17 @@ VALUES (1, NULL, NULL, 'John Smith', 'phone', '+61412345678', NULL, '+6141234567
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
 VALUES (1, NULL, 'Bank Buddy', 'Sally Account', 'bank_account', '123-456 987654321', NULL, NULL, '123-456 987654321');
 
-INSERT INTO wallet (wallet_id, account, currency, balance) VALUES
-    (20, 1, 1, 1000),
-    (2, 1, 2, 1000),
-    (3, 1, 3, 10000),
-    (11, 3, 1, 1000),
-    (12, 3, 2, 500),
-    (13, 3, 3, 100),
-    (4, 2, 1, 500),
-    (5, 2, 3, 100);
+INSERT INTO wallet (zai_wallet_id, account, currency, balance) VALUES
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
+  ('zai_wallet_testuserverified_usd', 2, 2, 1000.00),
+  ('zai_wallet_testuser_aud', 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
+  ('zai_wallet_nouser_aud', 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
-INSERT INTO transactions (event_time, transaction_id, name, amount, 
-                          category, sender, recipient) VALUES
-    ('2000-12-01T00:00:00.000Z', 1, 'Figma', 15, '{"design","software","subscription"}', 1, 4),
-    ('2012-11-06T02:00:00.000Z', 2, 'Grammarly', 20, '{"software","subscription", "language"}', 1, 4),
-    ('2000-12-01T00:00:00.000Z', 3, 'Blender', 300, '{"technology","kitchen"}', 1, 4),
-    ('2010-12-01T00:00:00.000Z', 4, 'Netflix', 30, '{"stuff","subscription","entertainment"}', 4, 1),
-    ('2025-7-18T12:00:00.000Z', 5, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
-    ('2025-7-18T12:30:00.000Z', 6, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
-    ('2025-7-18T12:00:00.000Z', 7, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
-    ('2025-7-18T09:05:00.000Z', 8, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
-    ('2025-7-18T18:24:00.000Z', 9, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4),
-    ('2025-7-18T22:19:00.000Z', 10, 'Spotify', 20, '{"software","subscription", "music"}', 1, 4);
+
+INSERT INTO transactions (name, amount, category, sender, recipient, event_time) VALUES
+    ('Figma Subscription', 15.00, '{"design","software","subscription"}', 1, 4, '2023-10-01T10:00:00.000Z'),
+    ('Salary', 2500.00, '{"income", "work"}', 4, 1, '2023-10-05T09:00:00.000Z'),
+    ('Coffee', 5.50, '{"food", "cafe"}', 1, 4, '2023-10-06T08:30:00.000Z'),
+    ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z'),
+    ('Dinner with Friends', 75.00, '{"food", "social"}', 1, 3, '2023-10-12T20:00:00.000Z');
+
