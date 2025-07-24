@@ -13,6 +13,7 @@ import {
   DocumentTextIcon,
   GlobeAltIcon,
   HomeIcon,
+  InboxArrowDownIcon,
   PaperAirplaneIcon,
   PlusIcon,
   UserGroupIcon,
@@ -27,13 +28,13 @@ import { auth } from "../services/firebase";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
-  // { name: "Payments", href: "/payments", icon: CreditCardIcon },
-  { name: "Add Money", href: "/add-money", icon: PlusIcon },
-  { name: "Forex", href: "/forex", icon: GlobeAltIcon },
-  { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
-  { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
-  { name: "Payment Requests", href: "/sent-payments", icon: PaperAirplaneIcon },
   { name: "Transactions", href: "/transactions", icon: ArrowPathIcon },
+  { name: "Add Money", href: "/add-money", icon: PlusIcon },
+  { name: "Send Money", href: "/send-money", icon: PaperAirplaneIcon },
+  { name: "Request Money", href: "/request-money", icon: InboxArrowDownIcon },
+  { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
+  { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
+  { name: "Forex", href: "/forex", icon: GlobeAltIcon },
 ];
 
 function classNames(...classes: string[]) {
@@ -151,7 +152,7 @@ export default function NavbarLayout() {
                       </Link>
                     </div>
                     <div className="hover:cursor-pointer">
-                      <div
+                      <button
                         className="text-gray-700 hover:bg-gray-50 hover:text-black group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
                         onClick={handleLogout}
                       >
@@ -160,7 +161,7 @@ export default function NavbarLayout() {
                           className="text-gray-400 group-hover:text-black size-6 shrink-0"
                         />
                         Logout
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -231,7 +232,7 @@ export default function NavbarLayout() {
                   </Link>
                 </div>
                 <div className="hover:cursor-pointer">
-                  <div
+                  <button
                     className="text-gray-700 hover:bg-gray-50 hover:text-black group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
                     onClick={handleLogout}
                   >
@@ -240,7 +241,7 @@ export default function NavbarLayout() {
                       className="text-gray-400 group-hover:text-black size-6 shrink-0"
                     />
                     Logout
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>

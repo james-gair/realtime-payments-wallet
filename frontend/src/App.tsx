@@ -19,7 +19,7 @@ import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import RequestPayment from "./pages/RequestPayment";
 import ResetPassword from "./pages/ResetPassword";
-import SentPayments from "./pages/SentPayments";
+import SendMoney from "./pages/SendMoney";
 import Transactions from "./pages/Transactions";
 import "./styles/App.css";
 
@@ -40,8 +40,8 @@ function App() {
           <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
-          <Route path="/request-payment" element={<RequestPayment />} />
-          <Route path="/sent-payments" element={<SentPayments />} />
+          <Route path="/request-money" element={<RequestPayment />} />
+          <Route path="/send-money" element={<SendMoney />} />
           <Route path="/bill-payments" element={<BillPayments />} />
           <Route
             path="/bill-payments/confirmation/:id"
