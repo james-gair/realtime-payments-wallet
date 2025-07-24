@@ -1,18 +1,43 @@
 import React, { useState } from "react";
 
-const SentPayments: React.FC = () => {
+const SendMoney: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   const paymentRequests = [
-    { id: 1, recipient: "John Doe", amount: 100, description: "Payment for services" },
-    { id: 2, recipient: "Jane Smith", amount: 200, description: "Payment for goods" },
-    { id: 3, recipient: "Bob Johnson", amount: 50, description: "Reimbursement" },
+    {
+      id: 1,
+      recipient: "John Doe",
+      amount: 100,
+      description: "Payment for services",
+    },
+    {
+      id: 2,
+      recipient: "Jane Smith",
+      amount: 200,
+      description: "Payment for goods",
+    },
+    {
+      id: 3,
+      recipient: "Bob Johnson",
+      amount: 50,
+      description: "Reimbursement",
+    },
   ];
 
   const sentPayments = [
-    { id: 1, recipient: "Alice", amount: 150, description: "Payment for project" },
-    { id: 2, recipient: "Charlie", amount: 300, description: "Payment for consulting" },
+    {
+      id: 1,
+      recipient: "Alice",
+      amount: 150,
+      description: "Payment for project",
+    },
+    {
+      id: 2,
+      recipient: "Charlie",
+      amount: 300,
+      description: "Payment for consulting",
+    },
   ];
 
   const handleClickPaymentRequest = (payment: any) => {
@@ -31,10 +56,12 @@ const SentPayments: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 px-6 py-8 max-w-4xl mx-auto">
+    <div className="space-y-10 sm:px-6 py-8 max-w-4xl mx-auto">
       {/* Section: Payment Requests */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Incoming Payment Requests</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Incoming Payment Requests
+        </h2>
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <ul role="list" className="divide-y divide-gray-100">
             {paymentRequests.map((payment) => (
@@ -44,11 +71,17 @@ const SentPayments: React.FC = () => {
                 className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{payment.recipient}</p>
-                  <p className="text-sm text-gray-500 truncate">{payment.description}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {payment.recipient}
+                  </p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {payment.description}
+                  </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <span className="text-base font-semibold text-gray-900">${payment.amount}</span>
+                  <span className="text-base font-semibold text-gray-900">
+                    ${payment.amount}
+                  </span>
                 </div>
               </li>
             ))}
@@ -67,11 +100,17 @@ const SentPayments: React.FC = () => {
                 className="flex justify-between items-center gap-x-6 px-6 py-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{payment.recipient}</p>
-                  <p className="text-sm text-gray-500 truncate">{payment.description}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {payment.recipient}
+                  </p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {payment.description}
+                  </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <span className="text-base font-semibold text-gray-900">${payment.amount}</span>
+                  <span className="text-base font-semibold text-gray-900">
+                    ${payment.amount}
+                  </span>
                 </div>
               </li>
             ))}
@@ -81,13 +120,30 @@ const SentPayments: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 px-4">
-          <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-4">Settle Payment</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md z-49"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-4">
+              Settle Payment
+            </h3>
             <div className="space-y-2 text-sm text-gray-700">
-              <p><span className="font-medium">Recipient:</span> {selectedPayment?.recipient}</p>
-              <p><span className="font-medium">Amount:</span> ${selectedPayment?.amount}</p>
-              <p><span className="font-medium">Description:</span> {selectedPayment?.description}</p>
+              <p>
+                <span className="font-medium">Recipient:</span>{" "}
+                {selectedPayment?.recipient}
+              </p>
+              <p>
+                <span className="font-medium">Amount:</span> $
+                {selectedPayment?.amount}
+              </p>
+              <p>
+                <span className="font-medium">Description:</span>{" "}
+                {selectedPayment?.description}
+              </p>
             </div>
             <div className="mt-6 flex justify-between">
               <button
@@ -110,4 +166,4 @@ const SentPayments: React.FC = () => {
   );
 };
 
-export default SentPayments;
+export default SendMoney;
