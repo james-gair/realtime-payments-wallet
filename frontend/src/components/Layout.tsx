@@ -8,6 +8,7 @@ import {
 } from "@headlessui/react";
 import {
   ArrowPathIcon,
+  ArrowRightEndOnRectangleIcon,
   Bars3Icon,
   DocumentTextIcon,
   GlobeAltIcon,
@@ -18,13 +19,14 @@ import {
   UserIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { signOut } from "firebase/auth";
 import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import { auth } from "../services/firebase";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: HomeIcon },
-  { name: "Profile", href: "/profile", icon: UserIcon },
   // { name: "Payments", href: "/payments", icon: CreditCardIcon },
   { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
@@ -41,6 +43,12 @@ function classNames(...classes: string[]) {
 export default function NavbarLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await signOut(auth);
+    navigate("/login");
+  }
 
   return (
     <>
@@ -85,62 +93,15 @@ export default function NavbarLayout() {
                     className="h-10 w-auto mt-4 mr-4"
                   />
                 </div>
-                <nav className="flex flex-1 flex-col">
-                  <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                    <li>
-                      <ul role="list" className="-mx-2 space-y-1">
-                        {navigation.map((item) => {
-                          const isActive = location.pathname === item.href;
-                          return (
-                            <li key={item.name}>
-                              <Link
-                                to={item.href}
-                                className={classNames(
-                                  isActive
-                                    ? "bg-gray-50 text-black"
-                                    : "text-gray-700 hover:bg-gray-50 hover:text-black",
-                                  "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
-                                )}
-                              >
-                                <item.icon
-                                  aria-hidden="true"
-                                  className={classNames(
-                                    isActive
-                                      ? "text-black"
-                                      : "text-gray-400 group-hover:text-black",
-                                    "size-6 shrink-0"
-                                  )}
-                                />
-                                {item.name}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
-            </DialogPanel>
-          </div>
-        </Dialog>
-
-        {/* Static sidebar for desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-            <div className="flex h-16 shrink-0 items-center">
-              <img alt="SENDIT Logo" src={logo} className="h-10 mt-4 w-auto" />
-            </div>
-            <nav className="flex flex-1 flex-col">
-              <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                <li>
-                  <ul role="list" className="-mx-2 space-y-1">
+                <div className="flex flex-1 flex-col gap-y-7">
+                  <div className="-mx-2 space-y-1">
                     {navigation.map((item) => {
                       const isActive = location.pathname === item.href;
                       return (
-                        <li key={item.name}>
+                        <div key={item.name}>
                           <Link
                             to={item.href}
+                            onClick={() => setSidebarOpen(false)}
                             className={classNames(
                               isActive
                                 ? "bg-gray-50 text-black"
@@ -159,13 +120,130 @@ export default function NavbarLayout() {
                             />
                             {item.name}
                           </Link>
-                        </li>
+                        </div>
                       );
                     })}
-                  </ul>
-                </li>
-              </ul>
-            </nav>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-y-7 mb-6">
+                  <div className="-mx-2 space-y-1 ">
+                    <div className="hover:cursor-pointer">
+                      <Link
+                        to={"/profile"}
+                        onClick={() => setSidebarOpen(false)}
+                        className={classNames(
+                          location.pathname === "/profile"
+                            ? "bg-gray-50 text-black"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-black",
+                          "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+                        )}
+                      >
+                        <UserIcon
+                          aria-hidden="true"
+                          className={classNames(
+                            location.pathname === "/profile"
+                              ? "text-black"
+                              : "text-gray-400 group-hover:text-black",
+                            "size-6 shrink-0"
+                          )}
+                        />
+                        Profile
+                      </Link>
+                    </div>
+                    <div className="hover:cursor-pointer">
+                      <div
+                        className="text-gray-700 hover:bg-gray-50 hover:text-black group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+                        onClick={handleLogout}
+                      >
+                        <ArrowRightEndOnRectangleIcon
+                          aria-hidden="true"
+                          className="text-gray-400 group-hover:text-black size-6 shrink-0"
+                        />
+                        Logout
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogPanel>
+          </div>
+        </Dialog>
+
+        {/* Static sidebar for desktop */}
+        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
+            <div className="flex h-16 shrink-0 items-center">
+              <img alt="SENDIT Logo" src={logo} className="h-10 mt-4 w-auto" />
+            </div>
+            <div className="flex flex-1 flex-col gap-y-7">
+              <div className="-mx-2 space-y-1 ">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <div key={item.name} className="hover:cursor-pointer">
+                      <Link
+                        to={item.href}
+                        className={classNames(
+                          isActive
+                            ? "bg-gray-50 text-black"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-black",
+                          "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+                        )}
+                      >
+                        <item.icon
+                          aria-hidden="true"
+                          className={classNames(
+                            isActive
+                              ? "text-black"
+                              : "text-gray-400 group-hover:text-black",
+                            "size-6 shrink-0"
+                          )}
+                        />
+                        {item.name}
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex flex-col gap-y-7 mb-6">
+              <div className="-mx-2 space-y-1 ">
+                <div className="hover:cursor-pointer">
+                  <Link
+                    to={"/profile"}
+                    className={classNames(
+                      location.pathname === "/profile"
+                        ? "bg-gray-50 text-black"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-black",
+                      "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+                    )}
+                  >
+                    <UserIcon
+                      aria-hidden="true"
+                      className={classNames(
+                        location.pathname === "/profile"
+                          ? "text-black"
+                          : "text-gray-400 group-hover:text-black",
+                        "size-6 shrink-0"
+                      )}
+                    />
+                    Profile
+                  </Link>
+                </div>
+                <div className="hover:cursor-pointer">
+                  <div
+                    className="text-gray-700 hover:bg-gray-50 hover:text-black group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+                    onClick={handleLogout}
+                  >
+                    <ArrowRightEndOnRectangleIcon
+                      aria-hidden="true"
+                      className="text-gray-400 group-hover:text-black size-6 shrink-0"
+                    />
+                    Logout
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
