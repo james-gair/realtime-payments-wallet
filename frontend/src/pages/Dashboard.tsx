@@ -382,7 +382,10 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 lg:hidden">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/send-money")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -399,11 +402,20 @@ function Dashboard() {
                 <span className="font-medium">Send Money</span>
               </button>
               <button
-                onClick={() => navigate("/request-payment")}
+                onClick={() => navigate("/request-money")}
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
               >
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
+              </button>
+              <button
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
+                onClick={() => {
+                  navigate("/add-money");
+                }}
+              >
+                <PlusIcon className="w-5 h-5" />
+                <span className="font-medium">Add Money</span>
               </button>
               {/* <button
                 onClick={addUSDWallet}
@@ -475,7 +487,10 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block mt-11">
             <h3 className="font-semibold text-gray-900 mb-6">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/send-money")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -490,10 +505,9 @@ function Dashboard() {
                   />
                 </svg>
                 <span className="font-medium">Send Money</span>
-                {/* TODO: Add send money page */}
               </button>
               <button
-                onClick={() => navigate("/request-payment")}
+                onClick={() => navigate("/request-money")}
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
               >
                 <InboxArrowDownIcon className="w-5 h-5" />
@@ -523,19 +537,6 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Send Money</h3>
-              <svg
-                className="w-5 h-5 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
             </div>
 
             <div className="space-y-4">
