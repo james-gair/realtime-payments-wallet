@@ -1,21 +1,7 @@
 import { DocumentDuplicateIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
-
-interface Card {
-  id: number;
-  currency: string;
-  balance: number;
-  cardNumber: string;
-  expiryDate: string;
-  gradient: string;
-  symbol: string;
-}
-
-interface PayIdDetails {
-  payId: string;
-  instruction: string;
-}
+import type { Card, PayIdDetails } from "../types";
 
 export default function AddMoney() {
   const [cards, setCards] = useState<Card[]>([]);

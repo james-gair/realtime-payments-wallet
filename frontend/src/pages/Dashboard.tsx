@@ -6,39 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
 dayjs.extend(relativeTime);
 
-// TypeScript interfaces for backend integration
-export interface Card {
-  id: number;
-  currency: string;
-  balance: number;
-  gradient: string;
-  symbol: string;
-}
-
-export interface Transaction {
-  id: number;
-  name: string;
-  amount: string;
-  icon: string;
-  color: string;
-  time: string;
-  category?: string;
-}
-
-interface ExpenseCategory {
-  name: string;
-  amount: string;
-  color: string;
-  percentage: number;
-}
-
-interface IncomeExpenseData {
-  type: "income" | "expense";
-  amount: string;
-  period: string;
-  change: string;
-  changeType: "positive" | "negative";
-}
+import type {
+  Card,
+  ExpenseCategory,
+  IncomeExpenseData,
+  Transaction,
+} from "../types";
 
 const mockExpenseCategories: ExpenseCategory[] = [
   { name: "Friends", amount: "$950", color: "bg-indigo-500", percentage: 60 },
