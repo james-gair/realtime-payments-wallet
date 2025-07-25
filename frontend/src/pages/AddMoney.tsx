@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import type { Card, PayIdDetails } from "../types";
 
+// TODO: This is only setup for AUD
+const quickAmounts = ["50", "100", "500"];
+
 export default function AddMoney() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -266,6 +269,24 @@ export default function AddMoney() {
               </h3>
 
               <div className="space-y-6">
+                {/* Quick Amount Buttons */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Quick Amount
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {quickAmounts.map((quickAmount) => (
+                      <button
+                        key={quickAmount}
+                        onClick={() => setAmount(quickAmount)}
+                        className="py-2 px-4 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all hover:cursor-pointer"
+                      >
+                        {selectedCard?.symbol || "$"}
+                        {quickAmount}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {/* Amount Input */}
                 <div>
                   <label
@@ -326,25 +347,6 @@ export default function AddMoney() {
                         Debit/Credit Card
                       </span>
                     </label>
-                  </div>
-                </div>
-
-                {/* Quick Amount Buttons */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Quick Amount
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {["50", "100", "500"].map((quickAmount) => (
-                      <button
-                        key={quickAmount}
-                        onClick={() => setAmount(quickAmount)}
-                        className="py-2 px-4 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all hover:cursor-pointer"
-                      >
-                        {selectedCard?.symbol || "$"}
-                        {quickAmount}
-                      </button>
-                    ))}
                   </div>
                 </div>
 
