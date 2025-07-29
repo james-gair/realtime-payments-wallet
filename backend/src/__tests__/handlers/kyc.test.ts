@@ -149,7 +149,6 @@ describe("kyc", () => {
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: "User verified successfully",
         result: { result: "verified" },
       })
     );

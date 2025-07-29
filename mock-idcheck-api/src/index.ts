@@ -1,11 +1,16 @@
 import express from "express";
 import kycVerifyrouter from "./routes/kycVerify";
 import { Request, Response, NextFunction } from "express";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./docs/swagger";
 
 const app = express();
 const PORT = 4001;
 
 app.use(express.json());
+
+// Swagger docs
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Handle invalid req body
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

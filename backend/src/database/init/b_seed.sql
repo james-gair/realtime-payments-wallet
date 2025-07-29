@@ -3,7 +3,10 @@ INSERT INTO Account (firebase_id, username, email, phone, dob, verified, zai_use
   ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, null, 'Test', 'User'),
   ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, null, 'Test', 'User'),
   ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, null, 'No', 'User'),
-  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'Edwin', 'N');
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'Edwin', 'N'),
+ -- For api doc testing:
+  ('mock-user', 'mockmarker', 'marker@example.com', '0400000000', '1990-01-01T00:00:00.000Z',false,null,'Marker','Test');
+
 /* 
 pword for test is testtest
 pword for no is nononono

@@ -9,8 +9,8 @@ select * from account_identity;
 SELECT verified FROM Account WHERE firebase_id = 'ImwaeGpTjUhxe5GStIi1nwbYDj72';
 
 UPDATE Account
-SET verified = true
-WHERE account_id = 3;
+SET verified = false
+WHERE account_id = 2;
 
 select * from bill_payments;
 SET TIME ZONE 'Australia/Sydney';
@@ -18,3 +18,6 @@ select * from bill_payments where account_id = '3' AND id = '1' AND status = 'ac
 
 SELECT * FROM Wallet;
 SELECT * FROM Currency;
+
+
+select * from Account;
