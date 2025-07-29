@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SendToBankForm } from "../components/SendToBankForm";
+import { SendToUserForm } from "../components/SendToUserForm";
 import { authFetch } from "../services/firebaseFetch";
 import type { Card, PaymentRequest, SentPayment } from "../types";
 
@@ -163,6 +164,19 @@ const SendMoney: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Send to User Section Header */}
+      <div className="pt-8 border-t border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Send to Friend
+        </h2>
+        <p className="text-gray-600">
+          Transfer money instantly to another user by username
+        </p>
+      </div>
+
+      {/* Send to User Form Component */}
+      <SendToUserForm cards={cards} />
 
       {/* Bank Transfer Section Header */}
       <div className="pt-8 border-t border-gray-200">
