@@ -9,43 +9,40 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     setError("");
+    setLoading(true);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
-      try {
-        const response = await authFetch("http://localhost:4000/api/login", {
-          method: "POST",
-        });
+      const response = await authFetch("http://localhost:4000/api/login", {
+        method: "POST",
+      });
 
-        if (!response.ok) {
-          // Handle HTTP errors
-          const errorData = await response.json();
-          console.error("Error response:", errorData);
-          setError(errorData.error || "Login failed");
-          return;
-        } else {
-          const data = await response.json();
-          console.log("Success:", data);
-          // Store user info in localStorage for use in other components - do we need this?
-          // if (data.user) {
-          //   localStorage.setItem('userInfo', JSON.stringify(data.user));
-          // }
-        }
-      } catch (error) {
-        console.error("Fetch error:", error);
-        setError("Failed to login");
+      if (!response.ok) {
+        // Handle HTTP errors
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        setError(errorData.error || "Login failed");
+        setLoading(false);
         return;
+      } else {
+        const data = await response.json();
+        // Store user info in localStorage for use in other components - do we need this?
+        // if (data.user) {
+        //   localStorage.setItem('userInfo', JSON.stringify(data.user));
+        // }
       }
 
       // need to put multi factor authentication before acessing the dashboard
       navigate("/dashboard");
     } catch (error: any) {
       setError("Login failed: " + error.message);
+      setLoading(false);
     }
   };
 
@@ -120,9 +117,17 @@ function LoginPage() {
             <button
               type="button"
               onClick={handleLogin}
-              className="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black cursor-pointer"
+              disabled={loading}
+              className="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                "Sign in"
+              )}
             </button>
           </div>
         </div>

@@ -1,10 +1,7 @@
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
-import type { Card } from "./Dashboard";
-interface Rates {
-  [currency: string]: number;
-}
+import type { Card, Rates } from "../types";
 
 function Forex() {
   const [rates, setRates] = useState<Rates>({});
