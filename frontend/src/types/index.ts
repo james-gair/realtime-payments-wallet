@@ -179,7 +179,6 @@ export interface IncomeExpenseData {
 
 export interface PayIdDetails {
   payId: string;
-  instruction: string;
 }
 
 // ============================================================================
