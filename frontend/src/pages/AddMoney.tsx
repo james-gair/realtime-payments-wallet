@@ -8,8 +8,6 @@ const quickAmounts = ["50", "100", "500"];
 
 const MOCK_DATA = {
   payId: "edwin@sendit.com.au",
-  instruction:
-    "Use this PayID in your banking app to add money to your wallet instantly.",
 };
 
 export default function AddMoney() {
@@ -89,8 +87,7 @@ export default function AddMoney() {
           card.id === selectedCard?.id
             ? {
                 ...card,
-                balance:
-                  parseFloat(card.balance.toString()) + parseFloat(amount),
+                balance: card.balance + parseFloat(amount),
               }
             : card
         )
@@ -231,7 +228,8 @@ export default function AddMoney() {
                 PayID Transfer Instructions
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                {payIdDetails.instruction}
+                Use this PayID in your banking app to add money to your wallet
+                instantly.
               </p>
 
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

@@ -47,7 +47,7 @@ export async function getUserWallet(req: Request, res: Response) {
   try {
     const wallets: wallet[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
-        c.code AS currency, w.balance, c.symbol
+        c.code AS currency, CAST(w.balance AS FLOAT), c.symbol
         FROM wallets w 
         JOIN accounts a ON w.account_id = a.account_id 
         JOIN currencies c ON w.currency_id = c.currency_id
