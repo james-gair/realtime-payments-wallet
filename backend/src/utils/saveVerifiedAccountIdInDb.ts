@@ -8,7 +8,7 @@ export async function saveVerifiedAccountIdInDb(
   // find the corresponding account_id
   // using account_id instead of firebase_id -> safer option
   const account = await sql`
-    SELECT account_id FROM Account WHERE firebase_id = ${firebase_id}
+    SELECT account_id FROM accounts WHERE firebase_id = ${firebase_id}
   `;
 
   if (account.length === 0) {
@@ -18,7 +18,7 @@ export async function saveVerifiedAccountIdInDb(
   const account_id = account[0].account_id;
 
   return await sql`
-    INSERT INTO account_identity (
+    INSERT INTO account_identities (
       account_id,
       full_name,
       date_of_birth,

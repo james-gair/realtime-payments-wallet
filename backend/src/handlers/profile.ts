@@ -5,11 +5,10 @@ export async function getUserProfile(req: Request, res: Response) {
   const firebaseId = (req as any).user.uid;
   console.log("firebaseId from token:", firebaseId);
 
-
   try {
     const result = await sql`
       SELECT account_id, email, phone, address
-      FROM account
+      FROM accounts
       WHERE firebase_id = ${firebaseId}
     `;
     console.log("Database query result:", result);
@@ -26,7 +25,10 @@ export async function getUserProfile(req: Request, res: Response) {
   }
 }
 
-export async function updateUserProfile(req: Request, res: Response): Promise<void> {
+export async function updateUserProfile(
+  req: Request,
+  res: Response
+): Promise<void> {
   const firebaseId = (req as any).user.uid;
   const { email, phone, address } = req.body;
 
@@ -52,23 +54,20 @@ export async function updateUserProfile(req: Request, res: Response): Promise<vo
     return;
   }
 
-  
   const setClause = fields
     .map((field, index) => `${field} = $${index + 1}`)
     .join(", ");
 
-  
   const params = [...values, firebaseId];
 
   const query = `
-    UPDATE account
+    UPDATE accounts
     SET ${setClause}
     WHERE firebase_id = $${params.length}
     RETURNING account_id, email, phone, address
   `;
 
   try {
-    
     const result = await sql.unsafe(query, params);
 
     if (result.length === 0) {

@@ -1,14 +1,8 @@
 import { Router } from "express";
-import { addMoney, getBankPayInDetails } from "../handlers/payments";
+import { addMoney } from "../handlers/payments";
 import { authenticateFirebaseToken } from "../middleware/auth";
 
 const paymentsRouter = Router();
-
-paymentsRouter.get(
-  "/payments/bank-details",
-  authenticateFirebaseToken as any,
-  getBankPayInDetails as any
-);
 
 paymentsRouter.post(
   "/payments/add-money",
