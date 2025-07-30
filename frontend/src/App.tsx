@@ -12,6 +12,7 @@ import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailSent from "./pages/EmailSent";
 import Forex from "./pages/Forex";
 import GroupPayments from "./pages/GroupPayments";
+import GroupPaymentsDashboard from "./pages/GroupPaymentsDashboard";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import LoginPage from "./pages/LoginPage";
@@ -57,7 +58,8 @@ function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
-          <Route path="/group-payments" element={<GroupPayments />} />
+          <Route path="/group-payments" element={<GroupPaymentsDashboard />} />
+          <Route path="/group-payments/:id" element={<GroupPayments />} />
         </Route>
       </Route>
     </Routes>
