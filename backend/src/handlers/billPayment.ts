@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { BillInputs, billPaymentSchema } from "../schemas/billPayment.schema";
 import sql from "../database/client";
-import { getAccountId } from "../utils/getAccountId";
 import { CancelBillParams } from "../dtos/BillPaymentReq";
+import { BillInputs, billPaymentSchema } from "../schemas/billPayment.schema";
+import { getAccountId } from "../utils/getAccountId";
 
 export interface BillRecord {
   billId: string;
@@ -124,8 +124,8 @@ export async function getUpcomingBills(req: Request, res: Response) {
         bp.next_run_at AS "nextRunAt",
         c.code AS "currencyCode"
       FROM bill_payments bp
-      JOIN Wallet w ON bp.wallet_id = w.wallet_id
-      JOIN Currency c ON w.currency = c.currency_id
+      JOIN wallets w ON bp.wallet_id = w.wallet_id
+      JOIN currencies c ON w.currency_id = c.currency_id
       WHERE bp.status = 'active' 
         AND bp.next_run_at > now()
     `;
@@ -197,9 +197,9 @@ export async function getAvailableWallets(req: Request, res: Response) {
         w.wallet_id AS "walletId", 
         w.balance,
         c.code AS currency
-      FROM Wallet w
-      JOIN Currency c ON w.currency = c.currency_id
-      WHERE w.account = ${account_id}
+      FROM wallets w
+      JOIN currencies c ON w.currency_id = c.currency_id
+      WHERE w.account_id = ${account_id}
     `;
     ////console.log(wallets);
     res.status(200).json(wallets);
@@ -249,8 +249,8 @@ export async function getSavedBillById(req: Request, res: Response) {
           bp.next_run_at AS "nextRunAt",
           c.code AS "currencyCode"
         FROM bill_payments bp
-        JOIN Wallet w ON bp.wallet_id = w.wallet_id
-        JOIN Currency c ON w.currency = c.currency_id
+        JOIN wallets w ON bp.wallet_id = w.wallet_id
+        JOIN currencies c ON w.currency_id = c.currency_id
         WHERE bp.status = 'active'
           AND bp.id = ${billId}
           AND bp.account_id = ${account_id}

@@ -6,6 +6,12 @@ import type { Card, PayIdDetails } from "../types";
 // TODO: This is only setup for AUD
 const quickAmounts = ["50", "100", "500"];
 
+const MOCK_DATA = {
+  payId: "edwin@sendit.com.au",
+  instruction:
+    "Use this PayID in your banking app to add money to your wallet instantly.",
+};
+
 export default function AddMoney() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -47,21 +53,6 @@ export default function AddMoney() {
     // --- Bank Transfer Logic ---
     setIsLoading(true);
     try {
-      // TODO: Uncomment this when the backend is ready
-      // const response = await authFetch(
-      //   "http://localhost:4000/api/payments/bank-details",
-      //   {
-      //     method: "GET",
-      //   }
-      // );
-
-      // if (!response.ok) {
-      //   const errData = await response.json();
-      //   throw new Error(errData.error || "Failed to fetch bank details.");
-      // }
-
-      // const data = await response.json();
-
       const response = await authFetch(
         "http://localhost:4000/api/payments/add-money",
         {
@@ -80,11 +71,8 @@ export default function AddMoney() {
         throw new Error(errData.error || "Failed to add money.");
       }
 
-      const MOCK_DATA = {
-        payId: "edwin@zai.com.au",
-        instruction:
-          "Use this PayID in your banking app to add money to your wallet instantly.",
-      };
+      // TODO: Real world scenario would rely on a webhook to update the balance
+      // Optimistically update the selected card and all cards
       setSelectedCard(
         selectedCard
           ? {
@@ -94,6 +82,18 @@ export default function AddMoney() {
                 parseFloat(selectedCard.balance.toString()),
             }
           : null
+      );
+
+      setCards(
+        cards.map((card) =>
+          card.id === selectedCard?.id
+            ? {
+                ...card,
+                balance:
+                  parseFloat(card.balance.toString()) + parseFloat(amount),
+              }
+            : card
+        )
       );
       setPayIdDetails(MOCK_DATA);
       setShowPayIdDetails(true);
