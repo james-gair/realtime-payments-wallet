@@ -35,6 +35,7 @@ const navigation = [
   { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Group Payments", href: "/group-payments", icon: UserGroupIcon },
 ];
 
 function classNames(...classes: string[]) {
