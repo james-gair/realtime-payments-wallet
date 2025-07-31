@@ -4,41 +4,11 @@ import {
   WalletIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { billPaymentSchema } from "../schema/billPaymentsSchema.schema";
 import { authFetch } from "../services/firebaseFetch";
-import { ConfirmModal } from "../components/ConfirmModal";
+import type { BillInputs, Wallet } from "../types";
 
-export interface BillInputs {
-  walletId: string;
-  amount: number;
-  payMethod: "bankAcct" | "bpay";
-  // Optional depending on payment method
-  billerBsb?: string;
-  billerBankAccountNumber?: string;
-
-  billerBpayCode?: string;
-  billerBpayRef?: string;
-
-  billerDisplayName?: string;
-  billDisplayName?: string;
-
-  type: "one-time" | "recurring";
-  frequency?: string;
-  firstPaymentDate?: string;
-
-  // Sprint 3
-  reminder?: boolean;
-  reminderDays?: string;
-
-  currencyCode?: string;
-  nextRunAt?: string;
-}
-
-interface Wallet {
-  walletId: string;
-  currency: string;
-  balance: string;
-}
 export function BillForm({
   handleActualSubmit,
   billData,

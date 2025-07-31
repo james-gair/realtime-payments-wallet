@@ -3,11 +3,10 @@ import { auth } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import { WebcamCapture } from "../components/WebcameCapture";
 import { ErrorModal } from "../components/ErrorModal";
-
-// TODO: Selfie Capture and error handling
+import { VITE_BACKEND_URL } from "../constants";
 
 export function KYCApplication() {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = VITE_BACKEND_URL;
   const navigate = useNavigate();
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
@@ -17,6 +16,7 @@ export function KYCApplication() {
 
   const handleConfirm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     const originalFormData = new FormData(event.currentTarget);
     const formData = new FormData();
 
@@ -59,7 +59,7 @@ export function KYCApplication() {
         return;
       }
       const file = originalFormData.get("passportPhoto");
-      console.log("file type:", typeof file);
+
       if (file) {
         formData.append("idPhoto", file);
       } else if (licenseFile) {
@@ -92,7 +92,7 @@ export function KYCApplication() {
       }
 
       const file = originalFormData.get("driverLicensePhoto");
-      console.log("file type:", typeof file);
+
       if (file) {
         formData.append("idPhoto", file);
       } else if (licenseFile) {
@@ -117,6 +117,7 @@ export function KYCApplication() {
     //   console.log(`${key}: ${value}`);
     // }
     // Send request to the backend
+
     try {
       const res = await fetch(backendUrl + "/api/kyc", {
         method: "POST",
@@ -208,7 +209,7 @@ export function KYCApplication() {
                 <input
                   type="radio"
                   name="idType"
-                  value="drivers_license" // complies with the id check api
+                  value="driver_license" // complies with the id check api
                   checked={idType === "driver_license"}
                   onChange={() => setIdType("driver_license")}
                 />
@@ -258,7 +259,6 @@ export function KYCApplication() {
                     name="passportPhoto"
                     accept="image/*"
                     className="sr-only inline-block m-10"
-                    required
                   />
                   <label
                     htmlFor="passportPhoto"
@@ -320,7 +320,6 @@ export function KYCApplication() {
                     name="driverLicensePhoto"
                     accept="image/*"
                     className="sr-only inline-block m-10"
-                    required
                   />
                   <label
                     htmlFor="driverLicensePhoto"
@@ -339,6 +338,14 @@ export function KYCApplication() {
                 </>
               )}
             </div>
+          )}
+          {selfieFile && (
+            <input
+              type="hidden"
+              name="selfieWithId"
+              value="captured"
+              data-testid="selfie-input"
+            />
           )}
 
           <button

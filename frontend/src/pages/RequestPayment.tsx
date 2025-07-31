@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-
-interface FormState {
-  amount: string;
-  recipient: string;
-  description: string;
-}
+import type { FormState } from "../types";
 
 const RequestPage: React.FC = () => {
   const [formData, setFormData] = useState<FormState>({

@@ -1,19 +1,20 @@
-CREATE TABLE account (
+CREATE TABLE accounts (
   account_id SERIAL PRIMARY KEY,
   firebase_id TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL,
   phone TEXT NOT NULL,
-  dob DATE NOT NULL,
+  date_of_birth DATE NOT NULL,
   address TEXT,
-  verified BOOLEAN DEFAULT FALSE,
-  zai_user_id TEXT UNIQUE,
+  is_verified BOOLEAN DEFAULT FALSE,
   first_name TEXT,
-  last_name TEXT
+  last_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE account_identity (
-  account_id INTEGER PRIMARY KEY REFERENCES account(account_id) ON DELETE CASCADE,
+CREATE TABLE account_identities (
+  account_id INTEGER PRIMARY KEY REFERENCES accounts(account_id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   date_of_birth DATE NOT NULL,
   id_type TEXT NOT NULL CHECK (id_type IN ('passport', 'driver_license')),
@@ -39,27 +40,26 @@ CREATE TABLE saved_contacts (
 );
 
 -- Currencies table
-CREATE TABLE currency (
+CREATE TABLE currencies (
   currency_id SERIAL PRIMARY KEY,
   code VARCHAR(10) NOT NULL UNIQUE,  -- e.g. "AUD", "USD"
   symbol VARCHAR(10) NOT NULL UNIQUE
 );
 
 -- Wallets table
-CREATE TABLE wallet (
+CREATE TABLE wallets (
   wallet_id SERIAL PRIMARY KEY,
-  zai_wallet_id TEXT NOT NULL UNIQUE,
-  account INTEGER NOT NULL,
-  currency INTEGER NOT NULL,
+  account_id INTEGER NOT NULL,
+  currency_id INTEGER NOT NULL,
   balance NUMERIC(18, 2) DEFAULT 0 CHECK (balance >= 0),
   -- card_number VARCHAR(16) NOT NULL,
   -- expiry_date VARCHAR(5) NOT NULL,
   monthly_limit NUMERIC(18, 2) CHECK (monthly_limit >= 0),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (account, currency),
-  FOREIGN KEY (account) REFERENCES account(account_id),
-  FOREIGN KEY (currency) REFERENCES currency(currency_id)
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (account_id, currency_id),
+  CONSTRAINT fk_wallets_account FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+  CONSTRAINT fk_wallets_currency FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
 );
 
 CREATE FUNCTION update_updated_at_column()
@@ -71,7 +71,7 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER set_updated_at
-BEFORE UPDATE ON wallet
+BEFORE UPDATE ON wallets
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
@@ -79,10 +79,10 @@ CREATE TABLE transactions (
   transaction_id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
-  event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  event_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
-  sender INTEGER REFERENCES wallet(wallet_id),
-  recipient INTEGER REFERENCES wallet(wallet_id)
+  sender_wallet_id INTEGER REFERENCES wallets(wallet_id),
+  recipient_wallet_id INTEGER REFERENCES wallets(wallet_id)
 );
 
 

@@ -1,21 +1,14 @@
 import { DocumentDuplicateIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
+import type { Card, PayIdDetails } from "../types";
 
-interface Card {
-  id: number;
-  currency: string;
-  balance: number;
-  cardNumber: string;
-  expiryDate: string;
-  gradient: string;
-  symbol: string;
-}
+// TODO: This is only setup for AUD
+const quickAmounts = ["50", "100", "500"];
 
-interface PayIdDetails {
-  payId: string;
-  instruction: string;
-}
+const MOCK_DATA = {
+  payId: "edwin@sendit.com.au",
+};
 
 export default function AddMoney() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -58,21 +51,6 @@ export default function AddMoney() {
     // --- Bank Transfer Logic ---
     setIsLoading(true);
     try {
-      // TODO: Uncomment this when the backend is ready
-      // const response = await authFetch(
-      //   "http://localhost:4000/api/payments/bank-details",
-      //   {
-      //     method: "GET",
-      //   }
-      // );
-
-      // if (!response.ok) {
-      //   const errData = await response.json();
-      //   throw new Error(errData.error || "Failed to fetch bank details.");
-      // }
-
-      // const data = await response.json();
-
       const response = await authFetch(
         "http://localhost:4000/api/payments/add-money",
         {
@@ -91,11 +69,8 @@ export default function AddMoney() {
         throw new Error(errData.error || "Failed to add money.");
       }
 
-      const MOCK_DATA = {
-        payId: "edwin@zai.com.au",
-        instruction:
-          "Use this PayID in your banking app to add money to your wallet instantly.",
-      };
+      // TODO: Real world scenario would rely on a webhook to update the balance
+      // Optimistically update the selected card and all cards
       setSelectedCard(
         selectedCard
           ? {
@@ -105,6 +80,17 @@ export default function AddMoney() {
                 parseFloat(selectedCard.balance.toString()),
             }
           : null
+      );
+
+      setCards(
+        cards.map((card) =>
+          card.id === selectedCard?.id
+            ? {
+                ...card,
+                balance: card.balance + parseFloat(amount),
+              }
+            : card
+        )
       );
       setPayIdDetails(MOCK_DATA);
       setShowPayIdDetails(true);
@@ -242,7 +228,8 @@ export default function AddMoney() {
                 PayID Transfer Instructions
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                {payIdDetails.instruction}
+                Use this PayID in your banking app to add money to your wallet
+                instantly.
               </p>
 
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -280,6 +267,24 @@ export default function AddMoney() {
               </h3>
 
               <div className="space-y-6">
+                {/* Quick Amount Buttons */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Quick Amount
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {quickAmounts.map((quickAmount) => (
+                      <button
+                        key={quickAmount}
+                        onClick={() => setAmount(quickAmount)}
+                        className="py-2 px-4 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all hover:cursor-pointer"
+                      >
+                        {selectedCard?.symbol || "$"}
+                        {quickAmount}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {/* Amount Input */}
                 <div>
                   <label
@@ -340,25 +345,6 @@ export default function AddMoney() {
                         Debit/Credit Card
                       </span>
                     </label>
-                  </div>
-                </div>
-
-                {/* Quick Amount Buttons */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Quick Amount
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {["50", "100", "500"].map((quickAmount) => (
-                      <button
-                        key={quickAmount}
-                        onClick={() => setAmount(quickAmount)}
-                        className="py-2 px-4 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all hover:cursor-pointer"
-                      >
-                        {selectedCard?.symbol || "$"}
-                        {quickAmount}
-                      </button>
-                    ))}
                   </div>
                 </div>
 

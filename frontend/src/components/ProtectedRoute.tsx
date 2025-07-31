@@ -1,6 +1,6 @@
+import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../services/firebase";
 
 function ProtectedRoute() {
@@ -9,7 +9,6 @@ function ProtectedRoute() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("ProtectedRoute - onAuthStateChanged user:", user);
       setIsAuthed(!!user);
       setLoading(false);
     });
@@ -17,10 +16,19 @@ function ProtectedRoute() {
     return () => unsubscribe();
   }, []);
 
-  console.log("ProtectedRoute - loading:", loading, "isAuthed:", isAuthed);
-
   if (loading) {
-    return <div className="text-center mt-20 text-lg">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Loading...
+          </h2>
+        </div>
+      </div>
+    );
   }
 
   return isAuthed ? <Outlet /> : <Navigate to="/login" />;

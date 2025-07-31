@@ -1,8 +1,4 @@
-interface ConfirmModalProps {
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import type { ConfirmModalProps } from "../types";
 
 export function ConfirmModal({
   message,

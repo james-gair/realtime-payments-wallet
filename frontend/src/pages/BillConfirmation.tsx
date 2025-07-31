@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
-import type { BillInputs } from "../components/BillForm";
-
-interface SavedBillRes extends BillInputs {
-  currencyCode: string;
-  nextRunAt: string;
-}
+import type { SavedBillRes } from "../types";
 
 export function BillConfirmation() {
   const { id } = useParams<{ id: string }>();

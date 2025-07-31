@@ -2,7 +2,7 @@ import sql from "../database/client";
 
 export async function getAccountId(firebase_id: string): Promise<string> {
   const account = await sql`
-    SELECT account_id FROM Account WHERE firebase_id = ${firebase_id}
+    SELECT account_id FROM accounts WHERE firebase_id = ${firebase_id}
   `;
 
   if (account.length === 0) {

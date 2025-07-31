@@ -10,6 +10,8 @@ import userLogin from "./routes/login";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
 import savedContactsRouter from "./routes/savedContacts";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./docs/swagger";
 
 dotenv.config();
 export function createApp() {
@@ -18,6 +20,9 @@ export function createApp() {
   app.use(cors({ origin: "http://localhost:5173" }));
   // Middleware to parse JSON
   app.use(express.json());
+
+  // Swagger setup
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Delete this after starting the actual project
   app.use("/api", userLogin);

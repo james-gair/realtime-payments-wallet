@@ -11,6 +11,8 @@ import { EditBillWrapper } from "./pages/EditBillWrapper";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailSent from "./pages/EmailSent";
 import Forex from "./pages/Forex";
+import GroupPayments from "./pages/GroupPayments";
+import GroupPaymentsDashboard from "./pages/GroupPaymentsDashboard";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import LoginPage from "./pages/LoginPage";
@@ -19,7 +21,7 @@ import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import RequestPayment from "./pages/RequestPayment";
 import ResetPassword from "./pages/ResetPassword";
-import SentPayments from "./pages/SentPayments";
+import SendMoney from "./pages/SendMoney";
 import Transactions from "./pages/Transactions";
 import "./styles/App.css";
 
@@ -40,8 +42,8 @@ function App() {
           <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
-          <Route path="/request-payment" element={<RequestPayment />} />
-          <Route path="/sent-payments" element={<SentPayments />} />
+          <Route path="/request-money" element={<RequestPayment />} />
+          <Route path="/send-money" element={<SendMoney />} />
           <Route path="/bill-payments" element={<BillPayments />} />
           <Route
             path="/bill-payments/confirmation/:id"
@@ -56,6 +58,8 @@ function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
+          <Route path="/group-payments" element={<GroupPaymentsDashboard />} />
+          <Route path="/group-payments/:id" element={<GroupPayments />} />
         </Route>
       </Route>
     </Routes>
