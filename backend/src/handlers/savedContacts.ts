@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
+import { getAccountId } from "../utils/getAccountId";
 
 export async function getSavedContacts(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
 
   try {
+    const account_id = await getAccountId(auth_id);
+    
     const contacts: any[] = await sql`
       SELECT
         sc.id,
@@ -19,7 +22,7 @@ export async function getSavedContacts(req: Request, res: Response) {
         sc.bank_account
       FROM saved_contacts sc
       LEFT JOIN account a ON sc.contact_account_id = a.account_id
-      WHERE sc.account_id = ${auth_id}
+      WHERE sc.account_id = ${account_id}
       ORDER BY sc.id
     `;
     console.log("Contacts fetched from DB:", contacts);

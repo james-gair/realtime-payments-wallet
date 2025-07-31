@@ -13,7 +13,7 @@ CREATE TABLE account (
 );
 
 CREATE TABLE account_identity (
-  account_id INTEGER PRIMARY KEY REFERENCES Account(account_id) ON DELETE CASCADE,
+  account_id INTEGER PRIMARY KEY REFERENCES account(account_id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   date_of_birth DATE NOT NULL,
   id_type TEXT NOT NULL CHECK (id_type IN ('passport', 'driver_license')),
@@ -25,8 +25,8 @@ CREATE TABLE account_identity (
 
 CREATE TABLE saved_contacts (
   id SERIAL PRIMARY KEY,
-  account_id INTEGER NOT NULL REFERENCES Account(account_id) ON DELETE CASCADE, -- who saved the contact
-  contact_account_id INTEGER REFERENCES Account(account_id) ON DELETE SET NULL, -- if linked to an account
+  account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE, -- who saved the contact
+  contact_account_id INTEGER REFERENCES account(account_id) ON DELETE SET NULL, -- if linked to an account
   nickname TEXT,
   name TEXT NOT NULL,
   added_by TEXT NOT NULL,    -- 'username', 'email', 'phone', 'bank_account'
@@ -58,8 +58,8 @@ CREATE TABLE wallet (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (account, currency),
-  FOREIGN KEY (account) REFERENCES Account(account_id),
-  FOREIGN KEY (currency) REFERENCES Currency(currency_id)
+  FOREIGN KEY (account) REFERENCES account(account_id),
+  FOREIGN KEY (currency) REFERENCES currency(currency_id)
 );
 
 CREATE FUNCTION update_updated_at_column()
@@ -71,7 +71,7 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER set_updated_at
-BEFORE UPDATE ON Wallet
+BEFORE UPDATE ON wallet
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
@@ -81,8 +81,8 @@ CREATE TABLE transactions (
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
   event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
-  sender INTEGER REFERENCES Wallet(wallet_id),
-  recipient INTEGER REFERENCES Wallet(wallet_id)
+  sender INTEGER REFERENCES wallet(wallet_id),
+  recipient INTEGER REFERENCES wallet(wallet_id)
 );
 
 

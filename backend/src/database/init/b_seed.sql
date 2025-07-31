@@ -1,5 +1,5 @@
 
-INSERT INTO acount (firebase_id, username, email, phone, dob, verified, zai_user_id, first_name, last_name) VALUES
+INSERT INTO account (firebase_id, username, email, phone, dob, verified, zai_user_id, first_name, last_name) VALUES
 -- The below users do not have Zai accounts yet.
   ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, null, 'Test', 'User'),
   ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, null, 'Test', 'User'),
@@ -14,11 +14,11 @@ INSERT INTO currency (currency_id, code, symbol) VALUES
 
 -- Example: added by username (linked to account_id 2)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
-VALUES (1, 2, 'Bestie', 'No User', 'username', 'nouser', NULL, NULL, NULL);
+VALUES (1, 2, 'Bestie', 'Test User Verified', 'username', 'testuserverified', NULL, NULL, NULL);
 
 -- Example: added by username (linked to account_id 3, no nickname)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
-VALUES (1, 3, NULL, 'Test User Verified', 'username', 'testuserverified', NULL, NULL, NULL);
+VALUES (1, 3, NULL, 'No User', 'username', 'nouser', NULL, NULL, NULL);
 
 -- Example: added by email (PayID, not linked to an account)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
