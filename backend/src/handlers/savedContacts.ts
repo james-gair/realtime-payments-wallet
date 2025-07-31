@@ -21,7 +21,7 @@ export async function getSavedContacts(req: Request, res: Response) {
         sc.phone,
         sc.bank_account
       FROM saved_contacts sc
-      LEFT JOIN account a ON sc.contact_account_id = a.account_id
+      LEFT JOIN accounts a ON sc.contact_account_id = a.account_id
       WHERE sc.account_id = ${account_id}
       ORDER BY sc.id
     `;

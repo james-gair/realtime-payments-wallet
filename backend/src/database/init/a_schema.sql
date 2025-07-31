@@ -26,8 +26,8 @@ CREATE TABLE account_identities (
 
 CREATE TABLE saved_contacts (
   id SERIAL PRIMARY KEY,
-  account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE, -- who saved the contact
-  contact_account_id INTEGER REFERENCES account(account_id) ON DELETE SET NULL, -- if linked to an account
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE, -- who saved the contact
+  contact_account_id INTEGER REFERENCES accounts(account_id) ON DELETE SET NULL, -- if linked to an account
   nickname TEXT,
   name TEXT NOT NULL,
   added_by TEXT NOT NULL,    -- 'username', 'email', 'phone', 'bank_account'
