@@ -124,11 +124,15 @@ export interface SavedBillRes extends BillInputs {
 // ============================================================================
 
 export interface Contact {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
+  id: number; // saved contact id
+  nickname?: string | null;
+  name: string; // always present, certified at time of adding
+  username?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  bank_account?: string | null; // for future use
+  added_by: "username" | "email" | "phone" | "bank_account"; // how the contact was added
+  added_value: string; // the value used to add the contact
 }
 
 // ============================================================================

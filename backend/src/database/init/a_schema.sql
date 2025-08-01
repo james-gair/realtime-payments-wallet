@@ -24,6 +24,21 @@ CREATE TABLE account_identities (
   verified_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE saved_contacts (
+  id SERIAL PRIMARY KEY,
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE, -- who saved the contact
+  contact_account_id INTEGER REFERENCES accounts(account_id) ON DELETE SET NULL, -- if linked to an account
+  nickname TEXT,
+  name TEXT NOT NULL,
+  added_by TEXT NOT NULL,    -- 'username', 'email', 'phone', 'bank_account'
+  added_value TEXT NOT NULL, -- the value used to add the contact (e.g. username, email, phone, bank acct)
+  email TEXT,                -- for PayID/email (optional, for display)
+  phone TEXT,                -- for PayID/phone (optional, for display)
+  bank_account TEXT,         -- for bank account (optional, for display)
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (account_id, added_by, added_value)
+);
+
 -- Currencies table
 CREATE TABLE currencies (
   currency_id SERIAL PRIMARY KEY,

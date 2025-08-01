@@ -9,6 +9,7 @@ import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
+import savedContactsRouter from "./routes/savedContacts";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
 
@@ -31,6 +32,7 @@ export function createApp() {
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
   app.use("/api", profileRouter);
+  app.use("/api", savedContactsRouter);
   app.use("/api", paymentsRouter);
   app.use(errorHandler);
 
