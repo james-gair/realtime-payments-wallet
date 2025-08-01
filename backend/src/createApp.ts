@@ -12,6 +12,7 @@ import profileRouter from "./routes/profile";
 import savedContactsRouter from "./routes/savedContacts";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
+import paymentRequestRouter from "./routes/paymentRequests";
 
 dotenv.config();
 export function createApp() {
@@ -32,6 +33,7 @@ export function createApp() {
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
   app.use("/api", profileRouter);
+  app.use("/api/payment-request", paymentRequestRouter);
   app.use("/api", savedContactsRouter);
   app.use("/api", paymentsRouter);
   app.use(errorHandler);

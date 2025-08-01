@@ -18,10 +18,31 @@ const RequestPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted", formData);
-  };
+ 
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payment-request`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to send payment request");
+    }
+
+    const result = await response.json();
+    console.log("Payment request submitted:", result);
+    // Optionally reset form
+    setFormData({ amount: "", recipient: "", description: "" });
+  } catch (err) {
+    console.error("Error:", err);
+  }
+};
 
   return (
     <div className="space-y-6 px-6 py-8 max-w-4xl mx-auto">
@@ -63,17 +84,22 @@ const RequestPage: React.FC = () => {
               htmlFor="recipient"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Recipient
+              To Username *
             </label>
-            <input
-              type="text"
-              id="recipient"
-              placeholder="Enter recipient name"
-              value={formData.recipient}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              required
-            />
+             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 text-lg">@</span>
+              </div>
+              <input
+                type="text"
+                id="recipient"
+                placeholder="Enter recipient name"
+                value={formData.recipient}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                required
+              />
+            </div>
           </div>
 
           {/* Description */}
