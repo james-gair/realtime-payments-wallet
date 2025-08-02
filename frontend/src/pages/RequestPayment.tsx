@@ -67,6 +67,28 @@ const RequestPage: React.FC = () => {
     }
   };
 
+  // Cancel payment request by id
+  const handleCancel = async (id: number) => {
+    if (!window.confirm("Are you sure you want to cancel this payment request?")) return;
+
+    try {
+      const response = await authFetch(`http://localhost:4000/api/payment-request/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel payment request");
+      }
+
+      alert("Payment request cancelled.");
+      // Refresh the sent requests list
+      await fetchSentRequests();
+    } catch (err) {
+      console.error("Error cancelling payment request:", err);
+      alert("Error cancelling payment request");
+    }
+  };
+
   return (
     <div className="space-y-6 px-6 py-8 max-w-4xl mx-auto">
       {/* Header */}
@@ -178,6 +200,16 @@ const RequestPage: React.FC = () => {
                 <div className="text-sm mt-2 text-amber-500 font-semibold">
                   Status: {req.status}
                 </div>
+
+                {/* Cancel Button for pending requests */}
+                {req.status === "pending" && (
+                  <button
+                    onClick={() => handleCancel(req.id)}
+                    className="mt-3 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded"
+                  >
+                    Cancel
+                  </button>
+                )}
               </li>
             ))}
           </ul>

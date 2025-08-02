@@ -143,3 +143,49 @@ export async function getSentPaymentRequests(req: Request, res: Response): Promi
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
+// be able to delete a payment request: the payment request needs to be sent by the current user and the payment requests needs to have status pending
+export async function deletePaymentRequest(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params; // id of the payment request
+
+    const firebaseId = (req as any).user?.uid;
+    if (!firebaseId) {
+      res.status(401).json({ error: "Unauthorized: No user info" });
+      return;
+    }
+
+    // Get account_id for the current user
+    const userResult = await sql`
+      SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}
+    `;
+
+    if (userResult.length === 0) {
+      res.status(404).json({ error: "User account not found" });
+      return;
+    }
+
+    const { account_id } = userResult[0];
+
+    // Verify the request exists and belongs to the user, and is still pending
+    const requestResult = await sql`
+      SELECT * FROM payment_request
+      WHERE id = ${id} AND account_id_from = ${account_id} AND status = 'pending'
+    `;
+
+    if (requestResult.length === 0) {
+      res.status(404).json({ error: "Payment request not found or not cancellable." });
+      return;
+    }
+
+    // Delete the payment request
+    await sql`
+      DELETE FROM payment_request WHERE id = ${id}
+    `;
+
+    res.status(200).json({ message: "Payment request cancelled successfully." });
+  } catch (error) {
+    console.error("Error deleting payment request:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
