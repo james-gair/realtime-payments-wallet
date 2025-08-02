@@ -32,7 +32,7 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
 
     // Lookup recipient's account_id
     const recipientUser = await sql`
-      SELECT account_id FROM users WHERE username = ${recipient}
+      SELECT account_id FROM accounts WHERE username = ${recipient}
     `;
 
     if (recipientUser.length === 0) {

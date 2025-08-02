@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { FormState } from "../types";
+import { authFetch } from "../services/firebaseFetch";
 
 const RequestPage: React.FC = () => {
   const [formData, setFormData] = useState<FormState>({
@@ -23,7 +24,7 @@ const RequestPage: React.FC = () => {
   e.preventDefault();
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payment-request`, {
+    const response = await authFetch(`${import.meta.env.VITE_BACKEND_URL}/api/payment-request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +94,7 @@ const RequestPage: React.FC = () => {
               <input
                 type="text"
                 id="recipient"
-                placeholder="Enter recipient name"
+                placeholder="   Enter recipient name"
                 value={formData.recipient}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
