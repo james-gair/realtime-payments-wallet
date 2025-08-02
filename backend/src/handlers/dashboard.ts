@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 
+import { ParsedQs } from 'qs';
+
 import { fetchSpecificExchangeRate } from "./fxRates";
-// Relative time logic moved to frontend
-// import dayjs from 'dayjs';
-// import relativeTime from 'dayjs/plugin/relativeTime';
-// dayjs.extend(relativeTime); 
 
 interface wallet {
   id: number;
@@ -73,13 +71,95 @@ export async function getUserWallet(req: Request, res: Response) {
   }
 }
 
-import * as emoji from "node-emoji";
-
 export async function getUserTransactions(req: Request, res: Response) {
     const auth_id = (req as any).user.uid;
-    const offset = 0;
+
+    const { category, minAmount, maxAmount, 
+            startDate, endDate, sort, searchTerm} = req.query;
+
     
     try {
+      const baseConditions = [
+        sql`(sender_account.firebase_id = ${auth_id} OR recipient_account.firebase_id = ${auth_id})`
+      ];
+
+      if (minAmount !== undefined) {
+        console.log("push");
+        baseConditions.push(sql`transactions.amount >= ${Number(minAmount)}`);
+      }
+
+      if (maxAmount !== undefined) {
+        console.log("push");
+        baseConditions.push(sql`transactions.amount <= ${Number(maxAmount)}`);
+      }
+
+      function parseQueryParam(value: string | ParsedQs | (string | ParsedQs)[] | undefined): string | undefined {
+        if (typeof value === 'string') return value;
+        if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+        return undefined;
+      }
+
+      const rawStartDate = parseQueryParam(startDate);
+
+      if (rawStartDate) {
+        const start = new Date(rawStartDate);
+        if (!isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0);
+          baseConditions.push(sql`transactions.event_time >= ${start.toISOString()}`);
+        }
+      }
+
+      const rawEndDate = parseQueryParam(endDate);
+
+      if (rawEndDate) {
+        const end = new Date(rawEndDate);
+        if (!isNaN(end.getTime())) {
+          baseConditions.push(sql`transactions.event_time <= ${end.toISOString()}`);
+        }
+      }
+
+      if (searchTerm) {
+        const term = `${searchTerm}%`;
+        baseConditions.push(sql`transactions.name ILIKE ${term}`);
+      }
+
+      if(category) {
+        console.log(category)
+        const catTerm = `${category}`;
+        baseConditions.push(sql`${catTerm} = ANY(transactions.category)`);
+      }
+
+      console.log("Sort param:", sort);
+      let orderBy = sql`time DESC`;
+      if (sort === 'date-asc') {
+        orderBy = sql`time ASC`;
+      } else if (sort === 'amount-desc') {
+        orderBy = sql`transactions.amount DESC`;
+      } else if (sort === 'amount-asc') {
+        orderBy = sql`transactions.amount ASC`;
+      } else if (sort === 'name-asc') {
+        orderBy = sql`name ASC`;
+      } else if (sort === 'name-desc') {
+        orderBy = sql`name DESC`;
+      }
+
+      function sqlJoin(sqlArray: any[], separator: any) {
+        if (sqlArray.length === 0) return null;
+        return sqlArray.reduce((acc, curr, i) =>
+          i === 0 ? curr : sql`${acc}${separator}${curr}`
+        );
+      }
+
+      // console.log(baseConditions.length);
+
+      const whereClause = baseConditions.length > 0
+        ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
+        : sql``;
+
+      // for(let i = 0; i < baseConditions.length; i++) {
+      //   // console.log(baseConditions[i])
+      // }
+
       // need to add a method to asign colours
       const transactions : transaction[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
@@ -88,25 +168,21 @@ export async function getUserTransactions(req: Request, res: Response) {
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
+        currency.symbol,
         transactions.event_time as time, 
         transactions.category
         FROM Transactions transactions
+        JOIN Currency currency ON transactions.currency = currency.currency_id
         JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
         JOIN Account sender_account on sender_wallet.account = sender_account.account_id
         JOIN Wallet recipient_wallet ON transactions.recipient = recipient_wallet.wallet_id
         JOIN Account recipient_account on recipient_wallet.account = recipient_account.account_id
-        WHERE sender_account.firebase_id = ${auth_id}
-        OR recipient_account.firebase_id = ${auth_id}
-        ORDER BY transactions.event_time DESC, transactions.transaction_id DESC
-        LIMIT 20 OFFSET ${offset}
+        ${whereClause}
+        ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
-      //need to up limit to 20 after testing
 
-      // uses dayjs package to get time since this transaction
       const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
         ...tx,
-        // delete when cleaning up
-        // time: dayjs(tx.time).fromNow(),
         color: transaction_palette[c % transaction_palette.length],
         icon: "❓"
       }));

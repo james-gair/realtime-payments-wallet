@@ -12,16 +12,16 @@ INSERT INTO Currency (currency_id, code, symbol) VALUES
   (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
 
 
-INSERT INTO Wallet (zai_wallet_id, account, currency, balance) VALUES
-  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
-  ('zai_wallet_testuserverified_usd', 2, 2, 1000.00),
-  ('zai_wallet_testuser_aud', 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
-  ('zai_wallet_nouser_aud', 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
+INSERT INTO Wallet (zai_wallet_id, wallet_id, account, currency, balance) VALUES
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 4, 4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
+  ('zai_wallet_testuserverified_usd', 3, 2, 2, 1000.00),
+  ('zai_wallet_testuser_aud', 1, 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
+  ('zai_wallet_nouser_aud', 2, 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
 
-INSERT INTO Transactions (name, amount, category, sender, recipient, event_time) VALUES
-    ('Figma Subscription', 15.00, '{"design","software","subscription"}', 1, 4, '2023-10-01T10:00:00.000Z'),
-    ('Salary', 2500.00, '{"income", "work"}', 4, 1, '2023-10-05T09:00:00.000Z'),
-    ('Coffee', 5.50, '{"food", "cafe"}', 1, 4, '2023-10-06T08:30:00.000Z'),
-    ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z'),
-    ('Dinner with Friends', 75.00, '{"food", "social"}', 1, 3, '2023-10-12T20:00:00.000Z');
+INSERT INTO Transactions (name, amount, category, sender, recipient, event_time, currency) VALUES
+    ('Figma Subscription', 15.00, '{"design","software","subscription"}', 1, 4, '2023-10-01T10:00:00.000Z', 1),
+    ('Salary', 2500.00, '{"income", "work"}', 4, 1, '2023-10-05T09:00:00.000Z', 1),
+    ('Coffee', 5.50, '{"food", "cafe"}', 1, 4, '2023-10-06T08:30:00.000Z', 1),
+    ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z', 2),
+    ('Dinner with Friends', 75.00, '{"food", "social"}', 1, 3, '2023-10-12T20:00:00.000Z', 1);

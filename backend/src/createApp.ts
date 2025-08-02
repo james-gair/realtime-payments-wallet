@@ -9,6 +9,7 @@ import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
+import transactionsRouter from "./routes/transactions";
 
 dotenv.config();
 export function createApp() {
@@ -27,6 +28,7 @@ export function createApp() {
   app.use("/api", userDashboard);
   app.use("/api", profileRouter);
   app.use("/api", paymentsRouter);
+  app.use("/api", transactionsRouter);
   app.use(errorHandler);
 
   return app;
