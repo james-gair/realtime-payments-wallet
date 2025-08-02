@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { FormState } from "../types";
 import { authFetch } from "../services/firebaseFetch";
 
@@ -8,6 +8,8 @@ const RequestPage: React.FC = () => {
     recipient: "",
     description: "",
   });
+
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -19,31 +21,51 @@ const RequestPage: React.FC = () => {
     }));
   };
 
- 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  try {
-    const response = await authFetch(`${import.meta.env.VITE_BACKEND_URL}/api/payment-request`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to send payment request");
+  const fetchSentRequests = async () => {
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/payment-request/sent"
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch sent payment requests");
+      }
+      const result = await response.json();
+      setSentRequests(result.data);
+    } catch (err) {
+      console.error("Error fetching sent requests:", err);
     }
+  };
 
-    const result = await response.json();
-    console.log("Payment request submitted:", result);
-    // Optionally reset form
-    setFormData({ amount: "", recipient: "", description: "" });
-  } catch (err) {
-    console.error("Error:", err);
-  }
-};
+  useEffect(() => {
+    fetchSentRequests();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await authFetch("http://localhost:4000/api/payment-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send payment request");
+      }
+
+      const result = await response.json();
+      console.log("Payment request submitted:", result);
+      setFormData({ amount: "", recipient: "", description: "" });
+
+      // Refresh list
+      await fetchSentRequests();
+    } catch (err) {
+      console.error("Error:", err);
+    }
+  };
 
   return (
     <div className="space-y-6 px-6 py-8 max-w-4xl mx-auto">
@@ -87,7 +109,7 @@ const RequestPage: React.FC = () => {
             >
               To Username *
             </label>
-             <div className="relative">
+            <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 text-lg">@</span>
               </div>
@@ -97,7 +119,7 @@ const RequestPage: React.FC = () => {
                 placeholder="   Enter recipient name"
                 value={formData.recipient}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-3 pl-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 required
               />
             </div>
@@ -129,6 +151,37 @@ const RequestPage: React.FC = () => {
             Request Payment
           </button>
         </form>
+      </div>
+
+      {/* Sent Requests List */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-4">Previously Sent Requests</h2>
+        {sentRequests.length === 0 ? (
+          <p className="text-gray-500">No sent requests yet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {sentRequests.map((req) => (
+              <li
+                key={req.id}
+                className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-gray-800 font-medium">
+                    To: <span className="font-bold">@{req.account_id_to}</span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(req.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="text-gray-700">Amount: ${req.amount}</div>
+                <div className="text-gray-600 text-sm mt-1">{req.description}</div>
+                <div className="text-sm mt-2 text-amber-500 font-semibold">
+                  Status: {req.status}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

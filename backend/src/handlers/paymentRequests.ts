@@ -68,3 +68,78 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
+// get all the payment requests that have been requested to the users 
+
+export async function getReceivedPaymentRequests(req: Request, res: Response): Promise<void> {
+  try {
+    const firebaseId = (req as any).user?.uid;
+    if (!firebaseId) {
+      res.status(401).json({ error: "Unauthorized: No user info" });
+      return;
+    }
+
+    // Get account_id for the current user
+    const userResult = await sql`
+      SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}
+    `;
+
+    if (userResult.length === 0) {
+      res.status(404).json({ error: "User account not found" });
+      return;
+    }
+
+    const { account_id } = userResult[0];
+
+    // Get all payment requests where this user is the recipient (account_id_to)
+    const paymentRequests = await sql`
+      SELECT * FROM payment_request
+      WHERE account_id_to = ${account_id}
+      ORDER BY created_at DESC
+    `;
+
+    res.status(200).json({ data: paymentRequests });
+  } catch (error) {
+    console.error("Error fetching received payment requests:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+// get all the payment requests that have been sent by the current user
+
+export async function getSentPaymentRequests(req: Request, res: Response): Promise<void> {
+  try {
+    const firebaseId = (req as any).user?.uid;
+    if (!firebaseId) {
+      res.status(401).json({ error: "Unauthorized: No user info" });
+      return;
+    }
+
+    // Get account_id for the current user
+    const userResult = await sql`
+      SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}
+    `;
+
+    if (userResult.length === 0) {
+      res.status(404).json({ error: "User account not found" });
+      return;
+    }
+
+    const { account_id } = userResult[0];
+
+    // Get all payment requests where this user is the sender (account_id_from)
+    const sentRequests = await sql`
+      SELECT * FROM payment_request
+      WHERE account_id_from = ${account_id}
+      ORDER BY created_at DESC
+    `;
+
+    console.log("Sent payment requests for account_id:", account_id);
+    console.log(sentRequests);
+
+    res.status(200).json({ data: sentRequests });
+  } catch (error) {
+    console.error("Error fetching sent payment requests:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
