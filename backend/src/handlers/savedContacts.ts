@@ -43,7 +43,59 @@ export async function getSavedContacts(req: Request, res: Response) {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error retrieving saved contacts", error);
+    console.error("Error retrieving saved contacts:", error);
     res.status(500).send({ error: "Failed to retrieve saved contacts" });
+  }
+}
+
+export async function updateContactNickname(req: Request, res: Response): Promise<void> {
+  const auth_id = (req as any).user.uid;
+  const { contactId, nickname } = req.body;
+
+  if (!contactId || typeof contactId !== 'number') {
+    res.status(400).json({ error: "Contact ID is required and must be a number" });
+    return;
+  }
+
+  if (nickname !== undefined && (typeof nickname !== 'string' || nickname.length > 50)) {
+    res.status(400).json({ error: "Nickname must be a string and cannot exceed 50 characters" });
+    return;
+  }
+
+  try {
+    const account_id = await getAccountId(auth_id);
+    
+    // Check if the contact belongs to the user
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+    `;
+
+    if (existingContact.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    // Update the nickname
+    const result = await sql`
+      UPDATE saved_contacts 
+      SET nickname = ${nickname || null}
+      WHERE id = ${contactId} AND account_id = ${account_id}
+      RETURNING id, nickname, name
+    `;
+
+    if (result.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    res.status(200).json({
+      id: result[0].id,
+      nickname: result[0].nickname,
+      name: result[0].name
+    });
+  } catch (error) {
+    console.error("Error updating contact nickname:", error);
+    res.status(500).json({ error: "Failed to update contact nickname" });
   }
 }
