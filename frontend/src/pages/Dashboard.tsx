@@ -6,39 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
 dayjs.extend(relativeTime);
 
-// TypeScript interfaces for backend integration
-export interface Card {
-  id: number;
-  currency: string;
-  balance: number;
-  gradient: string;
-  symbol: string;
-}
-
-export interface Transaction {
-  id: number;
-  name: string;
-  amount: string;
-  icon: string;
-  color: string;
-  time: string;
-  category?: string;
-}
-
-interface ExpenseCategory {
-  name: string;
-  amount: string;
-  color: string;
-  percentage: number;
-}
-
-interface IncomeExpenseData {
-  type: "income" | "expense";
-  amount: string;
-  period: string;
-  change: string;
-  changeType: "positive" | "negative";
-}
+import type {
+  Card,
+  ExpenseCategory,
+  IncomeExpenseData,
+  Transaction,
+} from "../types";
 
 const mockExpenseCategories: ExpenseCategory[] = [
   { name: "Friends", amount: "$950", color: "bg-indigo-500", percentage: 60 },
@@ -78,10 +51,6 @@ function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const [transferAmount, setTransferAmount] = useState("");
-  const [transferCurrency, setTransferCurrency] = useState("AUD");
-  const [recipientUsername, setRecipientUsername] = useState("");
-
   // add all supported currencies to here, check correct
   // currency code
   const availableCurrencies = [
@@ -109,8 +78,6 @@ function Dashboard() {
   const goToCard = (index: number) => {
     setCurrentCardIndex(index);
   };
-
-  // const [test,setTest] = useState([]);
 
   const fetchCards = async () => {
     const response = await authFetch(
@@ -147,98 +114,10 @@ function Dashboard() {
     setTransactions(data.transactions);
   };
 
-  // const audWallet = cards.find((card) => card.currency === "AUD");
-  // const usdWallet = cards.find((card) => card.currency === "USD");
-  // const hasUSDWallet = !!usdWallet;
-
-  const userWallets = availableCurrencies
-    .map((currency) => ({
-      ...currency,
-      wallet: cards.find((card) => card.currency === currency.code),
-    }))
-    .filter((item) => item.wallet);
-
-  const getTransferWallet = () =>
-    userWallets.find((w) => w.code === transferCurrency)?.wallet;
-  const getTransferSymbol = () =>
-    availableCurrencies.find((c) => c.code === transferCurrency)?.symbol || "";
-
   useEffect(() => {
     fetchCards();
     fetchTransactions();
   }, []);
-
-  const transferMoney = async () => {
-    const amount = parseFloat(transferAmount);
-
-    if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    if (!recipientUsername.trim()) {
-      alert("Please enter a recipient username");
-      return;
-    }
-
-    try {
-      const response = await authFetch(
-        "http://localhost:4000/api/dashboard/transfer",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            recipientUsername: recipientUsername.trim(),
-            currencyCode: transferCurrency,
-            amount: amount,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        await fetchCards(); // Refresh wallet balances
-        setTransferAmount("");
-        setRecipientUsername("");
-        alert(
-          `Successfully transferred ${getTransferSymbol()}${amount} to ${recipientUsername}!`
-        );
-      } else {
-        const errorData = await response.json();
-        alert(`Transfer failed: ${errorData.error || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("Error transferring money:", error);
-      alert("Error transferring money. Please try again.");
-    }
-  };
-
-  const addUSDWallet = async () => {
-    try {
-      const response = await authFetch(
-        "http://localhost:4000/api/dashboard/wallet",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ currencyCode: "USD" }),
-        }
-      );
-
-      if (response.ok) {
-        await fetchCards();
-        alert("USD wallet created");
-      } else {
-        const errorData = await response.json();
-        alert(`failed create wallet: ${errorData.error || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("err creating wallet:", error);
-      alert("err creating wallet");
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -311,15 +190,6 @@ function Dashboard() {
                           {formatBalance(card.balance, card.currency)}
                         </div>
                       </div>
-
-                      {/* Card Details
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-white text-opacity-90 text-sm font-mono tracking-wider">
-                            {card.cardNumber}
-                          </div>
-                        </div>
-                      </div> */}
                     </div>
                   </div>
                 ))}
@@ -409,7 +279,10 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 lg:hidden">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/send-money")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -426,19 +299,21 @@ function Dashboard() {
                 <span className="font-medium">Send Money</span>
               </button>
               <button
-                onClick={() => navigate("/request-payment")}
+                onClick={() => navigate("/request-money")}
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
               >
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
               </button>
-              {/* <button
-                onClick={addUSDWallet}
+              <button
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
+                onClick={() => {
+                  navigate("/add-money");
+                }}
               >
                 <PlusIcon className="w-5 h-5" />
-                <span className="font-medium">Add USD Wallet</span>
-              </button> */}
+                <span className="font-medium">Add Money</span>
+              </button>
             </div>
           </div>
 
@@ -502,7 +377,10 @@ function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 hidden lg:block mt-11">
             <h3 className="font-semibold text-gray-900 mb-6">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer">
+              <button
+                onClick={() => navigate("/send-money")}
+                className="w-full flex items-center justify-center space-x-3 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all hover:cursor-pointer"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -517,15 +395,13 @@ function Dashboard() {
                   />
                 </svg>
                 <span className="font-medium">Send Money</span>
-                {/* TODO: Add send money page */}
               </button>
               <button
-                onClick={() => navigate("/request-payment")}
+                onClick={() => navigate("/request-money")}
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all hover:cursor-pointer"
               >
                 <InboxArrowDownIcon className="w-5 h-5" />
                 <span className="font-medium">Request Money</span>
-                {/* TODO: Add request money page */}
               </button>
               <button
                 className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
@@ -536,133 +412,9 @@ function Dashboard() {
                 <PlusIcon className="w-5 h-5" />
                 <span className="font-medium">Add Money</span>
               </button>
-              {/* <button
-                onClick={addUSDWallet}
-                className="w-full flex items-center justify-center space-x-3 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all hover:cursor-pointer"
-              >
-                <PlusIcon className="w-5 h-5" />
-                <span className="font-medium">Add USD Wallet</span>
-              </button> */}
             </div>
           </div>
-
-          {/* Money Transfer */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Send Money</h3>
-              <svg
-                className="w-5 h-5 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-            </div>
-
-            <div className="space-y-4">
-              {/* Recipient Username */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  To Username
-                </label>
-                <input
-                  type="text"
-                  value={recipientUsername}
-                  onChange={(e) => setRecipientUsername(e.target.value)}
-                  placeholder="Enter username"
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Currency Selection */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Currency
-                </label>
-                <select
-                  value={transferCurrency}
-                  onChange={(e) => setTransferCurrency(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
-                >
-                  {userWallets.map((wallet) => (
-                    <option key={wallet.code} value={wallet.code}>
-                      {wallet.code} - {wallet.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Amount Input */}
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                    {getTransferSymbol()}
-                  </span>
-                  <input
-                    type="number"
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-
-                {/* Balance Display */}
-                {getTransferWallet() && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Your Balance: {getTransferSymbol()}
-                    {formatBalance(
-                      getTransferWallet()!.balance,
-                      transferCurrency
-                    )}
-                  </p>
-                )}
-              </div>
-
-              {/* Transfer Button */}
-              <button
-                onClick={transferMoney}
-                disabled={
-                  !transferAmount ||
-                  !recipientUsername.trim() ||
-                  !getTransferWallet() ||
-                  userWallets.length === 0
-                }
-                className="w-full flex items-center justify-center space-x-2 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-all"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-                <span className="font-medium">
-                  Send {getTransferSymbol()}
-                  {transferAmount || "0"} to {recipientUsername || "user"}
-                </span>
-              </button>
-
-              {userWallets.length === 0 && (
-                <p className="text-xs text-red-500 text-center">
-                  You need at least one wallet to transfer money
-                </p>
-              )}
-            </div>
-          </div>
-          {/* Available Pie Chart */}
+          {/* Expense Categories Pie Chart */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">
@@ -728,35 +480,6 @@ function Dashboard() {
               ))}
             </div>
           </div>
-
-          {/* Expense Card
-          {incomeExpenseData
-            .filter((data) => data.type === "expense")
-            .map((data, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl border border-gray-200 p-6"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 capitalize">
-                    {data.type}
-                  </h3>
-                </div>
-                <div className="text-xl font-bold text-gray-900 mb-1">
-                  {data.amount}
-                </div>
-                <div className="text-sm text-gray-500 mb-4">{data.period}</div>
-                <div
-                  className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                    data.changeType === "positive"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-purple-100 text-purple-800"
-                  }`}
-                >
-                  {data.change}
-                </div>
-              </div>
-            ))} */}
         </div>
       </div>
     </div>

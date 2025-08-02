@@ -1,7 +1,4 @@
-interface ErrorModalProps {
-  errorMessage: string;
-  onClose: () => void;
-}
+import type { ErrorModalProps } from "../types";
 
 export function ErrorModal({ errorMessage, onClose }: ErrorModalProps) {
   return (

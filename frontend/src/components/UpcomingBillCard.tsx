@@ -1,22 +1,10 @@
 import { useState } from "react";
-import { authFetch } from "../services/firebaseFetch";
-import { ErrorModal } from "./ErrorModal";
-import { ConfirmModal } from "./ConfirmModal";
 import { useNavigate } from "react-router-dom";
+import { authFetch } from "../services/firebaseFetch";
+import { ConfirmModal } from "./ConfirmModal";
+import { ErrorModal } from "./ErrorModal";
 
-export interface UpcomingBill {
-  billId: string;
-  type: "one-time" | "recurring";
-  billDisplayName?: string;
-  billerDisplayName?: string;
-  billerBsb?: string;
-  billerBankAccountNumber?: string;
-  billerBpayCode?: string;
-  billerBpayRef?: string;
-  amount: string;
-  nextRunAt: string;
-  currencyCode: string;
-}
+import type { UpcomingBill } from "../types";
 
 export function UpcomingBillCard({
   bill,

@@ -29,41 +29,40 @@ interface transaction_icon extends transaction {
   icon: string;
 }
 
-
 // add colours for wallet here
 const wallet_palette = [
-  "from-emerald-400 to-emerald-600", "from-blue-400 to-blue-600", "from-purple-400 to-purple-600"
+  "from-emerald-400 to-emerald-600",
+  "from-blue-400 to-blue-600",
+  "from-purple-400 to-purple-600",
 ];
 
-const transaction_palette = [
-  "bg-orange-100", "bg-red-100", "bg-green-100"
-];
+const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
 
 export async function getUserWallet(req: Request, res: Response) {
-    const auth_id = (req as any).user.uid;
-    
-    // get data from db excluding colour 
-    try {
-      const wallets: wallet[] = await sql`
+  const auth_id = (req as any).user.uid;
+
+  // get data from db excluding colour
+  try {
+    const wallets: wallet[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
-        c.code AS currency, w.balance, c.symbol
-        FROM Wallet w 
-        JOIN Account a ON w.account = a.account_id 
-        JOIN Currency c ON w.currency = c.currency_id
+        c.code AS currency, CAST(w.balance AS FLOAT), c.symbol
+        FROM wallets w 
+        JOIN accounts a ON w.account_id = a.account_id 
+        JOIN currencies c ON w.currency_id = c.currency_id
         WHERE a.firebase_id = ${auth_id}
       `;
 
-      // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
-      const wallets_colour: wallet_gradient[] = wallets.map((w, c) => ({
-        ...w,
-        gradient: wallet_palette[c % wallet_palette.length]
-      }));
+    // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
+    const wallets_colour: wallet_gradient[] = wallets.map((w, c) => ({
+      ...w,
+      gradient: wallet_palette[c % wallet_palette.length],
+    }));
 
-      res.json({
-        wallets: wallets_colour
-      });
+    res.json({
+      wallets: wallets_colour,
+    });
 
-      return;
+    return;
   } catch (error) {
     console.error("Error retrieving wallet data", error);
     res.status(500).send({ error: "Failed to retrieve wallets" });
@@ -150,17 +149,10 @@ export async function getUserTransactions(req: Request, res: Response) {
         );
       }
 
-      // console.log(baseConditions.length);
-
       const whereClause = baseConditions.length > 0
         ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
         : sql``;
 
-      // for(let i = 0; i < baseConditions.length; i++) {
-      //   // console.log(baseConditions[i])
-      // }
-
-      // need to add a method to asign colours
       const transactions : transaction[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
         transactions.name,
@@ -171,12 +163,12 @@ export async function getUserTransactions(req: Request, res: Response) {
         currency.symbol,
         transactions.event_time as time, 
         transactions.category
-        FROM Transactions transactions
-        JOIN Currency currency ON transactions.currency = currency.currency_id
-        JOIN Wallet sender_wallet ON transactions.sender = sender_wallet.wallet_id
-        JOIN Account sender_account on sender_wallet.account = sender_account.account_id
-        JOIN Wallet recipient_wallet ON transactions.recipient = recipient_wallet.wallet_id
-        JOIN Account recipient_account on recipient_wallet.account = recipient_account.account_id
+        FROM transactions transactions
+        JOIN currencies currency ON transactions.currency = currency.currency_id
+        JOIN wallets sender_wallet ON transactions.sender = sender_wallet.wallet_id
+        JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
+        JOIN wallets recipient_wallet ON transactions.recipient = recipient_wallet.wallet_id
+        JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
         ${whereClause}
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
@@ -187,12 +179,12 @@ export async function getUserTransactions(req: Request, res: Response) {
         icon: "❓"
       }));
 
-      res.json({
-        transactions: transactions_time
-      });
-      console.log(transactions_time)
+    res.json({
+      transactions: transactions_time,
+    });
+    console.log(transactions_time);
 
-      return;
+    return;
   } catch (error) {
     console.error("Error adding user:", error);
     res.status(500).send({ error: "Failed to add user" });
@@ -207,10 +199,10 @@ export async function postCreateWallet(req: Request, res: Response) {
 
   try {
     await sql`
-      INSERT INTO Wallet (account, currency, balance, monthly_limit)
+      INSERT INTO wallets (account_id, currency_id, balance, monthly_limit)
       VALUES (
-        (SELECT account_id FROM Account WHERE firebase_id = ${firebaseId}),
-        (SELECT currency_id FROM Currency WHERE code = ${currencyCode}),
+        (SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}),
+        (SELECT currency_id FROM currencies WHERE code = ${currencyCode}),
         0,
         10000
       )
@@ -230,7 +222,10 @@ export async function postExchangeCurrency(req: Request, res: Response) {
 
   // Fixed for now; will be pulled from forex API in later development
   const { fromCurrencyCode, toCurrencyCode, fromAmount } = req.body;
-  const exchangeRate = await fetchSpecificExchangeRate(fromCurrencyCode, toCurrencyCode);
+  const exchangeRate = await fetchSpecificExchangeRate(
+    fromCurrencyCode,
+    toCurrencyCode
+  );
 
   if (fromAmount <= 0) {
     res.status(400).json({ error: "negative amount err" });
@@ -241,15 +236,15 @@ export async function postExchangeCurrency(req: Request, res: Response) {
     // runs quaries as a single transaction ???
     await sql.begin(async (sql) => {
       const [account] = await sql`
-        SELECT account_id FROM Account WHERE firebase_id = ${firebaseId}
+        SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}
       `;
       if (!account) throw new Error("acc not found");
 
       const [fromCurrency] = await sql`
-        SELECT currency_id FROM Currency WHERE code = ${fromCurrencyCode}
+        SELECT currency_id FROM currencies WHERE code = ${fromCurrencyCode}
       `;
       const [toCurrency] = await sql`
-        SELECT currency_id FROM Currency WHERE code = ${toCurrencyCode}
+        SELECT currency_id FROM currencies WHERE code = ${toCurrencyCode}
       `;
       if (!fromCurrency || !toCurrency) {
         throw new Error("currency not found/not supported");
@@ -257,13 +252,13 @@ export async function postExchangeCurrency(req: Request, res: Response) {
 
       // Lock wallet rows for update
       const [fromWallet] = await sql`
-        SELECT * FROM Wallet
-        WHERE account = ${account.account_id} AND currency = ${fromCurrency.currency_id}
+        SELECT * FROM wallets
+                  WHERE account_id = ${account.account_id} AND currency_id = ${fromCurrency.currency_id}
         FOR UPDATE
       `;
       const [toWallet] = await sql`
-        SELECT * FROM Wallet
-        WHERE account = ${account.account_id} AND currency = ${toCurrency.currency_id}
+        SELECT * FROM wallets
+                  WHERE account_id = ${account.account_id} AND currency_id = ${toCurrency.currency_id}
         FOR UPDATE
       `;
       if (!fromWallet || !toWallet) {
@@ -278,26 +273,24 @@ export async function postExchangeCurrency(req: Request, res: Response) {
 
       // update wallet balances
       await sql`
-        UPDATE Wallet
+        UPDATE wallets
         SET balance = balance - ${fromAmount}
         WHERE wallet_id = ${fromWallet.wallet_id}
       `;
 
       await sql`
-        UPDATE Wallet
+        UPDATE wallets
         SET balance = balance + ${toAmount}
         WHERE wallet_id = ${toWallet.wallet_id}
       `;
     });
 
     res.status(200).json({ message: "exchanged successfully" });
-
   } catch (err: any) {
     console.error("exchange err:", err);
     res.status(500).json({ error: err.message || "exchange failed" });
   }
 }
-
 
 export async function postTransferCurrency(req: Request, res: Response) {
   const senderFirebaseId = (req as any).user.uid;
@@ -311,23 +304,24 @@ export async function postTransferCurrency(req: Request, res: Response) {
   try {
     await sql.begin(async (sql) => {
       const [senderAccount] = await sql`
-        SELECT account_id FROM Account WHERE firebase_id = ${senderFirebaseId}
+        SELECT account_id FROM accounts WHERE firebase_id = ${senderFirebaseId}
       `;
       if (!senderAccount) throw new Error("ERR");
 
       const [recipientAccount] = await sql`
-        SELECT account_id FROM Account WHERE username = ${recipientUsername}
+        SELECT account_id FROM accounts WHERE username = ${recipientUsername}
       `;
-      if (!recipientAccount) throw new Error("no such user to transfer money to");
+      if (!recipientAccount)
+        throw new Error("no such user to transfer money to");
 
       const [currency] = await sql`
-        SELECT currency_id FROM Currency WHERE code = ${currencyCode}
+        SELECT currency_id FROM currencies WHERE code = ${currencyCode}
       `;
       if (!currency) throw new Error("currency invalid or not supported");
 
       const [senderWallet] = await sql`
-        SELECT * FROM Wallet
-        WHERE account = ${senderAccount.account_id} AND currency = ${currency.currency_id}
+        SELECT * FROM wallets
+                  WHERE account_id = ${senderAccount.account_id} AND currency_id = ${currency.currency_id}
         FOR UPDATE
       `;
 
@@ -336,8 +330,8 @@ export async function postTransferCurrency(req: Request, res: Response) {
       }
 
       const [recipientWallet] = await sql`
-        SELECT * FROM Wallet
-        WHERE account = ${recipientAccount.account_id} AND currency = ${currency.currency_id}
+        SELECT * FROM wallets
+                  WHERE account_id = ${recipientAccount.account_id} AND currency_id = ${currency.currency_id}
         FOR UPDATE
       `;
       if (!recipientWallet) {
@@ -350,13 +344,13 @@ export async function postTransferCurrency(req: Request, res: Response) {
 
       // balance update
       await sql`
-        UPDATE Wallet
+        UPDATE wallets
         SET balance = balance - ${amount}
         WHERE wallet_id = ${senderWallet.wallet_id}
       `;
 
       await sql`
-        UPDATE Wallet
+        UPDATE wallets
         SET balance = balance + ${amount}
         WHERE wallet_id = ${recipientWallet.wallet_id}
       `;
@@ -366,7 +360,6 @@ export async function postTransferCurrency(req: Request, res: Response) {
     });
 
     res.status(200).json({ message: "transfer successful" });
-
   } catch (err: any) {
     console.error("transfer err:", err);
     res.status(500).json({ error: err.message || "transfer failed" });

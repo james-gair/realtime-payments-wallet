@@ -7,16 +7,9 @@ const videoConstraints = {
   facingMode: "user",
 };
 
-export function WebcamCapture({
-  onCapture,
-  label,
-}: {
-  // a function passed by the parent component
-  // so that we can use it here to save the file
-  // in the parent component
-  onCapture: (file: File) => void;
-  label: string;
-}) {
+import type { WebcamCaptureProps } from "../types";
+
+export function WebcamCapture({ onCapture, label }: WebcamCaptureProps) {
   const webcamRef = useRef<Webcam>(null);
   const [preview, setPreview] = useState<string | null>(null);
 

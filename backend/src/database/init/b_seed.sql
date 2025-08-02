@@ -1,14 +1,16 @@
-INSERT INTO Account (firebase_id, username, email, phone, dob, verified, zai_user_id, first_name, last_name) VALUES
--- The below users do not have Zai accounts yet.
-  ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, null, 'Test', 'User'),
-  ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, null, 'Test', 'User'),
-  ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, null, 'No', 'User'),
-  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'Edwin', 'N');
+INSERT INTO accounts (firebase_id, username, email, phone, date_of_birth, is_verified, first_name, last_name) VALUES
+  ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, 'Test', 'User'),
+  ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, 'Test', 'User'),
+  ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, 'No', 'User'),
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'Edwin', 'N'),
+ -- For api doc testing:
+  ('mock-user', 'mockmarker', 'marker@example.com', '0400000000', '1990-01-01T00:00:00.000Z',false,'Marker','Test');
+
 /* 
 pword for test is testtest
 pword for no is nononono
 */
-INSERT INTO Currency (currency_id, code, symbol) VALUES
+INSERT INTO currencies (currency_id, code, symbol) VALUES
   (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
 
 
