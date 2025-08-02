@@ -129,9 +129,13 @@ export async function getSentPaymentRequests(req: Request, res: Response): Promi
 
     // Get all payment requests where this user is the sender (account_id_from)
     const sentRequests = await sql`
-      SELECT * FROM payment_request
-      WHERE account_id_from = ${account_id}
-      ORDER BY created_at DESC
+      SELECT 
+        pr.*,                  
+        a.username AS recipient_username  
+      FROM payment_request pr
+      JOIN accounts a ON pr.account_id_to = a.account_id
+      WHERE pr.account_id_from = ${account_id}
+      ORDER BY pr.created_at DESC
     `;
 
     console.log("Sent payment requests for account_id:", account_id);
