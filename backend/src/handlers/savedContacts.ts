@@ -99,3 +99,49 @@ export async function updateContactNickname(req: Request, res: Response): Promis
     res.status(500).json({ error: "Failed to update contact nickname" });
   }
 }
+
+export async function addContact(req: Request, res: Response) {
+  const auth_id = (req as any).user.uid;
+  const { contact_account_id, nickname, name,added_by, added_value, email, phone, bank_account } = req.body;
+
+  try {
+    const account_id = await getAccountId(auth_id);
+
+    // Update the nickname
+    const result = await sql`
+      INSERT INTO bill_payments (
+        account_id,
+        contact_account_id,
+        nickname,
+        name,
+        added_by,
+        added_value,
+        email,
+        phone,
+        bank_account,
+      ) VALUES (
+        ${account_id},
+        ${contact_account_id},
+        ${nickname},
+        ${name},
+        ${added_by},
+        ${added_value},
+        ${email},
+        ${phone},
+        ${bank_account},
+      )
+      RETURNING id;
+    `;
+
+    if (result.length === 0) {
+      res.status(404).json({ error: "Failed to add contact" });
+      return;
+    }
+    
+    res.status(200).json({ contactId: result[0].id });
+    return;
+  } catch (error) {
+    console.error("Error adding contact:", error);
+    res.status(500).json({ error: "Failed to add contact" });
+  }
+}
