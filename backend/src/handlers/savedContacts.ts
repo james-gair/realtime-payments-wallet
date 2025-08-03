@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 import { getAccountId } from "../utils/getAccountId";
+import { AddContactReq } from "../dtos/AddContactReq";
+import { lookupPayIDContact } from "../services/payidService";
+import { lookupBankAccountContact } from "../services/bankAccountService";
 
 export async function getSavedContacts(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
@@ -102,10 +105,103 @@ export async function updateContactNickname(req: Request, res: Response): Promis
 
 export async function addContact(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
-  const { contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account } = req.body;
+  const contactData: AddContactReq = req.body;
 
   try {
     const account_id = await getAccountId(auth_id);
+
+    let contactInfo: {
+      name: string;
+      added_by: string;
+      added_value: string;
+      contact_account_id?: number;
+      email?: string;
+      phone?: string;
+      bank_account?: string;
+    };
+
+    switch (contactData.type) {
+      case 'account':
+        // Handle account-based contact addition
+        const { searchValue, nickname } = contactData;
+        
+        if (!searchValue) {
+          res.status(400).json({ error: "Search value is required" });
+          return;
+        }
+
+        // Find the account by username, phone, or email
+        let accountQuery;
+        if (searchValue.startsWith('@')) {
+          // Username search (remove @ symbol)
+          const username = searchValue.substring(1);
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE username = ${username}`;
+        } else if (searchValue.includes('@')) {
+          // Email search
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE email = ${searchValue}`;
+        } else {
+          // Phone search
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE phone = ${searchValue}`;
+        }
+
+        if (accountQuery.length === 0) {
+          res.status(404).json({ error: "Account not found" });
+          return;
+        }
+
+        const account = accountQuery[0];
+        const name = `${account.first_name} ${account.last_name}`.trim();
+        
+        contactInfo = {
+          name,
+          added_by: searchValue.startsWith('@') ? 'username' : searchValue.includes('@') ? 'email' : 'phone',
+          added_value: searchValue,
+          contact_account_id: account.account_id,
+          email: account.email,
+          phone: account.phone
+        };
+        break;
+
+      case 'payid':
+        // Handle PayID-based contact addition
+        const payidInfo = await lookupPayIDContact(contactData.payid);
+        
+        contactInfo = {
+          name: payidInfo.name,
+          added_by: contactData.payid.includes('@') ? 'email' : 'phone',
+          added_value: contactData.payid,
+          email: payidInfo.email,
+          phone: payidInfo.phone
+        };
+        break;
+
+      case 'bank_account':
+        // Handle bank account-based contact addition
+        const bankInfo = await lookupBankAccountContact(contactData.bsb, contactData.accountNumber);
+        
+        contactInfo = {
+          name: bankInfo.name,
+          added_by: 'bank_account',
+          added_value: `${contactData.bsb}-${contactData.accountNumber}`,
+          bank_account: `${contactData.bsb}-${contactData.accountNumber}`
+        };
+        break;
+
+      default:
+        res.status(400).json({ error: "Invalid contact type" });
+        return;
+    }
+
+    // Check if contact already exists
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
+    `;
+
+    if (existingContact.length > 0) {
+      res.status(409).json({ error: "Contact already exists" });
+      return;
+    }
 
     // Insert into saved_contacts table
     const result = await sql`
@@ -121,25 +217,29 @@ export async function addContact(req: Request, res: Response) {
         bank_account
       ) VALUES (
         ${account_id},
-        ${contact_account_id},
-        ${nickname},
-        ${name},
-        ${added_by},
-        ${added_value},
-        ${email},
-        ${phone},
-        ${bank_account}
+        ${contactInfo.contact_account_id || null},
+        ${contactData.nickname || null},
+        ${contactInfo.name},
+        ${contactInfo.added_by},
+        ${contactInfo.added_value},
+        ${contactInfo.email || null},
+        ${contactInfo.phone || null},
+        ${contactInfo.bank_account || null}
       )
       RETURNING id;
     `;
 
     if (result.length === 0) {
-      res.status(404).json({ error: "Failed to add contact" });
+      res.status(500).json({ error: "Failed to add contact" });
       return;
     }
     
-    res.status(200).json({ contactId: result[0].id });
-    return;
+    res.status(200).json({ 
+      contactId: result[0].id,
+      name: contactInfo.name,
+      added_by: contactInfo.added_by,
+      added_value: contactInfo.added_value
+    });
   } catch (error) {
     console.error("Error adding contact:", error);
     res.status(500).json({ error: "Failed to add contact" });
