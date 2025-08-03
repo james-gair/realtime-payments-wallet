@@ -91,10 +91,10 @@ export async function getReceivedPaymentRequests(req: Request, res: Response): P
 
     const { account_id } = userResult[0];
 
-    // Get all payment requests where this user is the recipient (account_id_to)
+    // Get all payment requests where this user is the recipient (account_id_to) that havent been settled
     const paymentRequests = await sql`
       SELECT * FROM payment_request
-      WHERE account_id_to = ${account_id}
+      WHERE account_id_to = ${account_id} AND status = 'pending'
       ORDER BY created_at DESC
     `;
     console.log("Fetched payment requests:", paymentRequests);
@@ -191,6 +191,55 @@ export async function deletePaymentRequest(req: Request, res: Response): Promise
     res.status(200).json({ message: "Payment request cancelled successfully." });
   } catch (error) {
     console.error("Error deleting payment request:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+// before making a payment as settled, make the transfer and ensure the transfer is successfull
+
+export async function settlePaymentRequest(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const firebaseId = (req as any).user?.uid;
+
+    if (!firebaseId) {
+      res.status(401).json({ error: "Unauthorized: No user info" });
+      return;
+    }
+
+    // Get account_id of the current user (the recipient)
+    const userResult = await sql`
+      SELECT account_id FROM accounts WHERE firebase_id = ${firebaseId}
+    `;
+
+    if (userResult.length === 0) {
+      res.status(404).json({ error: "User account not found" });
+      return;
+    }
+
+    const { account_id } = userResult[0];
+
+    // Verify the payment request exists and belongs to the user as recipient
+    const requestResult = await sql`
+      SELECT * FROM payment_request
+      WHERE id = ${id} AND account_id_to = ${account_id} AND status = 'pending'
+    `;
+
+    if (requestResult.length === 0) {
+      res.status(404).json({ error: "No pending payment request found for this user." });
+      return;
+    }
+
+    // Update the status to "settled"
+    await sql`
+      UPDATE payment_request
+      SET status = 'settled'
+      WHERE id = ${id}
+    `;
+
+    res.status(200).json({ message: "Payment request marked as settled." });
+  } catch (error) {
+    console.error("Error settling payment request:", error);
     res.status(500).json({ error: "Internal server error." });
   }
 }

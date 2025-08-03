@@ -67,12 +67,35 @@ const SendMoney: React.FC = () => {
     setSelectedPayment(null);
   };
 
-  const handleSubmitPayment = () => {
-    if (selectedPayment) {
-      alert(`Payment to ${selectedPayment.username_from} settled.`);
-      setIsModalOpen(false);
+  //
+  const handleSubmitPayment = async () => {
+  if (!selectedPayment) return;
+
+  try {
+    const response = await authFetch(
+      `http://localhost:4000/api/payment-request/${selectedPayment.id}/settle`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error?.error || "Failed to settle payment.");
     }
-  };
+
+    alert(`Payment to ${selectedPayment.username_from} settled.`);
+    setIsModalOpen(false);
+    setSelectedPayment(null);
+
+    // Refresh list
+    fetchPaymentRequests();
+  } catch (error) {
+    console.error("Error settling payment:", error);
+    alert("Could not settle payment. Please try again.");
+  }
+};
+  
 
   return (
     <div className="space-y-8">
@@ -115,9 +138,7 @@ const SendMoney: React.FC = () => {
       {/* Conditional Content */}
       {activeTab === "requests" && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Payment Requests from Friends
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2"> Payment Requests from Friends</h2>
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <ul role="list" className="divide-y divide-gray-100">
               {loadingRequests ? (
