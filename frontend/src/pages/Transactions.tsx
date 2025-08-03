@@ -12,7 +12,7 @@ interface Transaction {
   icon: string;
   color: string;
   time: string;
-  category?: string;
+  category?: string[];
 }
 
 type TransactionFilters = {
@@ -55,6 +55,11 @@ function downloadCSV(csv: string) {
   document.body.removeChild(link);
 }
 
+function capitalise(word: string) {
+  if (!word) return "";
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
 function Transactions() {
   // set transactions being displayed
   const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
@@ -82,7 +87,7 @@ function Transactions() {
   });
 
   const [showDownloadCSV, setDownloadCSV] = useState(false);
-  // const [showCategoryPopup, setCategoryPopup] = useState(false);
+  const [categoryPopup, setCategoryPopup] = useState<string[] | null>(null);
 
   // error handling
   const [errorMessage, setErrorMessage] = useState<string | null>("");
@@ -308,6 +313,71 @@ function Transactions() {
               <option value="date-desc">Date ↓</option>
             </select>
         )}
+
+        {categoryPopup && (
+          <div
+            onClick={() => setCategoryPopup(null)} // Close on background click
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <div
+            onClick={(e) => e.stopPropagation()} // stop closing when clicking inside
+            className="bg-white p-4 rounded-lg max-w-sm w-full shadow-lg"
+          >
+            <h2 className="text-lg font-semibold mb-2">Categories</h2>
+            <div className="flex flex-wrap gap-2">
+              {categoryPopup.map((cat, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
+                >
+                  <span className="mr-2">{capitalise(cat)}</span>
+                  <button
+                    onClick={() => {
+                      setCategoryPopup(categoryPopup.filter((_, i) => i !== index));
+                    }}
+                    className="text-gray-400 hover:text-red-600 font-bold text-xs ml-1"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <div
+                  className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
+                >
+                <button
+                  className="text-blue-400 font-bold text-xs ml-1"
+                  title="Remove"
+                  >
+                    Add New +
+                </button>
+              </div>
+            </div>
+            
+            {/* <ul className="list-disc list-inside text-gray-700">
+              {Array.isArray(categoryPopup) && categoryPopup.map((cat, index) => (
+                <li key={index}>{cat}</li>
+              ))}
+            </ul> */}
+            <button
+              onClick={() => setCategoryPopup(null)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Close
+            </button>
+          </div>
+          </div>
+          )}
       </div>
 
       <div className="rounded grid grid-cols-1 sm:grid-cols-[1fr_2fr_2fr_1.5fr_1fr] font-semibold text-gray-800 px-2 py-2 hover:bg-gray-50">
@@ -344,10 +414,11 @@ function Transactions() {
         {transaction.category?.map((catItem, idx) => (
           <div
             key={idx}
+            onClick={() => setCategoryPopup(transaction.category)}
             className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
             title={`Click ${catItem}`}
           >
-            <div className="text-sm text-gray-700">{catItem}</div>
+            <div className="text-sm text-gray-700">{capitalise(catItem)}</div>
           </div>
         ))}
       </div>

@@ -5,45 +5,98 @@ import { ParsedQs } from 'qs';
 
 import { fetchSpecificExchangeRate } from "./fxRates";
 
-interface wallet {
+interface Wallet {
   id: number;
   currency: string;
   balance: number;
   symbol: string;
 }
 
-interface wallet_gradient extends wallet {
+interface WalletGradient extends Wallet {
   gradient: string;
 }
 
-interface transaction {
+interface Transaction {
   id: number;
   name: string;
   amount: string;
   time: string;
-  category?: string;
+  category?: string[];
 }
 
-interface transaction_icon extends transaction {
-  color: string;
+interface TransactionIcon extends Transaction {
+  color?: string;
   icon: string;
 }
-
 // add colours for wallet here
-const wallet_palette = [
+const walletPalette = [
   "from-emerald-400 to-emerald-600",
   "from-blue-400 to-blue-600",
   "from-purple-400 to-purple-600",
 ];
 
-const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
+interface IconCategory {
+  category: string;
+  icon: string;
+  parent?: string;
+}
+
+const iconCategories: IconCategory[] = [
+  { category: "food", icon: "🍽️" },
+  { category: "groceries", icon: "🛒", parent: "food" },
+  { category: "restaurant", icon: "🍝", parent: "food" },
+  { category: "fast food", icon: "🍟", parent: "food" },
+  { category: "drink", icon: "🥤"},
+  { category: "cafe", icon: "☕", parent: "drink" },
+  { category: "alcohol", icon: "🍷", parent: "drink" },
+
+  { category: "housing", icon: "🏠" },
+  { category: "rent", icon: "💸", parent: "housing" },
+  { category: "mortgage", icon: "🏡", parent: "housing" },
+  { category: "utilities", icon: "💡", parent: "housing" },
+  { category: "internet", icon: "🌐", parent: "utilities" },
+  { category: "electricity", icon: "🔌", parent: "utilities" },
+  { category: "water", icon: "🚿", parent: "utilities" },
+
+  { category: "finance", icon: "💳" },
+  { category: "loan", icon: "🏦", parent: "finance" },
+  { category: "investment", icon: "📈", parent: "finance" },
+  { category: "income", icon: "💵", parent: "finance" },
+  { category: "savings", icon: "💰", parent: "finance" },
+  { category: "insurance", icon: "🛡️", parent: "finance" },
+
+  { category: "shopping", icon: "🛍️" },
+  { category: "clothing", icon: "👗", parent: "shopping" },
+  { category: "electronics", icon: "📱", parent: "shopping" },
+  { category: "furniture", icon: "🛋️", parent: "shopping" },
+  { category: "online shopping", icon: "💻", parent: "shopping" },
+
+  { category: "health", icon: "🏥" },
+  { category: "pharmacy", icon: "💊", parent: "health" },
+  { category: "doctor", icon: "🩺", parent: "health" },
+  { category: "gym", icon: "🏋️", parent: "health" },
+
+  { category: "entertainment", icon: "🎉" },
+  { category: "movies", icon: "🎬", parent: "entertainment" },
+  { category: "music", icon: "🎧", parent: "entertainment" },
+  { category: "games", icon: "🎮", parent: "entertainment" },
+  { category: "subscription", icon: "🔔", parent: "entertainment" },
+
+  { category: "travel", icon: "✈️" },
+  { category: "accommodation", icon: "🏨", parent: "travel" },
+  { category: "flights", icon: "🛫", parent: "travel" },
+  { category: "taxis", icon: "🚖", parent: "travel" },
+  { category: "sightseeing", icon: "🗺️", parent: "travel" }
+];
+
+// const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
 
 export async function getUserWallet(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
 
   // get data from db excluding colour
   try {
-    const wallets: wallet[] = await sql`
+    const wallets: Wallet[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
         c.code AS currency, CAST(w.balance AS FLOAT), c.symbol
         FROM wallets w 
@@ -53,9 +106,9 @@ export async function getUserWallet(req: Request, res: Response) {
       `;
 
     // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
-    const wallets_colour: wallet_gradient[] = wallets.map((w, c) => ({
+    const wallets_colour: WalletGradient[] = wallets.map((w, c) => ({
       ...w,
-      gradient: wallet_palette[c % wallet_palette.length],
+      gradient: walletPalette[c % walletPalette.length],
     }));
 
     res.json({
@@ -153,7 +206,7 @@ export async function getUserTransactions(req: Request, res: Response) {
         ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
         : sql``;
 
-      const transactions : transaction[] = await sql`
+      const transactions : Transaction[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
         transactions.name,
         CASE 
@@ -173,11 +226,62 @@ export async function getUserTransactions(req: Request, res: Response) {
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
 
-      const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
-        ...tx,
-        color: transaction_palette[c % transaction_palette.length],
-        icon: "❓"
-      }));
+      const categoryToIcon = new Map<string, string>();
+      const categoryToParent = new Map<string, string | undefined>();
+
+      for (const { category, icon, parent } of iconCategories) {
+        categoryToIcon.set(category, icon);
+        categoryToParent.set(category, parent);
+      }
+
+      function resolveIconFromCategories(categories: string[]): string {
+        // Sort longest paths first (most specific)
+        const sorted = [...categories].sort((a, b) => {
+          let depthA = getCategoryDepth(a);
+          let depthB = getCategoryDepth(b);
+          return depthB - depthA; // more specific first
+        });
+
+        for (const cat of sorted) {
+          let resolved = resolveCategoryToIcon(cat);
+          if (resolved) return resolved;
+        }
+
+        return "❓"; // Fallback
+      }
+
+      function resolveCategoryToIcon(category: string): string | undefined {
+        // Traverse up the hierarchy to find icon
+        let current = category;
+        while (current) {
+          const icon = categoryToIcon.get(current);
+          if (icon) return icon;
+          current = categoryToParent.get(current) ?? "";
+        }
+        return undefined;
+      }
+
+      function getCategoryDepth(category: string): number {
+        let depth = 0;
+        let current = category;
+        while (categoryToParent.has(current)) {
+          current = categoryToParent.get(current)!;
+          depth++;
+        }
+        return depth;
+      }
+
+      const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
+        const icon = Array.isArray(tx.category)
+          ? resolveIconFromCategories(tx.category)
+          : "❓";
+
+        return {
+          ...tx,
+          // color: transaction_palette[c % transaction_palette.length],
+          icon
+        };
+      });
 
     res.json({
       transactions: transactions_time,
