@@ -88,6 +88,9 @@ function Transactions() {
 
   const [showDownloadCSV, setDownloadCSV] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState<string[] | null>(null);
+  const [showNewCategory, setNewCategory] = useState<boolean>(false);
+  const [deleteCategory, setDeleteCategory] = useState<string | null>(null);
+  const [addCategory, setAddCategory] = useState<string | null>(null);
 
   // error handling
   const [errorMessage, setErrorMessage] = useState<string | null>("");
@@ -330,11 +333,12 @@ function Transactions() {
             }}
           >
             <div
-            onClick={(e) => e.stopPropagation()} // stop closing when clicking inside
-            className="bg-white p-4 rounded-lg max-w-sm w-full shadow-lg"
-          >
-            <h2 className="text-lg font-semibold mb-2">Categories</h2>
-            <div className="flex flex-wrap gap-2">
+              onClick={(e) => e.stopPropagation()} // stop closing when clicking inside
+              className="bg-white p-4 rounded-lg max-w-sm w-full shadow-lg"
+            >
+              <h2 className="text-lg font-semibold mb-2">Categories</h2>
+              <div className="flex flex-wrap gap-2">
+              
               {categoryPopup.map((cat, index) => (
                 <div
                   key={index}
@@ -344,6 +348,7 @@ function Transactions() {
                   <button
                     onClick={() => {
                       setCategoryPopup(categoryPopup.filter((_, i) => i !== index));
+                      setDeleteCategory(cat);
                     }}
                     className="text-gray-400 hover:text-red-600 font-bold text-xs ml-1"
                     title="Remove"
@@ -352,32 +357,57 @@ function Transactions() {
                   </button>
                 </div>
               ))}
-              <div
+                <div
                   className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
                 >
-                <button
-                  className="text-blue-400 font-bold text-xs ml-1"
-                  title="Remove"
-                  >
-                    Add New +
-                </button>
+
+                {/* {showNewCategory && (
+                  <div className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200">
+                    <input
+                      type="text"
+                      placeholder="Category"
+                      className="sm:w-64 border border-gray-300 p-2 rounded-xl w-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition"
+                    />
+                  </div>
+                )}  */}
+
+                {!showNewCategory && ( 
+                  <button
+                    onClick={() => setNewCategory(!showNewCategory)}
+                    className="text-blue-400 font-bold text-xs ml-1"
+                    title="Remove"
+                    >
+                      Add New +
+                  </button>
+                )}
               </div>
             </div>
-            
-            {/* <ul className="list-disc list-inside text-gray-700">
-              {Array.isArray(categoryPopup) && categoryPopup.map((cat, index) => (
-                <li key={index}>{cat}</li>
-              ))}
-            </ul> */}
             <button
-              onClick={() => setCategoryPopup(null)}
+              onClick={() => {
+                setNewCategory(false);
+                setCategoryPopup(null);
+              }}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              Close
+              Save
             </button>
           </div>
           </div>
           )}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       </div>
 
       <div className="rounded grid grid-cols-1 sm:grid-cols-[1fr_2fr_2fr_1.5fr_1fr] font-semibold text-gray-800 px-2 py-2 hover:bg-gray-50">
