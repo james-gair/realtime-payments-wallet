@@ -87,16 +87,6 @@ export function AddContactMethod({ onMethodSelect, onCancel }: AddContactMethodP
           </svg>
         </button>
       </div>
-
-      {/* See all options button */}
-      <div className="mt-8 text-center">
-        <button className="inline-flex items-center px-4 py-2 bg-black hover:bg-zinc-800 text-white rounded-lg transition-colors font-semibold">
-          <span>See all options</span>
-          <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 } 
