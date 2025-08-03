@@ -40,11 +40,17 @@ export interface Transaction {
 // PAYMENT TYPES
 // ============================================================================
 
+
 export interface PaymentRequest {
   id: number;
-  recipient: string;
+  account_id_from: number;
+  username_from: string;
+  account_id_to: number;
   amount: number;
   description: string;
+  status: "pending" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SentPayment {
