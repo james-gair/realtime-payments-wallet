@@ -20,7 +20,7 @@ const SendMoney: React.FC = () => {
 
   const fetchPaymentRequests = async () => {
     try {
-      const response = await authFetch("http://localhost:4000/api/payment-requests/received", {
+      const response = await authFetch("http://localhost:4000/api/payment-request/received", {
         method: "GET",
       });
       const json = await response.json();

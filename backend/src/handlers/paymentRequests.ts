@@ -97,6 +97,7 @@ export async function getReceivedPaymentRequests(req: Request, res: Response): P
       WHERE account_id_to = ${account_id}
       ORDER BY created_at DESC
     `;
+    console.log("Fetched payment requests:", paymentRequests);
 
     res.status(200).json({ data: paymentRequests });
   } catch (error) {
