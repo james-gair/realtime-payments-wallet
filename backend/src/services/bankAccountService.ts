@@ -6,6 +6,7 @@ export interface BankAccountContactInfo {
   name: string;
   accountNumber: string;
   bsb: string;
+  email?: string;
 }
 
 export async function lookupBankAccountContact(bsb: string, accountNumber: string): Promise<BankAccountContactInfo> {
@@ -20,6 +21,7 @@ export async function lookupBankAccountContact(bsb: string, accountNumber: strin
   return {
     name: 'Account Holder',
     accountNumber: accountNumber,
-    bsb: bsb
+    bsb: bsb,
+    email: 'account.holder@example.com'
   };
 } 

@@ -10,13 +10,8 @@ function Contacts() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleContactSelect = (contact: Contact) => {
-    setSelectedContact(contact);
-    setShowSuccess(true);
-    
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 3000);
+    // Navigate to contact details page
+    navigate(`/contacts/${contact.id}`);
   };
 
   const handleAddNew = () => {
@@ -49,7 +44,8 @@ function Contacts() {
           key={refreshKey}
           onSelect={handleContactSelect}
           onAddNew={handleAddNew}
-          actionText="Edit"
+          actionText="View"
+          showEditModal={false}
         />
       </div>
     </div>

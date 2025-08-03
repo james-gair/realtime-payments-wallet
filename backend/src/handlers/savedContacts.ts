@@ -4,6 +4,7 @@ import { getAccountId } from "../utils/getAccountId";
 import { AddContactReq } from "../dtos/AddContactReq";
 import { lookupPayIDContact } from "../services/payidService";
 import { lookupBankAccountContact } from "../services/bankAccountService";
+import { lookupUSBankAccountContact } from "../services/usBankAccountService";
 
 export async function getSavedContacts(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
@@ -41,6 +42,12 @@ export async function getSavedContacts(req: Request, res: Response) {
       phone: row.added_by === 'phone' ? row.phone : null,
       bank_account: row.added_by === 'bank_account' ? row.bank_account : null,
       contact_account_id: row.contact_account_id,
+      // Bank account specific fields
+      bsb: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 6 ? row.bank_account?.split('-')[0] : null,
+      routing_number: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 9 ? row.bank_account?.split('-')[0] : null,
+      account_number: row.added_by === 'bank_account' ? row.bank_account?.split('-')[1] : null,
+      account_holder_name: row.added_by === 'bank_account' ? row.name : null,
+      account_email: row.added_by === 'bank_account' ? row.email : null,
     }));
 
     console.log("Result to send:", result);
@@ -101,6 +108,48 @@ export async function updateContactNickname(req: Request, res: Response): Promis
   } catch (error) {
     console.error("Error updating contact nickname:", error);
     res.status(500).json({ error: "Failed to update contact nickname" });
+  }
+}
+
+export async function deleteContact(req: Request, res: Response): Promise<void> {
+  const auth_id = (req as any).user.uid;
+  const contactId = parseInt(req.params.contactId);
+
+  if (!contactId || isNaN(contactId)) {
+    res.status(400).json({ error: "Valid contact ID is required" });
+    return;
+  }
+
+  try {
+    const account_id = await getAccountId(auth_id);
+    
+    // Check if the contact belongs to the user
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+    `;
+
+    if (existingContact.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    // Delete the contact
+    const result = await sql`
+      DELETE FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+      RETURNING id
+    `;
+
+    if (result.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    res.status(200).json({ message: "Contact deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    res.status(500).json({ error: "Failed to delete contact" });
   }
 }
 
@@ -178,13 +227,37 @@ export async function addContact(req: Request, res: Response) {
 
       case 'bank_account':
         // Handle bank account-based contact addition
-        const bankInfo = await lookupBankAccountContact(contactData.bsb, contactData.accountNumber);
+        let bankInfo;
+        let addedValue;
+        let bankAccountValue;
+        
+        if (contactData.country === 'AU') {
+          if (!contactData.bsb) {
+            res.status(400).json({ error: "BSB is required for Australian bank accounts" });
+            return;
+          }
+          bankInfo = await lookupBankAccountContact(contactData.bsb, contactData.accountNumber);
+          addedValue = `${contactData.bsb}-${contactData.accountNumber}`;
+          bankAccountValue = `${contactData.bsb}-${contactData.accountNumber}`;
+        } else if (contactData.country === 'US') {
+          if (!contactData.routingNumber) {
+            res.status(400).json({ error: "Routing number is required for US bank accounts" });
+            return;
+          }
+          bankInfo = await lookupUSBankAccountContact(contactData.routingNumber, contactData.accountNumber);
+          addedValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
+          bankAccountValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
+        } else {
+          res.status(400).json({ error: "Unsupported country for bank account" });
+          return;
+        }
         
         contactInfo = {
-          name: bankInfo.name,
+          name: contactData.accountHolderName || bankInfo.name,
           added_by: 'bank_account',
-          added_value: `${contactData.bsb}-${contactData.accountNumber}`,
-          bank_account: `${contactData.bsb}-${contactData.accountNumber}`
+          added_value: addedValue,
+          bank_account: bankAccountValue,
+          email: contactData.accountEmail || bankInfo.email
         };
         break;
 

@@ -144,6 +144,12 @@ export interface Contact {
   contact_account_id?: number | null; // account_id if contact has an account
   added_by: "username" | "email" | "phone" | "bank_account"; // how the contact was added
   added_value: string; // the value used to add the contact
+  // Bank account specific fields (for extensibility)
+  bsb?: string | null;
+  routing_number?: string | null;
+  account_number?: string | null;
+  account_holder_name?: string | null;
+  account_email?: string | null;
 }
 
 // ============================================================================
