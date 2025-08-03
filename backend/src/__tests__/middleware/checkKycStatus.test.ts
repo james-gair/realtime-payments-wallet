@@ -1,7 +1,7 @@
 import { checkKycStatus } from "../../middleware/checkKycStatus";
-import * as isVeriedUtil from "../../utils/isUerKycVerified";
+import * as isVeriedUtil from "../../utils/kyc";
 
-jest.mock("../../utils/isUerKycVerified");
+jest.mock("../../utils/kyc");
 
 const mockReq = {
   user: {

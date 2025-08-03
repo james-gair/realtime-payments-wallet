@@ -68,6 +68,10 @@ export interface BankAccountForm {
 }
 
 // ============================================================================
+// Payment Limits Types
+// ============================================================================
+
+// ============================================================================
 // FOREX & RATES TYPES
 // ============================================================================
 
@@ -157,7 +161,7 @@ export interface UserProfile {
 
 export interface KYCVerifyResultResponse {
   result: "verified" | "rejected";
-  validatedData: any; // Using any for now, can be refined based on schema
+  validatedData: unknown; // Using any for now, can be refined based on schema
   verifiedAt: string; // ISO timestamp string
   idType: "passport" | "driver_license";
 }
