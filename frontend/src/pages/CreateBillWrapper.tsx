@@ -4,7 +4,8 @@ import { ErrorModal } from "../components/ErrorModal";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
 import { auth } from "../services/firebase";
-import { BillForm, type BillInputs } from "../components/BillForm";
+import { BillForm } from "../components/BillForm";
+import type { BillInputs } from "../types";
 
 export function CreateBillWrapper() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;

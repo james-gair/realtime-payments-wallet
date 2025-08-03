@@ -26,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SendMoney from "./pages/SendMoney";
 import Transactions from "./pages/Transactions";
 import "./styles/App.css";
+import PaymentLimits from "./pages/PaymentLimits";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
           <Route path="/request-money" element={<RequestPayment />} />
           <Route path="/send-money" element={<SendMoney />} />
           <Route path="/bill-payments" element={<BillPayments />} />
+          <Route path="/payment-limits" element={<PaymentLimits />} />
           <Route
             path="/bill-payments/confirmation/:id"
             element={<BillConfirmation />}

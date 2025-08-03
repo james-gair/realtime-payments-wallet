@@ -150,7 +150,7 @@ const RequestPage: React.FC = () => {
         </div>
         <p className="text-gray-600 mt-2">
           Request money from {selectedContact?.nickname || selectedContact?.name}
-        </p>
+        </p>  
       </div>
 
       {/* Request Form */}

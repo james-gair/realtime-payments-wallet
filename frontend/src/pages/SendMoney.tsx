@@ -59,6 +59,7 @@ const SendMoney: React.FC = () => {
     description: ''
   });
 
+
   // Payment requests functionality
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
@@ -165,6 +166,10 @@ const SendMoney: React.FC = () => {
     setSelectedPayment(null);
   };
 
+  //
+  const handleSubmitPayment = async () => {
+  if (!selectedPayment) return;
+
   const handleSubmitPayment = () => {
     if (selectedPayment) {
       alert(`Payment to ${selectedPayment.recipient} settled.`);
@@ -182,69 +187,81 @@ const SendMoney: React.FC = () => {
         </p>
       </div>
 
-      {/* Payment Requests Section */}
-      <div className="space-y-6">
-        {/* Section: Payment Requests */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Payment Requests from Friends
-          </h2>
+      {/* Tab Toggle */}
+      <div className="flex gap-4 border-b border-gray-200 pb-4">
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "requests" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Settle Payment Requests
+        </button>
+        <button
+          onClick={() => setActiveTab("user")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "user" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Send to Users
+        </button>
+        <button
+          onClick={() => setActiveTab("bank")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "bank" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Send to Bank
+        </button>
+      </div>
+
+      {/* Conditional Content */}
+      {activeTab === "requests" && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2"> Payment Requests from Friends</h2>
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <ul role="list" className="divide-y divide-gray-100">
-              {MOCK_PAYMENT_REQUESTS.map((payment) => (
-                <li
-                  key={payment.id}
-                  onClick={() => handleClickPaymentRequest(payment)}
-                  className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {payment.recipient}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {payment.description}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="text-base font-semibold text-gray-900">
-                      ${payment.amount}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {loadingRequests ? (
+                <div className="p-4 text-gray-500">Loading payment requests...</div>
+              ) : paymentRequests.length === 0 ? (
+                <div className="p-4 text-gray-500">No pending payment requests.</div>
+              ) : (
+                paymentRequests
+                  .filter((p) => p.status === "pending")
+                  .map((payment) => (
+                    <li
+                      key={payment.id}
+                      onClick={() => handleClickPaymentRequest(payment)}
+                      className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {payment.username_from}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {payment.description}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="text-base font-semibold text-gray-900">
+                          ${payment.amount}
+                        </span>
+                      </div>
+                    </li>
+                  ))
+              )}
             </ul>
           </div>
         </div>
+      )}
 
-        {/* Section: Recent Sent Payments */}
+      {activeTab === "user" && (
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Recent Sent Payments
-          </h2>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <ul role="list" className="divide-y divide-gray-100">
-              {MOCK_SENT_PAYMENTS.map((payment) => (
-                <li
-                  key={payment.id}
-                  className="flex justify-between items-center gap-x-6 px-6 py-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {payment.recipient}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {payment.description}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="text-base font-semibold text-gray-900">
-                      ${payment.amount}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Friend</h2>
+          <p className="text-gray-600 mb-4">
+            Transfer money instantly to another user by username
+          </p>
+          <SendToUserForm cards={cards} />
         </div>
       </div>
 
@@ -430,7 +447,7 @@ const SendMoney: React.FC = () => {
        renderConfirmation()}
 
       {/* Payment Request Settlement Modal */}
-      {isModalOpen && (
+      {isModalOpen && selectedPayment && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4"
           onClick={handleCloseModal}
@@ -445,15 +462,14 @@ const SendMoney: React.FC = () => {
             <div className="space-y-2 text-sm text-gray-700">
               <p>
                 <span className="font-medium">From:</span>{" "}
-                {selectedPayment?.recipient}
+                {selectedPayment.username_from}
               </p>
               <p>
-                <span className="font-medium">Amount:</span> $
-                {selectedPayment?.amount}
+                <span className="font-medium">Amount:</span> ${selectedPayment.amount}
               </p>
               <p>
                 <span className="font-medium">Description:</span>{" "}
-                {selectedPayment?.description}
+                {selectedPayment.description}
               </p>
             </div>
             <div className="mt-6 flex gap-3">

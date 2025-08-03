@@ -90,8 +90,10 @@ export async function getUserTransactions(req: Request, res: Response) {
         FROM transactions t
         JOIN wallets sender_wallet ON t.sender_wallet_id = sender_wallet.wallet_id
         JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
-        JOIN wallets recipient_wallet ON t.recipient_wallet_id = recipient_wallet.wallet_id
-        JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
+        -- modified from JOIN to LEFT JOIN recipient_wallet to avoid issues with null recipient
+        -- modified by Jennifer, for bill payments
+        LEFT JOIN wallets recipient_wallet ON t.recipient_wallet_id = recipient_wallet.wallet_id
+        LEFT JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
         WHERE sender_account.firebase_id = ${auth_id}
         OR recipient_account.firebase_id = ${auth_id}
         ORDER BY t.event_time DESC, t.transaction_id DESC
