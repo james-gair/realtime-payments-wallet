@@ -7,32 +7,31 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MOCK_GROUPS } from "./GroupPaymentsDashboard";
 
-// Mock data for balances - in real app this would come from API
 const MOCK_BALANCES = [
   {
     id: 1,
-    name: "You are owed",
+    name: "You",
     amount: 20.0,
     avatar: "🫵",
     admin: true,
   },
   {
     id: 2,
-    name: "@Person is owed",
+    name: "@Person",
     amount: 5.0,
     avatar: "👤",
     admin: false,
   },
   {
     id: 3,
-    name: "@Pizza owes",
+    name: "@Pizza",
     amount: -15.0,
     avatar: "🍕",
     admin: false,
   },
   {
     id: 4,
-    name: "@Apple owes",
+    name: "@Apple",
     amount: -10.0,
     avatar: "🍎",
     admin: false,
@@ -53,8 +52,7 @@ export default function GroupPayments() {
     {}
   );
 
-  // Mock group members - in real app this would come from API
-  const groupMembers = ["You", "@Person", "@Pizza", "@Apple"];
+  const groupMembers = MOCK_BALANCES.map((balance) => balance.name);
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -64,11 +62,6 @@ export default function GroupPayments() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    // Reset form
-    setExpenseDescription("");
-    setExpenseAmount("");
-    setSelectedMembers([]);
-    setCustomAmounts({});
   };
 
   const toggleMemberSelection = (memberName: string) => {
@@ -84,10 +77,16 @@ export default function GroupPayments() {
   };
 
   const updateCustomAmount = (memberName: string, amount: string) => {
-    setCustomAmounts((prev) => ({
-      ...prev,
-      [memberName]: amount,
-    }));
+    if (amount === "0") {
+      const newCustomAmounts = { ...customAmounts };
+      delete newCustomAmounts[memberName];
+      setCustomAmounts(newCustomAmounts);
+    } else {
+      setCustomAmounts((prev) => ({
+        ...prev,
+        [memberName]: amount,
+      }));
+    }
   };
 
   const calculateSplit = () => {
@@ -144,6 +143,11 @@ export default function GroupPayments() {
         `Expense "${expenseDescription}" for $${expenseAmount} added and split between ${selectedMembers.length} members!`
       );
       closeModal();
+      // Reset form
+      setExpenseDescription("");
+      setExpenseAmount("");
+      setSelectedMembers([]);
+      setCustomAmounts({});
     } else {
       alert("Please fill in all fields and select at least one member.");
     }
@@ -323,52 +327,55 @@ export default function GroupPayments() {
 
               {/* Member Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Who should split this expense? *
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="block text-sm font-medium text-gray-700">
+                    Who should split this expense? *
+                  </p>
+                  <button
+                    className="text-sm text-gray-500 hover:text-gray-700 underline"
+                    onClick={() => {
+                      setSelectedMembers([...groupMembers]);
+                      setCustomAmounts({});
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {groupMembers.map((member) => (
+                  {MOCK_BALANCES.map((member) => (
                     <div
-                      key={member}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        selectedMembers.includes(member)
+                      key={member.id}
+                      onClick={() => toggleMemberSelection(member.name)}
+                      className={`p-3 rounded-xl border-2 transition-all cursor-pointer hover:bg-teal-50 ${
+                        selectedMembers.includes(member.name)
                           ? "border-teal-500 bg-teal-50"
                           : "border-gray-200"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div
-                          className="flex items-center gap-3 cursor-pointer flex-1"
-                          onClick={() => toggleMemberSelection(member)}
-                        >
+                        <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm">
-                            {member === "You"
-                              ? "🫵"
-                              : member.includes("Person")
-                              ? "👤"
-                              : member.includes("Pizza")
-                              ? "🍕"
-                              : "🍎"}
+                            {member.avatar}
                           </div>
                           <span className="text-gray-900 font-medium">
-                            {member}
+                            {member.name}
                           </span>
                         </div>
                         <div
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer ${
-                            selectedMembers.includes(member)
+                            selectedMembers.includes(member.name)
                               ? "border-teal-500 bg-teal-500"
                               : "border-gray-300"
                           }`}
-                          onClick={() => toggleMemberSelection(member)}
+                          onClick={() => toggleMemberSelection(member.name)}
                         >
-                          {selectedMembers.includes(member) && (
+                          {selectedMembers.includes(member.name) && (
                             <div className="w-2 h-2 bg-white rounded-full"></div>
                           )}
                         </div>
                       </div>
 
-                      {selectedMembers.includes(member) && (
+                      {selectedMembers.includes(member.name) && (
                         <div className="ml-11">
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-600 whitespace-nowrap">
@@ -381,12 +388,16 @@ export default function GroupPayments() {
                               <input
                                 type="number"
                                 step="0.01"
-                                value={customAmounts[member] || ""}
+                                min="0"
+                                value={customAmounts[member.name] || ""}
                                 onChange={(e) =>
-                                  updateCustomAmount(member, e.target.value)
+                                  updateCustomAmount(
+                                    member.name,
+                                    e.target.value
+                                  )
                                 }
                                 placeholder="Auto-split"
-                                className="w-full pl-6 pr-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:border-transparent"
+                                className="w-full pl-6 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:border-transparent"
                                 onClick={(e) => e.stopPropagation()}
                               />
                             </div>

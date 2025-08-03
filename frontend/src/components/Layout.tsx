@@ -18,6 +18,7 @@ import {
   PlusIcon,
   UserGroupIcon,
   UserIcon,
+  UsersIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { signOut } from "firebase/auth";
@@ -32,10 +33,10 @@ const navigation = [
   { name: "Add Money", href: "/add-money", icon: PlusIcon },
   { name: "Send Money", href: "/send-money", icon: PaperAirplaneIcon },
   { name: "Request Money", href: "/request-money", icon: InboxArrowDownIcon },
-  { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
+  { name: "Group Payments", href: "/group-payments", icon: UserGroupIcon },
+  { name: "Contacts", href: "/contacts", icon: UsersIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
-  { name: "Group Payments", href: "/group-payments", icon: UserGroupIcon },
 ];
 
 function classNames(...classes: string[]) {
