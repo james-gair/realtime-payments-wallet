@@ -131,6 +131,7 @@ export interface Contact {
   email?: string | null;
   phone?: string | null;
   bank_account?: string | null; // for future use
+  contact_account_id?: number | null; // account_id if contact has an account
   added_by: "username" | "email" | "phone" | "bank_account"; // how the contact was added
   added_value: string; // the value used to add the contact
 }

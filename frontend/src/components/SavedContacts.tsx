@@ -7,10 +7,14 @@ export function SavedContacts({
   onSelect,
   onAddNew,
   actionText = "Select",
+  showEditModal = true,
+  filterAccountOnly = false,
 }: {
   onSelect: (contact: Contact) => void;
   onAddNew?: () => void;
   actionText?: string;
+  showEditModal?: boolean;
+  filterAccountOnly?: boolean;
 }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,14 +45,21 @@ export function SavedContacts({
     fetchContacts();
   }, []);
 
-  // Filter contacts based on search query
+  // Filter contacts based on search query and account-only filter
   useEffect(() => {
+    let filtered = contacts;
+    
+    // Filter to only show account contacts if requested
+    if (filterAccountOnly) {
+      filtered = contacts.filter(contact => contact.contact_account_id !== null);
+    }
+    
     if (!searchQuery.trim()) {
-      setFilteredContacts(contacts);
+      setFilteredContacts(filtered);
     } else {
       const q = searchQuery.toLowerCase();
       setFilteredContacts(
-        contacts.filter(contact =>
+        filtered.filter(contact =>
           (contact.nickname || "").toLowerCase().includes(q) ||
           (contact.name || "").toLowerCase().includes(q) ||
           (contact.username || "").toLowerCase().includes(q) ||
@@ -58,11 +69,16 @@ export function SavedContacts({
         )
       );
     }
-  }, [searchQuery, contacts]);
+  }, [searchQuery, contacts, filterAccountOnly]);
 
   const handleSelect = (contact: Contact) => {
-    setSelectedContact(contact);
-    setIsEditModalOpen(true);
+    if (showEditModal) {
+      setSelectedContact(contact);
+      setIsEditModalOpen(true);
+    } else {
+      // Directly call onSelect without opening modal
+      onSelect(contact);
+    }
   };
 
   const handleSaveNickname = async (contactId: number, nickname: string | null) => {

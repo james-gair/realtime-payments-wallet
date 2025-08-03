@@ -5,7 +5,7 @@ type ContactType = 'account' | 'payid' | 'bank-account';
 
 interface AddContactFormProps {
   method: ContactType;
-  onSuccess: () => void;
+  onSuccess: (contact?: any) => void;
   onCancel: () => void;
 }
 
@@ -100,9 +100,9 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
       setAccountEmail('');
       setNickname('');
 
-      // Call success callback after a delay
+      // Call success callback with the new contact after a delay
       setTimeout(() => {
-        onSuccess();
+        onSuccess(result);
       }, 2000);
 
     } catch (err: any) {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AddContactForm } from "../components/AddContactForm";
 import { AddContactMethod } from "../components/AddContactMethod";
 
@@ -7,19 +7,32 @@ type ContactStep = 'select-method' | 'payid' | 'account' | 'bank-account';
 
 function AddContact() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<ContactStep>('select-method');
+  const location = useLocation();
+  
+  // Get return path and skip method selection flag from location state
+  const returnTo = (location.state as any)?.returnTo || "/contacts";
+  const skipMethodSelection = (location.state as any)?.skipMethodSelection || false;
+  
+  const [currentStep, setCurrentStep] = useState<ContactStep>(
+    skipMethodSelection ? 'account' : 'select-method'
+  );
 
   const handleMethodSelect = (method: 'payid' | 'account' | 'bank-account') => {
     setCurrentStep(method);
   };
 
-  const handleSuccess = () => {
-    navigate("/contacts");
+  const handleSuccess = (newContact?: any) => {
+    if (newContact && returnTo === "/request-money") {
+      // If we're returning to request-money, pass the new contact
+      navigate(returnTo, { state: { newContact } });
+    } else {
+      navigate(returnTo);
+    }
   };
 
   const handleCancel = () => {
-    if (currentStep === 'select-method') {
-      navigate("/contacts");
+    if (currentStep === 'select-method' || skipMethodSelection) {
+      navigate(returnTo);
     } else {
       setCurrentStep('select-method');
     }
