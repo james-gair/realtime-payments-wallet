@@ -18,6 +18,8 @@ const SendMoney: React.FC = () => {
     null
   );
 
+  const [activeTab, setActiveTab] = useState<"requests" | "user" | "bank">("requests");
+
   const fetchPaymentRequests = async () => {
     try {
       const response = await authFetch("http://localhost:4000/api/payment-request/received", {
@@ -73,128 +75,154 @@ const SendMoney: React.FC = () => {
   };
 
   return (
-  <div className="space-y-8">
-    {/* Header */}
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900">Send Money</h1>
-      <p className="text-gray-600 mt-2">
-        Pay friends quickly or send money to any bank account
-      </p>
-    </div>
-
-    {/* Payment Requests Section */}
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Payment Requests from Friends
-        </h2>
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <ul role="list" className="divide-y divide-gray-100">
-            {loadingRequests ? (
-              <div className="p-4 text-gray-500">Loading payment requests...</div>
-            ) : paymentRequests.length === 0 ? (
-              <div className="p-4 text-gray-500">No pending payment requests.</div>
-            ) : (
-              paymentRequests
-                .filter((p) => p.status === "pending")
-                .map((payment) => (
-                  <li
-                    key={payment.id}
-                    onClick={() => handleClickPaymentRequest(payment)}
-                    className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {payment.username_from}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {payment.description}
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="text-base font-semibold text-gray-900">
-                        ${payment.amount}
-                      </span>
-                    </div>
-                  </li>
-                ))
-            )}
-          </ul>
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Send Money</h1>
+        <p className="text-gray-600 mt-2">
+          Pay friends quickly or send money to any bank account
+        </p>
       </div>
-    </div>
 
-    {/* Send to User Section Header */}
-    <div className="pt-8 border-t border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Friend</h2>
-      <p className="text-gray-600">
-        Transfer money instantly to another user by username
-      </p>
-    </div>
-
-    {/* Send to User Form Component */}
-    <SendToUserForm cards={cards} />
-
-    {/* Bank Transfer Section Header */}
-    <div className="pt-8 border-t border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Bank Account</h2>
-      <p className="text-gray-600">
-        Transfer money directly to any bank account
-      </p>
-    </div>
-
-    {/* Send to Bank Form Component */}
-    <SendToBankForm
-      cards={cards}
-      selectedCard={selectedCard}
-      setSelectedCard={setSelectedCard}
-    />
-
-    {/* Payment Request Settlement Modal */}
-    {isModalOpen && selectedPayment && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4"
-        onClick={handleCloseModal}
-      >
-        <div
-          className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md"
-          onClick={(e) => e.stopPropagation()}
+      {/* Tab Toggle */}
+      <div className="flex gap-4 border-b border-gray-200 pb-4">
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "requests" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
         >
-          <h3 className="text-xl font-bold text-gray-900 text-center mb-4">
-            Settle Payment Request
-          </h3>
-          <div className="space-y-2 text-sm text-gray-700">
-            <p>
-              <span className="font-medium">From:</span>{" "}
-              {selectedPayment.username_from}
-            </p>
-            <p>
-              <span className="font-medium">Amount:</span> ${selectedPayment.amount}
-            </p>
-            <p>
-              <span className="font-medium">Description:</span>{" "}
-              {selectedPayment.description}
-            </p>
-          </div>
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={handleSubmitPayment}
-              className="flex-1 py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl transition"
-            >
-              Pay Now
-            </button>
-            <button
-              onClick={handleCloseModal}
-              className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition"
-            >
-              Cancel
-            </button>
+          Settle Payment Requests
+        </button>
+        <button
+          onClick={() => setActiveTab("user")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "user" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Send to Users
+        </button>
+        <button
+          onClick={() => setActiveTab("bank")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "bank" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Send to Bank
+        </button>
+      </div>
+
+      {/* Conditional Content */}
+      {activeTab === "requests" && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Payment Requests from Friends
+          </h2>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <ul role="list" className="divide-y divide-gray-100">
+              {loadingRequests ? (
+                <div className="p-4 text-gray-500">Loading payment requests...</div>
+              ) : paymentRequests.length === 0 ? (
+                <div className="p-4 text-gray-500">No pending payment requests.</div>
+              ) : (
+                paymentRequests
+                  .filter((p) => p.status === "pending")
+                  .map((payment) => (
+                    <li
+                      key={payment.id}
+                      onClick={() => handleClickPaymentRequest(payment)}
+                      className="flex justify-between items-center gap-x-6 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {payment.username_from}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {payment.description}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="text-base font-semibold text-gray-900">
+                          ${payment.amount}
+                        </span>
+                      </div>
+                    </li>
+                  ))
+              )}
+            </ul>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
-}
+      )}
 
- export default SendMoney;
+      {activeTab === "user" && (
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Friend</h2>
+          <p className="text-gray-600 mb-4">
+            Transfer money instantly to another user by username
+          </p>
+          <SendToUserForm cards={cards} />
+        </div>
+      )}
+
+      {activeTab === "bank" && (
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Bank Account</h2>
+          <p className="text-gray-600 mb-4">
+            Transfer money directly to any bank account
+          </p>
+          <SendToBankForm
+            cards={cards}
+            selectedCard={selectedCard}
+            setSelectedCard={setSelectedCard}
+          />
+        </div>
+      )}
+
+      {/* Payment Request Settlement Modal */}
+      {isModalOpen && selectedPayment && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-4">
+              Settle Payment Request
+            </h3>
+            <div className="space-y-2 text-sm text-gray-700">
+              <p>
+                <span className="font-medium">From:</span>{" "}
+                {selectedPayment.username_from}
+              </p>
+              <p>
+                <span className="font-medium">Amount:</span> ${selectedPayment.amount}
+              </p>
+              <p>
+                <span className="font-medium">Description:</span>{" "}
+                {selectedPayment.description}
+              </p>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleSubmitPayment}
+                className="flex-1 py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl transition"
+              >
+                Pay Now
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SendMoney;
