@@ -19,26 +19,18 @@ function Forex() {
   };
 
   const fetchCards = async () => {
-    const response = await authFetch(
-      "http://localhost:4000/api/dashboard/wallet",
-      {
-        method: "GET",
-      }
-    );
-    const data = await response.json();
-    if (data.wallets.length === 0) {
-      // if no wallets, create a default one
-      setCards([
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/wallet",
         {
-          id: 1,
-          currency: "AUD",
-          balance: 0,
-          gradient: "from-emerald-400 to-emerald-600",
-          symbol: "A$",
-        },
-      ]);
-    } else {
-      setCards(data.wallets);
+          method: "GET",
+        }
+      );
+      const data = await response.json();
+      setCards(data.wallets || []);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+      setCards([]);
     }
   };
 
@@ -48,17 +40,16 @@ function Forex() {
     { code: "JPY", symbol: "¥", name: "Japanese Yen" },
   ];
 
-  const userWallets = availableCurrencies
-    .map((currency) => ({
-      ...currency,
-      wallet: cards.find((card) => card.currency === currency.code),
-    }))
-    .filter((item) => item.wallet);
+  // Show all currencies regardless of wallet ownership
+  const userWallets = availableCurrencies.map((currency) => ({
+    ...currency,
+    wallet: cards.find((card) => card.currency === currency.code),
+  }));
 
   const getFromWallet = () =>
-    userWallets.find((w) => w.code === fromCurrency)?.wallet;
+    cards.find((card) => card.currency === fromCurrency);
   const getToWallet = () =>
-    userWallets.find((w) => w.code === toCurrency)?.wallet;
+    cards.find((card) => card.currency === toCurrency);
   const getFromSymbol = () =>
     availableCurrencies.find((c) => c.code === fromCurrency)?.symbol || "";
   const getToSymbol = () =>
@@ -77,6 +68,11 @@ function Forex() {
       return;
     }
 
+    if (!getFromWallet()) {
+      alert(`You need a ${fromCurrency} wallet to exchange from this currency`);
+      return;
+    }
+
     try {
       const response = await authFetch(
         "http://localhost:4000/api/dashboard/exchange",
@@ -86,8 +82,8 @@ function Forex() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            fromCurrencyCode: fromCurrency, // Dynamic instead of "AUD"
-            toCurrencyCode: toCurrency, // Dynamic instead of "USD"
+            fromCurrencyCode: fromCurrency,
+            toCurrencyCode: toCurrency,
             fromAmount: amount,
           }),
         }
@@ -124,8 +120,11 @@ function Forex() {
       }
     };
 
-    // call when page gets rendered, refresh every 10 seconds
+    // Fetch cards and rates when component mounts
+    fetchCards();
     fetchRates();
+    
+    // Refresh rates every 10 seconds
     const interval = setInterval(fetchRates, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -155,8 +154,9 @@ function Forex() {
           )}
         </div>
       </div>
+
       {/* Currency Exchange */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-md">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900">Currency Exchange</h3>
           <ArrowsRightLeftIcon className="w-5 h-5 text-gray-500" />
@@ -171,9 +171,9 @@ function Forex() {
               onChange={(e) => setFromCurrency(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
             >
-              {userWallets.map((wallet) => (
-                <option key={wallet.code} value={wallet.code}>
-                  {wallet.code} - {wallet.name}
+              {availableCurrencies.map((currency) => (
+                <option key={currency.code} value={currency.code}>
+                  {currency.code} - {currency.name}
                 </option>
               ))}
             </select>
@@ -193,10 +193,14 @@ function Forex() {
               />
             </div>
 
-            {getFromWallet() && (
+            {getFromWallet() ? (
               <p className="text-xs text-gray-500 mt-1">
                 Balance: {getFromSymbol()}
                 {formatBalance(getFromWallet()!.balance, fromCurrency)}
+              </p>
+            ) : (
+              <p className="text-xs text-red-500 mt-1">
+                No {fromCurrency} wallet found
               </p>
             )}
           </div>
@@ -214,11 +218,11 @@ function Forex() {
               onChange={(e) => setToCurrency(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
             >
-              {userWallets
-                .filter((wallet) => wallet.code !== fromCurrency)
-                .map((wallet) => (
-                  <option key={wallet.code} value={wallet.code}>
-                    {wallet.code} - {wallet.name}
+              {availableCurrencies
+                .filter((currency) => currency.code !== fromCurrency)
+                .map((currency) => (
+                  <option key={currency.code} value={currency.code}>
+                    {currency.code} - {currency.name}
                   </option>
                 ))}
             </select>
@@ -235,10 +239,14 @@ function Forex() {
               />
             </div>
 
-            {getToWallet() && (
+            {getToWallet() ? (
               <p className="text-xs text-gray-500 mt-1">
                 Balance: {getToSymbol()}
                 {formatBalance(getToWallet()!.balance, toCurrency)}
+              </p>
+            ) : (
+              <p className="text-xs text-orange-500 mt-1">
+                {toCurrency} wallet will be created if needed
               </p>
             )}
           </div>
@@ -248,9 +256,7 @@ function Forex() {
             disabled={
               !exchangeAmount ||
               !getFromWallet() ||
-              !getToWallet() ||
-              fromCurrency === toCurrency ||
-              userWallets.length < 2
+              fromCurrency === toCurrency
             }
             className="w-full flex items-center justify-center space-x-2 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-all"
           >
@@ -260,11 +266,26 @@ function Forex() {
             </span>
           </button>
 
-          {userWallets.length < 2 && (
-            <p className="text-xs text-red-500 text-center">
-              You need at least 2 different currency wallets to exchange
-            </p>
-          )}
+          {/* Helpful Messages */}
+          <div className="space-y-1">
+            {!getFromWallet() && (
+              <p className="text-xs text-red-500 text-center">
+                You need a {fromCurrency} wallet to exchange from this currency
+              </p>
+            )}
+            
+            {fromCurrency === toCurrency && (
+              <p className="text-xs text-red-500 text-center">
+                Please select different currencies
+              </p>
+            )}
+
+            {!exchangeAmount && (
+              <p className="text-xs text-gray-500 text-center">
+                Enter an amount to exchange
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
