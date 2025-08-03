@@ -40,6 +40,7 @@ export async function getSavedContacts(req: Request, res: Response) {
       email: row.added_by === 'email' ? row.email : null,
       phone: row.added_by === 'phone' ? row.phone : null,
       bank_account: row.added_by === 'bank_account' ? row.bank_account : null,
+      contact_account_id: row.contact_account_id,
     }));
 
     console.log("Result to send:", result);

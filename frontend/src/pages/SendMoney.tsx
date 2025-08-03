@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { SendToBankForm } from "../components/SendToBankForm";
 import { SendToUserForm } from "../components/SendToUserForm";
+import { SavedContacts } from "../components/SavedContacts";
 import { authFetch } from "../services/firebaseFetch";
-import type { Card, PaymentRequest } from "../types/index";
-
-
+import type { Card, PaymentRequest, SentPayment, Contact } from "../types";
 
 const SendMoney: React.FC = () => {
   const [cards, setCards] = useState<Card[]>([]);
@@ -20,6 +19,10 @@ const SendMoney: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<"requests" | "user" | "bank">("requests");
 
+  // SavedContacts functionality
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showContactSuccess, setShowContactSuccess] = useState(false);
+
   const fetchPaymentRequests = async () => {
     try {
       const response = await authFetch("http://localhost:4000/api/payment-request/received", {
@@ -33,11 +36,6 @@ const SendMoney: React.FC = () => {
       setLoadingRequests(false);
     }
   };
-
-  useEffect(() => {
-    fetchCards();
-    fetchPaymentRequests();
-  }, []);
 
   const fetchCards = async () => {
     try {
@@ -67,35 +65,54 @@ const SendMoney: React.FC = () => {
     setSelectedPayment(null);
   };
 
-  //
   const handleSubmitPayment = async () => {
-  if (!selectedPayment) return;
+    if (!selectedPayment) return;
 
-  try {
-    const response = await authFetch(
-      `http://localhost:4000/api/payment-request/${selectedPayment.id}/settle`,
-      {
-        method: "PATCH",
+    try {
+      const response = await authFetch(
+        `http://localhost:4000/api/payment-request/${selectedPayment.id}/settle`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.error || "Failed to settle payment.");
       }
-    );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error?.error || "Failed to settle payment.");
+      alert(`Payment to ${selectedPayment.username_from} settled.`);
+      setIsModalOpen(false);
+      setSelectedPayment(null);
+
+      // Refresh list
+      fetchPaymentRequests();
+    } catch (error) {
+      console.error("Error settling payment:", error);
+      alert("Could not settle payment. Please try again.");
     }
+  };
 
-    alert(`Payment to ${selectedPayment.username_from} settled.`);
-    setIsModalOpen(false);
-    setSelectedPayment(null);
+  // SavedContacts handlers
+  const handleContactSelect = (contact: Contact) => {
+    setSelectedContact(contact);
+    setShowContactSuccess(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowContactSuccess(false);
+    }, 3000);
+  };
 
-    // Refresh list
+  const handleAddNewContact = () => {
+    // TODO: Navigate to add contact page
+    console.log("Navigate to add contact page");
+  };
+
+  useEffect(() => {
+    fetchCards();
     fetchPaymentRequests();
-  } catch (error) {
-    console.error("Error settling payment:", error);
-    alert("Could not settle payment. Please try again.");
-  }
-};
-  
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -198,6 +215,37 @@ const SendMoney: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Saved Contacts Section */}
+      <div className="pt-8 border-t border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Saved Contacts
+        </h2>
+        <p className="text-gray-600 mb-4">
+          Select a contact to send money to them quickly
+        </p>
+        
+        {/* Success Message */}
+        {showContactSuccess && selectedContact && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-green-800">
+                Contact "{selectedContact.nickname || selectedContact.name}" selected for sending money!
+              </span>
+            </div>
+          </div>
+        )}
+
+        <SavedContacts
+          onSelect={handleContactSelect}
+          onAddNew={handleAddNewContact}
+          actionText="Send Money"
+          showEditModal={false}
+        />
+      </div>
 
       {/* Payment Request Settlement Modal */}
       {isModalOpen && selectedPayment && (

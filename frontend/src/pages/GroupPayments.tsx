@@ -5,7 +5,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { SavedContacts } from "../components/SavedContacts";
 import { MOCK_GROUPS } from "./GroupPaymentsDashboard";
+import type { Contact } from "../types";
 
 // Mock data for balances - in real app this would come from API
 const MOCK_BALANCES = [
@@ -52,6 +54,10 @@ export default function GroupPayments() {
   const [customAmounts, setCustomAmounts] = useState<{ [key: string]: string }>(
     {}
   );
+
+  // SavedContacts functionality
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showContactSuccess, setShowContactSuccess] = useState(false);
 
   // Mock group members - in real app this would come from API
   const groupMembers = ["You", "@Person", "@Pizza", "@Apple"];
@@ -147,6 +153,22 @@ export default function GroupPayments() {
     } else {
       alert("Please fill in all fields and select at least one member.");
     }
+  };
+
+  // SavedContacts handlers
+  const handleContactSelect = (contact: Contact) => {
+    setSelectedContact(contact);
+    setShowContactSuccess(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowContactSuccess(false);
+    }, 3000);
+  };
+
+  const handleAddNewContact = () => {
+    // TODO: Navigate to add contact page
+    console.log("Navigate to add contact page");
   };
 
   if (!id) {
@@ -452,6 +474,37 @@ export default function GroupPayments() {
           </div>
         </div>
       )}
+
+      {/* Saved Contacts Section */}
+      <div className="pt-8 border-t border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Saved Contacts
+        </h2>
+        <p className="text-gray-600 mb-4">
+          Select a contact to add them to this group
+        </p>
+        
+        {/* Success Message */}
+        {showContactSuccess && selectedContact && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-green-800">
+                Contact "{selectedContact.nickname || selectedContact.name}" selected for adding to group!
+              </span>
+            </div>
+          </div>
+        )}
+
+                     <SavedContacts
+               onSelect={handleContactSelect}
+               onAddNew={handleAddNewContact}
+               actionText="Add to Group"
+               showEditModal={false}
+             />
+      </div>
     </div>
   );
 }
