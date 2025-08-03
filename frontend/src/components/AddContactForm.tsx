@@ -19,9 +19,11 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
 
   // Bank account form fields
   const [bsb, setBsb] = useState('');
+  const [routingNumber, setRoutingNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
+  const [bankCountry, setBankCountry] = useState<'AU' | 'US'>('AU');
 
   // Common fields
   const [nickname, setNickname] = useState('');
@@ -63,14 +65,29 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
           break;
 
         case 'bank-account':
-          if (!bsb.trim() || !accountNumber.trim()) {
-            setError('Both BSB and account number are required');
+          if (bankCountry === 'AU' && !bsb.trim()) {
+            setError('BSB is required for Australian bank accounts');
+            return;
+          }
+          if (bankCountry === 'US' && !routingNumber.trim()) {
+            setError('Routing number is required for US bank accounts');
+            return;
+          }
+          if (!accountNumber.trim()) {
+            setError('Account number is required');
+            return;
+          }
+          if (!accountHolderName.trim()) {
+            setError('Account holder name is required');
             return;
           }
           requestData = {
             type: 'bank_account',
-            bsb: bsb.trim(),
+            country: bankCountry,
+            ...(bankCountry === 'AU' ? { bsb: bsb.trim() } : { routingNumber: routingNumber.trim() }),
             accountNumber: accountNumber.trim(),
+            accountHolderName: accountHolderName.trim(),
+            accountEmail: accountEmail.trim() || undefined,
             nickname: nickname.trim() || undefined
           };
           break;
@@ -95,10 +112,12 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
       // Reset form
       setSearchValue('');
       setBsb('');
+      setRoutingNumber('');
       setAccountNumber('');
       setAccountHolderName('');
       setAccountEmail('');
       setNickname('');
+      setBankCountry('AU');
 
       // Call success callback with the new contact after a delay
       setTimeout(() => {
@@ -193,6 +212,19 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Country
+              </label>
+              <select
+                value={bankCountry}
+                onChange={(e) => setBankCountry(e.target.value as 'AU' | 'US')}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+              >
+                <option value="AU">Australia</option>
+                <option value="US">United States</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Their email (optional)
               </label>
               <input
@@ -215,19 +247,35 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
                 placeholder="Enter full name"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                BSB code
-              </label>
-              <input
-                type="text"
-                value={bsb}
-                onChange={(e) => setBsb(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="802985"
-                maxLength={7}
-              />
-            </div>
+            {bankCountry === 'AU' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  BSB code
+                </label>
+                <input
+                  type="text"
+                  value={bsb}
+                  onChange={(e) => setBsb(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="802985"
+                  maxLength={6}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Routing number
+                </label>
+                <input
+                  type="text"
+                  value={routingNumber}
+                  onChange={(e) => setRoutingNumber(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="021000021"
+                  maxLength={9}
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Account number
@@ -237,7 +285,7 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="123456789"
+                placeholder={bankCountry === 'AU' ? "12345678" : "1234567890"}
               />
             </div>
           </div>
