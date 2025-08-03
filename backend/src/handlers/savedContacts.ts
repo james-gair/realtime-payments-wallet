@@ -102,14 +102,14 @@ export async function updateContactNickname(req: Request, res: Response): Promis
 
 export async function addContact(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
-  const { contact_account_id, nickname, name,added_by, added_value, email, phone, bank_account } = req.body;
+  const { contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account } = req.body;
 
   try {
     const account_id = await getAccountId(auth_id);
 
-    // Update the nickname
+    // Insert into saved_contacts table
     const result = await sql`
-      INSERT INTO bill_payments (
+      INSERT INTO saved_contacts (
         account_id,
         contact_account_id,
         nickname,
@@ -118,7 +118,7 @@ export async function addContact(req: Request, res: Response) {
         added_value,
         email,
         phone,
-        bank_account,
+        bank_account
       ) VALUES (
         ${account_id},
         ${contact_account_id},
@@ -128,7 +128,7 @@ export async function addContact(req: Request, res: Response) {
         ${added_value},
         ${email},
         ${phone},
-        ${bank_account},
+        ${bank_account}
       )
       RETURNING id;
     `;
