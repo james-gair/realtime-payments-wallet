@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SavedContacts } from "../components/SavedContacts";
 import type { Contact } from "../types";
 
 function Contacts() { 
+  const navigate = useNavigate();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
@@ -17,8 +20,12 @@ function Contacts() {
   };
 
   const handleAddNew = () => {
-    // TODO: Navigate to add contact page
-    console.log("Navigate to add contact page");
+    navigate("/add-contact");
+  };
+
+  const handleContactAdded = () => {
+    // Trigger a refresh of the contacts list
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -39,6 +46,7 @@ function Contacts() {
         )}
 
         <SavedContacts 
+          key={refreshKey}
           onSelect={handleContactSelect}
           onAddNew={handleAddNew}
           actionText="Edit"
