@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 import { getAccountId } from "../utils/getAccountId";
+import { AddContactReq } from "../dtos/AddContactReq";
+import { lookupPayIDContact } from "../services/payidService";
+import { lookupBankAccountContact } from "../services/bankAccountService";
+import { lookupUSBankAccountContact } from "../services/usBankAccountService";
 
 export async function getSavedContacts(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
@@ -37,13 +41,281 @@ export async function getSavedContacts(req: Request, res: Response) {
       email: row.added_by === 'email' ? row.email : null,
       phone: row.added_by === 'phone' ? row.phone : null,
       bank_account: row.added_by === 'bank_account' ? row.bank_account : null,
+      contact_account_id: row.contact_account_id,
+      // Bank account specific fields
+      bsb: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 6 ? row.bank_account?.split('-')[0] : null,
+      routing_number: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 9 ? row.bank_account?.split('-')[0] : null,
+      account_number: row.added_by === 'bank_account' ? row.bank_account?.split('-')[1] : null,
+      account_holder_name: row.added_by === 'bank_account' ? row.name : null,
+      account_email: row.added_by === 'bank_account' ? row.email : null,
     }));
 
     console.log("Result to send:", result);
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error retrieving saved contacts", error);
+    console.error("Error retrieving saved contacts:", error);
     res.status(500).send({ error: "Failed to retrieve saved contacts" });
+  }
+}
+
+export async function updateContactNickname(req: Request, res: Response): Promise<void> {
+  const auth_id = (req as any).user.uid;
+  const { contactId, nickname } = req.body;
+
+  if (!contactId || typeof contactId !== 'number') {
+    res.status(400).json({ error: "Contact ID is required and must be a number" });
+    return;
+  }
+
+  if (nickname !== undefined && (typeof nickname !== 'string' || nickname.length > 50)) {
+    res.status(400).json({ error: "Nickname must be a string and cannot exceed 50 characters" });
+    return;
+  }
+
+  try {
+    const account_id = await getAccountId(auth_id);
+    
+    // Check if the contact belongs to the user
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+    `;
+
+    if (existingContact.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    // Update the nickname
+    const result = await sql`
+      UPDATE saved_contacts 
+      SET nickname = ${nickname || null}
+      WHERE id = ${contactId} AND account_id = ${account_id}
+      RETURNING id, nickname, name
+    `;
+
+    if (result.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    res.status(200).json({
+      id: result[0].id,
+      nickname: result[0].nickname,
+      name: result[0].name
+    });
+  } catch (error) {
+    console.error("Error updating contact nickname:", error);
+    res.status(500).json({ error: "Failed to update contact nickname" });
+  }
+}
+
+export async function deleteContact(req: Request, res: Response): Promise<void> {
+  const auth_id = (req as any).user.uid;
+  const contactId = parseInt(req.params.contactId);
+
+  if (!contactId || isNaN(contactId)) {
+    res.status(400).json({ error: "Valid contact ID is required" });
+    return;
+  }
+
+  try {
+    const account_id = await getAccountId(auth_id);
+    
+    // Check if the contact belongs to the user
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+    `;
+
+    if (existingContact.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    // Delete the contact
+    const result = await sql`
+      DELETE FROM saved_contacts 
+      WHERE id = ${contactId} AND account_id = ${account_id}
+      RETURNING id
+    `;
+
+    if (result.length === 0) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+
+    res.status(200).json({ message: "Contact deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    res.status(500).json({ error: "Failed to delete contact" });
+  }
+}
+
+export async function addContact(req: Request, res: Response) {
+  const auth_id = (req as any).user.uid;
+  const contactData: AddContactReq = req.body;
+
+  try {
+    const account_id = await getAccountId(auth_id);
+
+    let contactInfo: {
+      name: string;
+      added_by: string;
+      added_value: string;
+      contact_account_id?: number;
+      email?: string;
+      phone?: string;
+      bank_account?: string;
+    };
+
+    switch (contactData.type) {
+      case 'account':
+        // Handle account-based contact addition
+        const { searchValue, nickname } = contactData;
+        
+        if (!searchValue) {
+          res.status(400).json({ error: "Search value is required" });
+          return;
+        }
+
+        // Find the account by username, phone, or email
+        let accountQuery;
+        if (searchValue.startsWith('@')) {
+          // Username search (remove @ symbol)
+          const username = searchValue.substring(1);
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE username = ${username}`;
+        } else if (searchValue.includes('@')) {
+          // Email search
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE email = ${searchValue}`;
+        } else {
+          // Phone search
+          accountQuery = await sql`SELECT account_id, username, first_name, last_name, email, phone FROM accounts WHERE phone = ${searchValue}`;
+        }
+
+        if (accountQuery.length === 0) {
+          res.status(404).json({ error: "Account not found" });
+          return;
+        }
+
+        const account = accountQuery[0];
+        const name = `${account.first_name} ${account.last_name}`.trim();
+        
+        contactInfo = {
+          name,
+          added_by: searchValue.startsWith('@') ? 'username' : searchValue.includes('@') ? 'email' : 'phone',
+          added_value: searchValue,
+          contact_account_id: account.account_id,
+          email: account.email,
+          phone: account.phone
+        };
+        break;
+
+      case 'payid':
+        // Handle PayID-based contact addition
+        const payidInfo = await lookupPayIDContact(contactData.payid);
+        
+        contactInfo = {
+          name: payidInfo.name,
+          added_by: contactData.payid.includes('@') ? 'email' : 'phone',
+          added_value: contactData.payid,
+          email: payidInfo.email,
+          phone: payidInfo.phone
+        };
+        break;
+
+      case 'bank_account':
+        // Handle bank account-based contact addition
+        let bankInfo;
+        let addedValue;
+        let bankAccountValue;
+        
+        if (contactData.country === 'AU') {
+          if (!contactData.bsb) {
+            res.status(400).json({ error: "BSB is required for Australian bank accounts" });
+            return;
+          }
+          bankInfo = await lookupBankAccountContact(contactData.bsb, contactData.accountNumber);
+          addedValue = `${contactData.bsb}-${contactData.accountNumber}`;
+          bankAccountValue = `${contactData.bsb}-${contactData.accountNumber}`;
+        } else if (contactData.country === 'US') {
+          if (!contactData.routingNumber) {
+            res.status(400).json({ error: "Routing number is required for US bank accounts" });
+            return;
+          }
+          bankInfo = await lookupUSBankAccountContact(contactData.routingNumber, contactData.accountNumber);
+          addedValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
+          bankAccountValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
+        } else {
+          res.status(400).json({ error: "Unsupported country for bank account" });
+          return;
+        }
+        
+        contactInfo = {
+          name: contactData.accountHolderName || bankInfo.name,
+          added_by: 'bank_account',
+          added_value: addedValue,
+          bank_account: bankAccountValue,
+          email: contactData.accountEmail || bankInfo.email
+        };
+        break;
+
+      default:
+        res.status(400).json({ error: "Invalid contact type" });
+        return;
+    }
+
+    // Check if contact already exists
+    const existingContact = await sql`
+      SELECT id FROM saved_contacts 
+      WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
+    `;
+
+    if (existingContact.length > 0) {
+      res.status(409).json({ error: "Contact already exists" });
+      return;
+    }
+
+    // Insert into saved_contacts table
+    const result = await sql`
+      INSERT INTO saved_contacts (
+        account_id,
+        contact_account_id,
+        nickname,
+        name,
+        added_by,
+        added_value,
+        email,
+        phone,
+        bank_account
+      ) VALUES (
+        ${account_id},
+        ${contactInfo.contact_account_id || null},
+        ${contactData.nickname || null},
+        ${contactInfo.name},
+        ${contactInfo.added_by},
+        ${contactInfo.added_value},
+        ${contactInfo.email || null},
+        ${contactInfo.phone || null},
+        ${contactInfo.bank_account || null}
+      )
+      RETURNING id;
+    `;
+
+    if (result.length === 0) {
+      res.status(500).json({ error: "Failed to add contact" });
+      return;
+    }
+    
+    res.status(200).json({ 
+      contactId: result[0].id,
+      name: contactInfo.name,
+      added_by: contactInfo.added_by,
+      added_value: contactInfo.added_value
+    });
+  } catch (error) {
+    console.error("Error adding contact:", error);
+    res.status(500).json({ error: "Failed to add contact" });
   }
 }
