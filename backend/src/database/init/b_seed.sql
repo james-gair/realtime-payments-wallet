@@ -38,6 +38,8 @@ INSERT INTO wallets (account_id, currency_id, balance) VALUES
   (2, 2, 1000.00),
   (2, 1, 1000.00),
   (1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
+  (1, 2, 200.00),  -- testuser's USD wallet (account_id=2)
+  (1, 3, 200.00),  -- testuser's YEN wallet (account_id=3)
   (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
 INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time) VALUES
