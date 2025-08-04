@@ -42,9 +42,6 @@ INSERT INTO wallets (account_id, currency_id, balance) VALUES
   (1, 3, 200.00),  -- testuser's YEN wallet (account_id=3)
   (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
-INSERT INTO cashback_deals (deal_wallet_id, min_spend_amount, cashback_amount) VALUES
-  (7, 10, 2);
-
 -------------------------------------------------------
 -- Bill Payments test data
 -- One-time payment with bank account (should succeed)
