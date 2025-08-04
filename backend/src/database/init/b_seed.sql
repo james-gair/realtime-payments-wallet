@@ -20,14 +20,6 @@ INSERT INTO wallets (wallet_id, account_id, currency_id, balance) VALUES
   (1, 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
   (2, 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
-
-INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time, currency) VALUES
-    ('Figma Subscription', 15.00, '{"subscription"}', 1, 4, '2023-10-01T10:00:00.000Z', 1),
-    ('Salary', 2500.00, '{"finance", "income"}', 4, 1, '2023-10-05T09:00:00.000Z', 1),
-    ('Coffee', 5.50, '{"drink", "cafe"}', 1, 4, '2023-10-06T08:30:00.000Z', 1),
-    ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z', 2),
-    ('Dinner with Friends', 75.00, '{"food", "restaurant"}', 1, 3, '2023-10-12T20:00:00.000Z', 1);
-
 -- Example: Australian bank account (not linked to an account)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
 VALUES (1, NULL, 'Aussie Bank', 'James Johnson', 'bank_account', '802985-12345678', 'james.johnson@example.com', NULL, '802985-12345678');
@@ -45,6 +37,8 @@ INSERT INTO wallets (account_id, currency_id, balance) VALUES
   (1, 3, 200.00),  -- testuser's YEN wallet (account_id=3)
   (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
+INSERT INTO cashback_deals (deal_wallet_id, min_spend_amount, cashback_amount) VALUES
+  (7, 10, 2);
 -------------------------------------------------------
 -- Bill Payments test data
 -- One-time payment with bank account (should succeed)
