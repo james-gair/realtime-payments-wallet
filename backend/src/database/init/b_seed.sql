@@ -42,6 +42,9 @@ INSERT INTO wallets (account_id, currency_id, balance) VALUES
   (1, 3, 200.00),  -- testuser's YEN wallet (account_id=3)
   (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
+INSERT INTO cashback_deals (deal_wallet_id, min_spend_amount, cashback_amount) VALUES
+  (7, 10, 2);
+
 INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time) VALUES
     ('Figma Subscription', 15.00, '{"design","software","subscription"}', 1, 4, '2023-10-01T10:00:00.000Z'),
     ('Salary', 2500.00, '{"income", "work"}', 4, 1, '2023-10-05T09:00:00.000Z'),

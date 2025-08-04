@@ -227,6 +227,8 @@ export async function postTransferCurrency(req: Request, res: Response) {
   const senderFirebaseId = (req as any).user.uid;
   const { recipientUsername, currencyCode, amount } = req.body;
 
+  console.log("transfermoney triggered")
+
   if (amount <= 0) {
     res.status(400).json({ error: "enter postive transfer amount" });
     return;
@@ -285,6 +287,24 @@ export async function postTransferCurrency(req: Request, res: Response) {
         SET balance = balance + ${amount}
         WHERE wallet_id = ${recipientWallet.wallet_id}
       `;
+
+      console.log("Recipient wallet ID:", recipientWallet.wallet_id);
+
+      // cashback logic
+      const [deal] = await sql`
+        SELECT * FROM cashback_deals
+        WHERE deal_wallet_id = ${recipientWallet.wallet_id}
+      `;
+
+      if (deal && amount >= deal.min_spend_amount) {
+        console.log("cashback deal found")
+        await sql`
+          UPDATE wallets
+          SET balance = balance + ${deal.cashback_amount}
+          WHERE wallet_id = ${senderWallet.wallet_id}
+        `;
+        // log cashback ???
+      }
 
       // TODO
       // !!!! THIS NEEDS TO BE INSERTED INTO TRANSACTION RECORD AS WELL

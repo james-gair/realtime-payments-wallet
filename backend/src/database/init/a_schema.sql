@@ -62,6 +62,14 @@ CREATE TABLE wallets (
   CONSTRAINT fk_wallets_currency FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
 );
 
+CREATE TABLE cashback_deals (
+  deal_id SERIAL PRIMARY KEY,
+  deal_wallet_id INTEGER NOT NULL REFERENCES wallets(wallet_id) ON DELETE CASCADE,
+  min_spend_amount NUMERIC(18,2) NOT NULL CHECK (min_spend_amount >= 0),
+  cashback_amount NUMERIC(18,2) NOT NULL CHECK (cashback_amount > 0)
+);
+
+
 CREATE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
