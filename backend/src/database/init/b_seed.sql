@@ -28,6 +28,13 @@ INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wa
     ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z', 2),
     ('Dinner with Friends', 75.00, '{"food", "restaurant"}', 1, 3, '2023-10-12T20:00:00.000Z', 1);
 
+-- Example: Australian bank account (not linked to an account)
+INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
+VALUES (1, NULL, 'Aussie Bank', 'James Johnson', 'bank_account', '802985-12345678', 'james.johnson@example.com', NULL, '802985-12345678');
+
+-- Example: US bank account (not linked to an account)
+INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
+VALUES (1, NULL, 'US Bank', 'Sarah Johnson', 'bank_account', '021000021-1234567890', 'sarah.johnson@example.com', NULL, '021000021-1234567890');
 
 INSERT INTO wallets (account_id, currency_id, balance) VALUES
   (4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
