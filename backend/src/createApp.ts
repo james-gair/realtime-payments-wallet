@@ -10,6 +10,7 @@ import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
+import transactionsRouter from "./routes/transactions";
 import savedContactsRouter from "./routes/savedContacts";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
@@ -41,6 +42,7 @@ export function createApp() {
   app.use("/api/payment-request", paymentRequestRouter);
   app.use("/api", savedContactsRouter);
   app.use("/api", paymentsRouter);
+  app.use("/api", transactionsRouter);
   app.use(errorHandler);
 
   return app;
