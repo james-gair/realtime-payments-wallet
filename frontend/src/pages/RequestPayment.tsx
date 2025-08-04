@@ -92,7 +92,7 @@ const RequestPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="space-y-8">
       {/* Toggle Buttons */}
       <h1 className="text-3xl font-bold text-gray-900">
         {view === "request" ? "Request Payment" : "Previously Sent Requests"}
@@ -215,7 +215,7 @@ const RequestPage: React.FC = () => {
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-gray-800 font-medium">
-                      To: <span className="font-bold">@{req.account_id_to}</span>
+                     To: <span className="font-bold">@{req.recipient_username}</span>
                     </div>
                     <div className="text-sm text-gray-500">
                       {new Date(req.created_at).toLocaleDateString()}
@@ -223,7 +223,7 @@ const RequestPage: React.FC = () => {
                   </div>
                   <div className="text-gray-700">Amount: ${req.amount}</div>
                   <div className="text-gray-600 text-sm mt-1">{req.description}</div>
-                  <div className="text-sm mt-2 text-amber-500 font-semibold">
+                  <div className="text-sm mt-2 text-color-purple-500 font-semibold">
                     Status: {req.status}
                   </div>
 

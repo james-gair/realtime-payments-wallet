@@ -3,6 +3,8 @@ import sql from "../database/client";
 import { CancelBillParams } from "../dtos/BillPaymentReq";
 import { BillInputs, billPaymentSchema } from "../schemas/billPayment.schema";
 import { getAccountId } from "../utils/getAccountId";
+import { payBillAction } from "../utils/billPayments";
+import { checkPaymentLimitForWalletId } from "../services/checkPaymentLimits";
 
 export interface BillRecord {
   billId: string;
@@ -16,6 +18,19 @@ export interface BillRecord {
   amount: number;
   nextRunAt: Date;
   currencyCode: string;
+}
+
+export interface Bill {
+  id: number;
+  accountId: number;
+  walletId: number;
+  amount: number;
+  payMethod: string;
+  billDisplayName?: string;
+  billerBsb?: string;
+  billerBankAccountNumber?: string;
+  billerBpayCode?: string;
+  billerBpayRef?: string;
 }
 
 export type UpcomingBillRes = BillRecord;
@@ -40,17 +55,13 @@ export async function payBill(req: Request, res: Response) {
 
   const data = parseResult.data;
 
-  /******************
-   * TODO: pay the NOT scheduled bills and mark it as complete if successed
-   *******************
-   */
-  // After scuccessfully paid, if this is a recurring bill and NOT scheduled,
+  // If this is a recurring bill and NOT scheduled,
   // set the next run at to the next run time:
-  const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
+  // const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
 
   // Save the bill payment to db:
   // get the account_id:
-  const account_id = await getAccountId(firebase_id);
+  const accountId = await getAccountId(firebase_id);
   // insert value to db
   const result = await sql`
   INSERT INTO bill_payments (
@@ -69,9 +80,10 @@ export async function payBill(req: Request, res: Response) {
     next_run_at,
     frequency,
     reminder,
-    remind_before_num_days
+    remind_before_num_days,
+    status
   ) VALUES (
-    ${account_id},
+    ${accountId},
     ${data.walletId},
     ${data.amount},
     ${data.payMethod},
@@ -83,16 +95,43 @@ export async function payBill(req: Request, res: Response) {
     ${data.billDisplayName ?? null},
     ${data.type},
     ${data.firstPaymentDate},
-    ${nextRunAt || data.firstPaymentDate},
+    ${data.firstPaymentDate},
     ${data.frequency ?? null},
     ${data.reminder ?? false},
-    ${data.reminderDays ?? null}
+    ${data.reminderDays ?? null},
+    -- set the processing status if the first payment date is today
+    -- so that we can prevent potential racing conditions
+    -- between the immediate payment and the scheduled cron jobs for today
+   
+    ${isDateToday(data.firstPaymentDate) ? "processing" : "active"}
   )
   RETURNING id;
 `;
 
-  //console.log(result);
   res.status(200).json({ billId: result[0].id });
+
+  /******************
+   * pay bills that are not scheduled.
+   *******************
+   */
+  const bill: Bill = {
+    id: result[0].id,
+    accountId: Number(accountId),
+    walletId: data.walletId,
+    amount: data.amount,
+    payMethod: data.payMethod,
+    billDisplayName: data.billDisplayName,
+    billerBsb: data.billerBsb,
+    billerBankAccountNumber: data.billerBankAccountNumber,
+    billerBpayCode: data.billerBpayCode?.toString(),
+    billerBpayRef: data.billerBpayRef,
+  };
+
+  checkPaymentLimitForWalletId(data.walletId.toString());
+
+  if (isDateToday(data.firstPaymentDate)) {
+    await payBillAction(bill);
+  }
   return;
 }
 
@@ -127,7 +166,7 @@ export async function getUpcomingBills(req: Request, res: Response) {
       JOIN wallets w ON bp.wallet_id = w.wallet_id
       JOIN currencies c ON w.currency_id = c.currency_id
       WHERE bp.status = 'active' 
-        AND bp.next_run_at > now()
+        AND bp.next_run_at::date > CURRENT_DATE
     `;
     });
 
@@ -201,7 +240,7 @@ export async function getAvailableWallets(req: Request, res: Response) {
       JOIN currencies c ON w.currency_id = c.currency_id
       WHERE w.account_id = ${account_id}
     `;
-    ////console.log(wallets);
+
     res.status(200).json(wallets);
     return;
   } catch (err) {
@@ -215,8 +254,7 @@ export async function getSavedBillById(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
   const account_id = await getAccountId(firebase_id);
   const billId = Number(req.params.id);
-  //console.log(account_id);
-  //console.log(billId);
+
   if (isNaN(billId)) {
     res.status(400).json({ error: "Invalid bill ID." });
     return;
@@ -251,14 +289,13 @@ export async function getSavedBillById(req: Request, res: Response) {
         FROM bill_payments bp
         JOIN wallets w ON bp.wallet_id = w.wallet_id
         JOIN currencies c ON w.currency_id = c.currency_id
-        WHERE bp.status = 'active'
-          AND bp.id = ${billId}
+        WHERE bp.id = ${billId}
           AND bp.account_id = ${account_id}
       `;
 
       return rows;
     });
-    //console.log(results);
+
     if (results.length === 0) {
       res.status(404).json({ error: "Bill not found." });
       return;
@@ -273,7 +310,7 @@ export async function getSavedBillById(req: Request, res: Response) {
 export async function updateBillInfo(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
   const billId = Number(req.params.id);
-  //console.log(billId);
+
   if (!firebase_id) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
@@ -368,4 +405,13 @@ function getNextRunAtIfDueToday(data: BillInputs): string | null {
   }
 
   return null;
+}
+
+function isDateToday(date: Date): boolean {
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
 }

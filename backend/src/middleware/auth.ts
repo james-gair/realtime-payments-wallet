@@ -21,7 +21,8 @@ export async function authenticateFirebaseToken(
   // This is not a secure way to handle authentication,
   // and should never be used in production.
   // It is only for development convenience.
-  console.log("NODE_ENV", process.env.NODE_ENV);
+
+  // console.log("NODE_ENV", process.env.NODE_ENV);
   if (
     process.env.NODE_ENV === "development" &&
     authHeader === "Bearer dev-bypass"

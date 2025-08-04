@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { isUserVerified } from "../utils/isUerKycVerified";
+import { isUserVerified } from "../utils/kyc";
 
 /**
  * Middleware to ensure the user has completed KYC verification.

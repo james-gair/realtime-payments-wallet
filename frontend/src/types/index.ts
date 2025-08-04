@@ -40,11 +40,17 @@ export interface Transaction {
 // PAYMENT TYPES
 // ============================================================================
 
+
 export interface PaymentRequest {
   id: number;
-  recipient: string;
+  account_id_from: number;
+  username_from: string;
+  account_id_to: number;
   amount: number;
   description: string;
+  status: "pending" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SentPayment {
@@ -60,6 +66,10 @@ export interface BankAccountForm {
   accountNumber: string;
   description: string;
 }
+
+// ============================================================================
+// Payment Limits Types
+// ============================================================================
 
 // ============================================================================
 // FOREX & RATES TYPES
@@ -151,7 +161,7 @@ export interface UserProfile {
 
 export interface KYCVerifyResultResponse {
   result: "verified" | "rejected";
-  validatedData: any; // Using any for now, can be refined based on schema
+  validatedData: unknown; // Using any for now, can be refined based on schema
   verifiedAt: string; // ISO timestamp string
   idType: "passport" | "driver_license";
 }

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { isUserVerified } from "../utils/isUerKycVerified";
+import { isUserVerified } from "../utils/kyc";
 /**
  * !!: For KYC backend route:
  *

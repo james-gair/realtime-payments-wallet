@@ -4,7 +4,8 @@ import {
   postPaymentRequest,
   getReceivedPaymentRequests,
   getSentPaymentRequests,
-  deletePaymentRequest
+  deletePaymentRequest,
+  settlePaymentRequest
 } from "../handlers/paymentRequests";
 
 const router = Router();
@@ -13,6 +14,7 @@ router.post("/", authenticateFirebaseToken as any, postPaymentRequest);
 router.get("/received", authenticateFirebaseToken as any, getReceivedPaymentRequests);
 router.get("/sent", authenticateFirebaseToken as any, getSentPaymentRequests);
 router.delete("/:id", authenticateFirebaseToken as any, deletePaymentRequest);
+router.patch("/:id/settle", authenticateFirebaseToken as any, settlePaymentRequest);
 
 export default router;
 

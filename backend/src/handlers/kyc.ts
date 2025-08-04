@@ -4,9 +4,12 @@ import FormData from "form-data";
 import sql from "../database/client";
 import { KYCVerifyResultResponse } from "../dtos/KYCVerifyResponse";
 import { verifyKyc } from "../services/verifyKyc";
-import { constructKycFormData } from "../utils/constructKycFormData";
-import { saveVerifiedAccountIdInDb } from "../utils/saveVerifiedAccountIdInDb";
-import { updataKycVerificationStatus } from "../utils/updateKycVerificationStatus";
+import {
+  constructKycFormData,
+  createWalletAfterSuccessfulKyc,
+  saveVerifiedAccountIdInDb,
+  updataKycVerificationStatus,
+} from "../utils/kyc";
 
 export async function kycHandler(req: Request, res: Response) {
   // get user id
@@ -76,41 +79,8 @@ export async function kycHandler(req: Request, res: Response) {
       firebase_id
     );
     if (updated && saved) {
-      // ---> NEW LOGIC STARTS HERE <---
-      // After local KYC success
-      try {
-        // 1. Get the user's account details from our DB
-        const userResult = await sql`
-          SELECT account_id FROM accounts WHERE firebase_id = ${firebase_id}
-        `;
-
-        if (userResult.length === 0) {
-          throw new Error("Could not find user in database after KYC update.");
-        }
-
-        const user = userResult[0];
-
-        const currencyResult =
-          await sql`SELECT currency_id FROM currencies WHERE code = 'AUD'`;
-        if (currencyResult.length === 0) {
-          // This should not happen if the DB is seeded correctly
-          throw new Error("AUD currency not found in database.");
-        }
-        const audCurrencyId = currencyResult[0].currency_id;
-
-        await sql`
-          INSERT INTO wallets (account_id, currency_id, balance)
-          VALUES (${user.account_id}, ${audCurrencyId}, 0)
-        `;
-      } catch (walletError: any) {
-        // If wallet creation fails, log it but don't fail the entire request.
-        // The user is still KYC'd on our end.
-        console.error(
-          "Critical: Failed to create AUD wallet for a verified user:",
-          walletError
-        );
-      }
-      // ---> NEW LOGIC ENDS HERE <---
+      // moved the new logic to a separate function
+      await createWalletAfterSuccessfulKyc(firebase_id);
 
       res.status(200).json({
         message: "User verified and wallet created successfully",

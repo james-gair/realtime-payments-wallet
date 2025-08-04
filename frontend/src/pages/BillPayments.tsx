@@ -1,11 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import {
-  UpcomingBillCard,
-  type UpcomingBill,
-} from "../components/UpcomingBillCard";
+import { UpcomingBillCard } from "../components/UpcomingBillCard";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import { ErrorModal } from "../components/ErrorModal";
+import type { UpcomingBill } from "../types";
 
 export function BillPayments() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;

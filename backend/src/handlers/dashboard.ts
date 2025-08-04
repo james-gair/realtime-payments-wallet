@@ -249,8 +249,8 @@ export async function getUserTransactions(req: Request, res: Response) {
         JOIN currencies currency ON transactions.currency = currency.currency_id
         JOIN wallets sender_wallet ON transactions.sender_wallet_id = sender_wallet.wallet_id
         JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
-        JOIN wallets recipient_wallet ON transactions.recipient_wallet_id = recipient_wallet.wallet_id
-        JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
+        LEFT JOIN wallets recipient_wallet ON transactions.recipient_wallet_id = recipient_wallet.wallet_id
+        LEFT JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
         ${whereClause}
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
