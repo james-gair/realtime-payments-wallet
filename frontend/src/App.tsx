@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router-dom";
 import NavbarLayout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddMoney from "./pages/AddMoney";
+import AddContact from "./pages/AddContact";
+import ContactDetails from "./pages/ContactDetails";
 import { BillConfirmation } from "./pages/BillConfirmation";
 import { BillPayments } from "./pages/BillPayments";
 import Contacts from "./pages/Contacts";
@@ -60,6 +62,8 @@ function App() {
           />
           <Route path="/profile" element={<Profile />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts/:contactId" element={<ContactDetails />} />
+          <Route path="/add-contact" element={<AddContact />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
           <Route path="/group-payments" element={<GroupPaymentsDashboard />} />

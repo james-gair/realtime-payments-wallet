@@ -1,51 +1,102 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 
-import { fetchSpecificExchangeRate } from "./fxRates";
-// Relative time logic moved to frontend
-// import dayjs from 'dayjs';
-// import relativeTime from 'dayjs/plugin/relativeTime';
-// dayjs.extend(relativeTime);
+import { ParsedQs } from 'qs';
 
-interface wallet {
+import { fetchSpecificExchangeRate } from "./fxRates";
+
+interface Wallet {
   id: number;
   currency: string;
   balance: number;
   symbol: string;
 }
 
-interface wallet_gradient extends wallet {
+interface WalletGradient extends Wallet {
   gradient: string;
 }
 
-interface transaction {
+interface Transaction {
   id: number;
   name: string;
   amount: string;
   time: string;
-  category?: string;
+  category?: string[];
 }
 
-interface transaction_icon extends transaction {
-  color: string;
+interface TransactionIcon extends Transaction {
+  color?: string;
   icon: string;
 }
-
 // add colours for wallet here
-const wallet_palette = [
+const walletPalette = [
   "from-emerald-400 to-emerald-600",
   "from-blue-400 to-blue-600",
   "from-purple-400 to-purple-600",
 ];
 
-const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
+interface IconCategory {
+  category: string;
+  icon: string;
+  parent?: string;
+}
+
+// const iconCategories: IconCategory[] = [
+//   { category: "food", icon: "🍽️" },
+//   { category: "groceries", icon: "🛒", parent: "food" },
+//   { category: "restaurant", icon: "🍝", parent: "food" },
+//   { category: "fast food", icon: "🍟", parent: "food" },
+//   { category: "drink", icon: "🥤"},
+//   { category: "cafe", icon: "☕", parent: "drink" },
+//   { category: "alcohol", icon: "🍷", parent: "drink" },
+
+//   { category: "housing", icon: "🏠" },
+//   { category: "rent", icon: "💸", parent: "housing" },
+//   { category: "mortgage", icon: "🏡", parent: "housing" },
+//   { category: "utilities", icon: "💡", parent: "housing" },
+//   { category: "internet", icon: "🌐", parent: "utilities" },
+//   { category: "electricity", icon: "🔌", parent: "utilities" },
+//   { category: "water", icon: "🚿", parent: "utilities" },
+
+//   { category: "finance", icon: "💳" },
+//   { category: "loan", icon: "🏦", parent: "finance" },
+//   { category: "investment", icon: "📈", parent: "finance" },
+//   { category: "income", icon: "💵", parent: "finance" },
+//   { category: "savings", icon: "💰", parent: "finance" },
+//   { category: "insurance", icon: "🛡️", parent: "finance" },
+
+//   { category: "shopping", icon: "🛍️" },
+//   { category: "clothing", icon: "👗", parent: "shopping" },
+//   { category: "electronics", icon: "📱", parent: "shopping" },
+//   { category: "furniture", icon: "🛋️", parent: "shopping" },
+//   { category: "online shopping", icon: "💻", parent: "shopping" },
+
+//   { category: "health", icon: "🏥" },
+//   { category: "pharmacy", icon: "💊", parent: "health" },
+//   { category: "doctor", icon: "🩺", parent: "health" },
+//   { category: "gym", icon: "🏋️", parent: "health" },
+
+//   { category: "entertainment", icon: "🎉" },
+//   { category: "movies", icon: "🎬", parent: "entertainment" },
+//   { category: "music", icon: "🎧", parent: "entertainment" },
+//   { category: "games", icon: "🎮", parent: "entertainment" },
+//   { category: "subscription", icon: "🔔", parent: "entertainment" },
+
+//   { category: "travel", icon: "✈️" },
+//   { category: "accommodation", icon: "🏨", parent: "travel" },
+//   { category: "flights", icon: "🛫", parent: "travel" },
+//   { category: "taxis", icon: "🚖", parent: "travel" },
+//   { category: "sightseeing", icon: "🗺️", parent: "travel" }
+// ];
+
+// const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
 
 export async function getUserWallet(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
 
   // get data from db excluding colour
   try {
-    const wallets: wallet[] = await sql`
+    const wallets: Wallet[] = await sql`
         SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
         c.code AS currency, CAST(w.balance AS FLOAT), c.symbol
         FROM wallets w 
@@ -55,9 +106,9 @@ export async function getUserWallet(req: Request, res: Response) {
       `;
 
     // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
-    const wallets_colour: wallet_gradient[] = wallets.map((w, c) => ({
+    const wallets_colour: WalletGradient[] = wallets.map((w, c) => ({
       ...w,
-      gradient: wallet_palette[c % wallet_palette.length],
+      gradient: walletPalette[c % walletPalette.length],
     }));
 
     res.json({
@@ -73,47 +124,207 @@ export async function getUserWallet(req: Request, res: Response) {
 }
 
 export async function getUserTransactions(req: Request, res: Response) {
-  const auth_id = (req as any).user.uid;
-  const offset = 0;
+    const auth_id = (req as any).user.uid;
 
-  try {
-    // need to add a method to asign colours
-    const transactions: transaction[] = await sql`
-        SELECT ROW_NUMBER() OVER (ORDER BY t.transaction_id) AS id,
-        t.name,
+    const { category, minAmount, maxAmount, 
+            startDate, endDate, sort, searchTerm} = req.query;
+    
+    try {
+      const baseConditions = [
+        sql`(sender_account.firebase_id = ${auth_id} OR recipient_account.firebase_id = ${auth_id})`
+      ];
+
+      if (minAmount !== undefined) {
+        console.log("push");
+        baseConditions.push(sql`transactions.amount >= ${Number(minAmount)}`);
+      }
+
+      if (maxAmount !== undefined) {
+        console.log("push");
+        baseConditions.push(sql`transactions.amount <= ${Number(maxAmount)}`);
+      }
+
+      function parseQueryParam(value: string | ParsedQs | (string | ParsedQs)[] | undefined): string | undefined {
+        if (typeof value === 'string') return value;
+        if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+        return undefined;
+      }
+
+      const rawStartDate = parseQueryParam(startDate);
+
+      if (rawStartDate) {
+        const start = new Date(rawStartDate);
+        if (!isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0);
+          baseConditions.push(sql`transactions.event_time >= ${start.toISOString()}`);
+        }
+      }
+
+      const rawEndDate = parseQueryParam(endDate);
+
+      if (rawEndDate) {
+        const end = new Date(rawEndDate);
+        if (!isNaN(end.getTime())) {
+          baseConditions.push(sql`transactions.event_time <= ${end.toISOString()}`);
+        }
+      }
+
+      if (searchTerm) {
+        const term = `${searchTerm}%`;
+        baseConditions.push(sql`transactions.name ILIKE ${term}`);
+      }
+
+      if(category) {
+        console.log(category)
+        const catTerm = `${category}`;
+        baseConditions.push(sql`${catTerm} = ANY(transactions.category)`);
+      }
+
+      console.log("Sort param:", sort);
+      let orderBy = sql`time DESC`;
+      if (sort === 'date-asc') {
+        orderBy = sql`time ASC`;
+      } else if (sort === 'amount-desc') {
+        orderBy = sql`transactions.amount DESC`;
+      } else if (sort === 'amount-asc') {
+        orderBy = sql`transactions.amount ASC`;
+      } else if (sort === 'name-asc') {
+        orderBy = sql`name ASC`;
+      } else if (sort === 'name-desc') {
+        orderBy = sql`name DESC`;
+      }
+
+      function sqlJoin(sqlArray: any[], separator: any) {
+        if (sqlArray.length === 0) return null;
+        return sqlArray.reduce((acc, curr, i) =>
+          i === 0 ? curr : sql`${acc}${separator}${curr}`
+        );
+      }
+
+      const whereClause = baseConditions.length > 0
+        ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
+        : sql``;
+
+          // SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
+      const transactions : Transaction[] = await sql`
+        SELECT transactions.transaction_id AS id,
+        transactions.name,
         CASE 
-          WHEN sender_account.firebase_id = ${auth_id} THEN -t.amount
-          ELSE t.amount
+          WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
+          ELSE transactions.amount
         END AS amount, 
-        t.event_time as time, 
-        t.category
-        FROM transactions t
-        JOIN wallets sender_wallet ON t.sender_wallet_id = sender_wallet.wallet_id
-        JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
-        -- modified from JOIN to LEFT JOIN recipient_wallet to avoid issues with null recipient
-        -- modified by Jennifer, for bill payments
-        LEFT JOIN wallets recipient_wallet ON t.recipient_wallet_id = recipient_wallet.wallet_id
-        LEFT JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
-        WHERE sender_account.firebase_id = ${auth_id}
-        OR recipient_account.firebase_id = ${auth_id}
-        ORDER BY t.event_time DESC, t.transaction_id DESC
-        LIMIT 20 OFFSET ${offset}
-      `;
-    //need to up limit to 20 after testing
+        currency.symbol,
+        transactions.event_time as time, 
+        transactions.category,
+          (
+        SELECT c.icon
+        FROM categories c
+        WHERE c.category = ANY(transactions.category)
+        ORDER BY array_position(transactions.category, c.category)
+        LIMIT 1
+      ) AS direct_icon,
 
-    // uses dayjs package to get time since this transaction
-    const transactions_time: transaction_icon[] = transactions.map((tx, c) => ({
-      ...tx,
-      // delete when cleaning up
-      // time: dayjs(tx.time).fromNow(),
-      color: transaction_palette[c % transaction_palette.length],
-      icon: "❓",
-    }));
+      (
+        SELECT p.icon
+        FROM categories c
+        JOIN categories p ON c.parent = p.category_id
+        WHERE c.category = ANY(transactions.category)
+        ORDER BY array_position(transactions.category, c.category)
+        LIMIT 1
+      ) AS fallback_icon,
+
+          COALESCE(
+            (
+              SELECT COALESCE(c.icon, p.icon)
+              FROM categories c
+              LEFT JOIN categories p ON c.parent = p.category_id
+              WHERE c.category = ANY(transactions.category)
+              ORDER BY array_position(transactions.category, c.category)
+              LIMIT 1
+            ),
+            '❓'
+          ) AS icon
+
+        FROM transactions transactions
+        JOIN currencies currency ON transactions.currency = currency.currency_id
+        JOIN wallets sender_wallet ON transactions.sender_wallet_id = sender_wallet.wallet_id
+        JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
+        LEFT JOIN wallets recipient_wallet ON transactions.recipient_wallet_id = recipient_wallet.wallet_id
+        LEFT JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
+        ${whereClause}
+        ORDER BY ${orderBy}, transactions.transaction_id DESC
+      `;
+
+      // const iconCategories = await sql`
+      //   SELECT c.category as category, COALESCE(c.icon, p.icon) AS icon, p.category as parent
+      //   FROM categories c
+      //   LEFT JOIN categories p on c.parent = p.category_id
+      // `;
+      // console.log("here")
+      // console.log(iconCategories)
+
+      // const categoryToIcon = new Map<string, string>();
+      // const categoryToParent = new Map<string, string | undefined>();
+
+
+      // for (const { category, icon, parent } of iconCategories) {
+      //   categoryToIcon.set(category, icon);
+      //   categoryToParent.set(category, parent);
+      // }
+
+      // function resolveIconFromCategories(categories: string[]): string {
+      //   // Sort longest paths first (most specific)
+      //   const sorted = [...categories].sort((a, b) => {
+      //     let depthA = getCategoryDepth(a);
+      //     let depthB = getCategoryDepth(b);
+      //     return depthB - depthA; // more specific first
+      //   });
+
+      //   for (const cat of sorted) {
+      //     let resolved = resolveCategoryToIcon(cat);
+      //     if (resolved) return resolved;
+      //   }
+
+      //   return "❓"; // Fallback
+      // }
+
+      // function resolveCategoryToIcon(category: string): string | undefined {
+      //   // Traverse up the hierarchy to find icon
+      //   let current = category;
+      //   while (current) {
+      //     const icon = categoryToIcon.get(current);
+      //     if (icon) return icon;
+      //     current = categoryToParent.get(current) ?? "";
+      //   }
+      //   return undefined;
+      // }
+
+      // function getCategoryDepth(category: string): number {
+      //   let depth = 0;
+      //   let current = category;
+      //   while (categoryToParent.has(current)) {
+      //     current = categoryToParent.get(current)!;
+      //     depth++;
+      //   }
+      //   return depth;
+      // }
+
+      // const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
+      //   const icon = Array.isArray(tx.category)
+      //     ? resolveIconFromCategories(tx.category)
+      //     : "❓";
+
+      //   return {
+      //     ...tx,
+      //     // color: transaction_palette[c % transaction_palette.length],
+      //     icon
+      //   };
+      // });
 
     res.json({
-      transactions: transactions_time,
+      transactions: transactions,
     });
-    console.log(transactions_time);
+    console.log(transactions);
 
     return;
   } catch (error) {
