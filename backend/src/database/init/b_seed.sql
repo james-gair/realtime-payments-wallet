@@ -45,14 +45,6 @@ INSERT INTO wallets (account_id, currency_id, balance) VALUES
 INSERT INTO cashback_deals (deal_wallet_id, min_spend_amount, cashback_amount) VALUES
   (7, 10, 2);
 
-INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time) VALUES
-    ('Figma Subscription', 15.00, '{"design","software","subscription"}', 1, 4, '2023-10-01T10:00:00.000Z'),
-    ('Salary', 2500.00, '{"income", "work"}', 4, 1, '2023-10-05T09:00:00.000Z'),
-    ('Coffee', 5.50, '{"food", "cafe"}', 1, 4, '2023-10-06T08:30:00.000Z'),
-    ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z'),
-    ('Dinner with Friends', 75.00, '{"food", "social"}', 1, 3, '2023-10-12T20:00:00.000Z');
-
-
 -------------------------------------------------------
 -- Bill Payments test data
 -- One-time payment with bank account (should succeed)
