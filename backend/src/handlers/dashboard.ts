@@ -41,53 +41,53 @@ interface IconCategory {
   parent?: string;
 }
 
-const iconCategories: IconCategory[] = [
-  { category: "food", icon: "🍽️" },
-  { category: "groceries", icon: "🛒", parent: "food" },
-  { category: "restaurant", icon: "🍝", parent: "food" },
-  { category: "fast food", icon: "🍟", parent: "food" },
-  { category: "drink", icon: "🥤"},
-  { category: "cafe", icon: "☕", parent: "drink" },
-  { category: "alcohol", icon: "🍷", parent: "drink" },
+// const iconCategories: IconCategory[] = [
+//   { category: "food", icon: "🍽️" },
+//   { category: "groceries", icon: "🛒", parent: "food" },
+//   { category: "restaurant", icon: "🍝", parent: "food" },
+//   { category: "fast food", icon: "🍟", parent: "food" },
+//   { category: "drink", icon: "🥤"},
+//   { category: "cafe", icon: "☕", parent: "drink" },
+//   { category: "alcohol", icon: "🍷", parent: "drink" },
 
-  { category: "housing", icon: "🏠" },
-  { category: "rent", icon: "💸", parent: "housing" },
-  { category: "mortgage", icon: "🏡", parent: "housing" },
-  { category: "utilities", icon: "💡", parent: "housing" },
-  { category: "internet", icon: "🌐", parent: "utilities" },
-  { category: "electricity", icon: "🔌", parent: "utilities" },
-  { category: "water", icon: "🚿", parent: "utilities" },
+//   { category: "housing", icon: "🏠" },
+//   { category: "rent", icon: "💸", parent: "housing" },
+//   { category: "mortgage", icon: "🏡", parent: "housing" },
+//   { category: "utilities", icon: "💡", parent: "housing" },
+//   { category: "internet", icon: "🌐", parent: "utilities" },
+//   { category: "electricity", icon: "🔌", parent: "utilities" },
+//   { category: "water", icon: "🚿", parent: "utilities" },
 
-  { category: "finance", icon: "💳" },
-  { category: "loan", icon: "🏦", parent: "finance" },
-  { category: "investment", icon: "📈", parent: "finance" },
-  { category: "income", icon: "💵", parent: "finance" },
-  { category: "savings", icon: "💰", parent: "finance" },
-  { category: "insurance", icon: "🛡️", parent: "finance" },
+//   { category: "finance", icon: "💳" },
+//   { category: "loan", icon: "🏦", parent: "finance" },
+//   { category: "investment", icon: "📈", parent: "finance" },
+//   { category: "income", icon: "💵", parent: "finance" },
+//   { category: "savings", icon: "💰", parent: "finance" },
+//   { category: "insurance", icon: "🛡️", parent: "finance" },
 
-  { category: "shopping", icon: "🛍️" },
-  { category: "clothing", icon: "👗", parent: "shopping" },
-  { category: "electronics", icon: "📱", parent: "shopping" },
-  { category: "furniture", icon: "🛋️", parent: "shopping" },
-  { category: "online shopping", icon: "💻", parent: "shopping" },
+//   { category: "shopping", icon: "🛍️" },
+//   { category: "clothing", icon: "👗", parent: "shopping" },
+//   { category: "electronics", icon: "📱", parent: "shopping" },
+//   { category: "furniture", icon: "🛋️", parent: "shopping" },
+//   { category: "online shopping", icon: "💻", parent: "shopping" },
 
-  { category: "health", icon: "🏥" },
-  { category: "pharmacy", icon: "💊", parent: "health" },
-  { category: "doctor", icon: "🩺", parent: "health" },
-  { category: "gym", icon: "🏋️", parent: "health" },
+//   { category: "health", icon: "🏥" },
+//   { category: "pharmacy", icon: "💊", parent: "health" },
+//   { category: "doctor", icon: "🩺", parent: "health" },
+//   { category: "gym", icon: "🏋️", parent: "health" },
 
-  { category: "entertainment", icon: "🎉" },
-  { category: "movies", icon: "🎬", parent: "entertainment" },
-  { category: "music", icon: "🎧", parent: "entertainment" },
-  { category: "games", icon: "🎮", parent: "entertainment" },
-  { category: "subscription", icon: "🔔", parent: "entertainment" },
+//   { category: "entertainment", icon: "🎉" },
+//   { category: "movies", icon: "🎬", parent: "entertainment" },
+//   { category: "music", icon: "🎧", parent: "entertainment" },
+//   { category: "games", icon: "🎮", parent: "entertainment" },
+//   { category: "subscription", icon: "🔔", parent: "entertainment" },
 
-  { category: "travel", icon: "✈️" },
-  { category: "accommodation", icon: "🏨", parent: "travel" },
-  { category: "flights", icon: "🛫", parent: "travel" },
-  { category: "taxis", icon: "🚖", parent: "travel" },
-  { category: "sightseeing", icon: "🗺️", parent: "travel" }
-];
+//   { category: "travel", icon: "✈️" },
+//   { category: "accommodation", icon: "🏨", parent: "travel" },
+//   { category: "flights", icon: "🛫", parent: "travel" },
+//   { category: "taxis", icon: "🚖", parent: "travel" },
+//   { category: "sightseeing", icon: "🗺️", parent: "travel" }
+// ];
 
 // const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
 
@@ -128,7 +128,6 @@ export async function getUserTransactions(req: Request, res: Response) {
 
     const { category, minAmount, maxAmount, 
             startDate, endDate, sort, searchTerm} = req.query;
-
     
     try {
       const baseConditions = [
@@ -206,8 +205,9 @@ export async function getUserTransactions(req: Request, res: Response) {
         ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
         : sql``;
 
+          // SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
       const transactions : Transaction[] = await sql`
-        SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
+        SELECT transactions.transaction_id AS id,
         transactions.name,
         CASE 
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
@@ -215,78 +215,116 @@ export async function getUserTransactions(req: Request, res: Response) {
         END AS amount, 
         currency.symbol,
         transactions.event_time as time, 
-        transactions.category
+        transactions.category,
+          (
+        SELECT c.icon
+        FROM categories c
+        WHERE c.category = ANY(transactions.category)
+        ORDER BY array_position(transactions.category, c.category)
+        LIMIT 1
+      ) AS direct_icon,
+
+      (
+        SELECT p.icon
+        FROM categories c
+        JOIN categories p ON c.parent = p.category_id
+        WHERE c.category = ANY(transactions.category)
+        ORDER BY array_position(transactions.category, c.category)
+        LIMIT 1
+      ) AS fallback_icon,
+
+          COALESCE(
+            (
+              SELECT COALESCE(c.icon, p.icon)
+              FROM categories c
+              LEFT JOIN categories p ON c.parent = p.category_id
+              WHERE c.category = ANY(transactions.category)
+              ORDER BY array_position(transactions.category, c.category)
+              LIMIT 1
+            ),
+            '❓'
+          ) AS icon
+
         FROM transactions transactions
         JOIN currencies currency ON transactions.currency = currency.currency_id
-        JOIN wallets sender_wallet ON transactions.sender = sender_wallet.wallet_id
+        JOIN wallets sender_wallet ON transactions.sender_wallet_id = sender_wallet.wallet_id
         JOIN accounts sender_account on sender_wallet.account_id = sender_account.account_id
-        JOIN wallets recipient_wallet ON transactions.recipient = recipient_wallet.wallet_id
+        JOIN wallets recipient_wallet ON transactions.recipient_wallet_id = recipient_wallet.wallet_id
         JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
         ${whereClause}
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
 
-      const categoryToIcon = new Map<string, string>();
-      const categoryToParent = new Map<string, string | undefined>();
+      // const iconCategories = await sql`
+      //   SELECT c.category as category, COALESCE(c.icon, p.icon) AS icon, p.category as parent
+      //   FROM categories c
+      //   LEFT JOIN categories p on c.parent = p.category_id
+      // `;
+      // console.log("here")
+      // console.log(iconCategories)
 
-      for (const { category, icon, parent } of iconCategories) {
-        categoryToIcon.set(category, icon);
-        categoryToParent.set(category, parent);
-      }
+      // const categoryToIcon = new Map<string, string>();
+      // const categoryToParent = new Map<string, string | undefined>();
 
-      function resolveIconFromCategories(categories: string[]): string {
-        // Sort longest paths first (most specific)
-        const sorted = [...categories].sort((a, b) => {
-          let depthA = getCategoryDepth(a);
-          let depthB = getCategoryDepth(b);
-          return depthB - depthA; // more specific first
-        });
 
-        for (const cat of sorted) {
-          let resolved = resolveCategoryToIcon(cat);
-          if (resolved) return resolved;
-        }
+      // for (const { category, icon, parent } of iconCategories) {
+      //   categoryToIcon.set(category, icon);
+      //   categoryToParent.set(category, parent);
+      // }
 
-        return "❓"; // Fallback
-      }
+      // function resolveIconFromCategories(categories: string[]): string {
+      //   // Sort longest paths first (most specific)
+      //   const sorted = [...categories].sort((a, b) => {
+      //     let depthA = getCategoryDepth(a);
+      //     let depthB = getCategoryDepth(b);
+      //     return depthB - depthA; // more specific first
+      //   });
 
-      function resolveCategoryToIcon(category: string): string | undefined {
-        // Traverse up the hierarchy to find icon
-        let current = category;
-        while (current) {
-          const icon = categoryToIcon.get(current);
-          if (icon) return icon;
-          current = categoryToParent.get(current) ?? "";
-        }
-        return undefined;
-      }
+      //   for (const cat of sorted) {
+      //     let resolved = resolveCategoryToIcon(cat);
+      //     if (resolved) return resolved;
+      //   }
 
-      function getCategoryDepth(category: string): number {
-        let depth = 0;
-        let current = category;
-        while (categoryToParent.has(current)) {
-          current = categoryToParent.get(current)!;
-          depth++;
-        }
-        return depth;
-      }
+      //   return "❓"; // Fallback
+      // }
 
-      const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
-        const icon = Array.isArray(tx.category)
-          ? resolveIconFromCategories(tx.category)
-          : "❓";
+      // function resolveCategoryToIcon(category: string): string | undefined {
+      //   // Traverse up the hierarchy to find icon
+      //   let current = category;
+      //   while (current) {
+      //     const icon = categoryToIcon.get(current);
+      //     if (icon) return icon;
+      //     current = categoryToParent.get(current) ?? "";
+      //   }
+      //   return undefined;
+      // }
 
-        return {
-          ...tx,
-          // color: transaction_palette[c % transaction_palette.length],
-          icon
-        };
-      });
+      // function getCategoryDepth(category: string): number {
+      //   let depth = 0;
+      //   let current = category;
+      //   while (categoryToParent.has(current)) {
+      //     current = categoryToParent.get(current)!;
+      //     depth++;
+      //   }
+      //   return depth;
+      // }
+
+      // const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
+      //   const icon = Array.isArray(tx.category)
+      //     ? resolveIconFromCategories(tx.category)
+      //     : "❓";
+
+      //   return {
+      //     ...tx,
+      //     // color: transaction_palette[c % transaction_palette.length],
+      //     icon
+      //   };
+      // });
 
     res.json({
-      transactions: transactions_time,
+      transactions: transactions,
     });
-    console.log(transactions_time);
+    console.log(transactions);
 
     return;
   } catch (error) {

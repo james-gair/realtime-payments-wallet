@@ -82,10 +82,16 @@ CREATE TABLE transactions (
   event_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
   currency INTEGER REFERENCES currencies(currency_id),
-  sender INTEGER REFERENCES wallets(wallet_id),
-  recipient INTEGER REFERENCES wallets(wallet_id)
+  sender_wallet_id INTEGER REFERENCES wallets(wallet_id),
+  recipient_wallet_id INTEGER REFERENCES wallets(wallet_id)
 );
 
+CREATE TABLE categories (
+  category_id SERIAL PRIMARY KEY,
+  category TEXT UNIQUE NOT NULL,
+  icon TEXT NOT NULL,
+  parent INTEGER REFERENCES categories(category_id) DEFAULT NULL
+);
 
 CREATE TYPE payment_type AS ENUM ('one-time', 'recurring');
 CREATE TYPE payment_frequency AS ENUM ('weekly', 'fortnightly', 'monthly');

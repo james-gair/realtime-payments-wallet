@@ -89,11 +89,11 @@ function Transactions() {
   const [showDownloadCSV, setDownloadCSV] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState<string[] | null>(null);
   const [showNewCategory, setNewCategory] = useState<boolean>(false);
-  const [deleteCategory, setDeleteCategory] = useState<string | null>(null);
-  const [addCategory, setAddCategory] = useState<string | null>(null);
+  const [changeCategory, setChangeCategory] = useState<string[] | null>(null);
 
   // error handling
   const [errorMessage, setErrorMessage] = useState<string | null>("");
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   
   async function downloadCSVData() {
     try {
@@ -106,9 +106,52 @@ function Transactions() {
       console.error("Failed to download CSV", err);
     }
   }
+
+  async function removeCategoryFromTransaction(transactionId: number, category: string) {
+    try {
+      const response = await authFetch(`${backendUrl}/api/transactions/${transactionId}/category`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ category })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove category");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error removing category:", error);
+      throw error;
+    }
+  }
+
+  async function addCategoryFromTransaction(transactionId: number, category: string) {
+    try {
+      const response = await authFetch(`${backendUrl}/api/transactions/${transactionId}/category`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ category })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add category");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error adding category:", error);
+      throw error;
+    }
+  }
   
   // allow for delay before successive fetch calls
   useEffect(() => {
+    console.log("trigger")
     if (!showAdvanced) {
       const handler = setTimeout(() => {
         setAppliedFilters(prev => ({ ...prev, searchTerm: inputFilters.searchTerm }));
@@ -319,7 +362,11 @@ function Transactions() {
 
         {categoryPopup && (
           <div
-            onClick={() => setCategoryPopup(null)} // Close on background click
+            // onClick={() => setCategoryPopup(null)} // Close on background click
+            onClick={() => {
+                setNewCategory(false);
+                setCategoryPopup(null);
+              }}
             style={{
               position: "fixed",
               top: 0,
@@ -334,7 +381,7 @@ function Transactions() {
           >
             <div
               onClick={(e) => e.stopPropagation()} // stop closing when clicking inside
-              className="bg-white p-4 rounded-lg max-w-sm w-full shadow-lg"
+              className="bg-white p-4 rounded-lg max-w-lg w-full shadow-lg"
             >
               <h2 className="text-lg font-semibold mb-2">Categories</h2>
               <div className="flex flex-wrap gap-2">
@@ -346,9 +393,18 @@ function Transactions() {
                 >
                   <span className="mr-2">{capitalise(cat)}</span>
                   <button
-                    onClick={() => {
-                      setCategoryPopup(categoryPopup.filter((_, i) => i !== index));
-                      setDeleteCategory(cat);
+                     onClick={async () => {
+                      const newCategories = categoryPopup.filter((_, i) => i !== index);
+                      setCategoryPopup(newCategories);
+                      setChangeCategory(newCategories);
+
+                      try {
+                        if (selectedTransactionId) {
+                          await removeCategoryFromTransaction(selectedTransactionId, cat);
+                        }
+                      } catch (err) {
+                        setErrorMessage("Failed to remove category. Please try again.");
+                      }
                     }}
                     className="text-gray-400 hover:text-red-600 font-bold text-xs ml-1"
                     title="Remove"
@@ -361,21 +417,40 @@ function Transactions() {
                   className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
                 >
 
-                {/* {showNewCategory && (
-                  <div className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200">
-                    <input
-                      type="text"
-                      placeholder="Category"
-                      className="sm:w-64 border border-gray-300 p-2 rounded-xl w-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition"
-                    />
-                  </div>
-                )}  */}
+                {showNewCategory ? (
+                  <select
+                    className="flex-1 border border-gray-300 px-3 py-2 rounded-lg"
+                    onChange={async (e) => {
+                    const selectedCategory = e.target.value;
+                    if (!selectedTransactionId || !selectedCategory) return;
 
-                {!showNewCategory && ( 
+                    try {
+                      await addCategoryFromTransaction(selectedTransactionId, selectedCategory);
+                      setAppliedFilters(prev => ({ ...prev })); // Trigger refetch
+                      setCategoryPopup(prev =>
+                        prev ? [...prev, selectedCategory] : [selectedCategory]
+                      );
+                      setNewCategory(false);                    // Hide dropdown
+                    } catch {
+                      setErrorMessage("Failed to add category");
+                    }
+                  }}
+                  >
+                    <option value="" hidden>Select Category</option>
+                    <option value="">All</option>
+                    {transactionCategories
+                      .filter(item => !categoryPopup?.includes(item.category))
+                      .map((item, index) => (
+                      <option key={index} value={item.category}>
+                        {capitalise(item.category)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
                   <button
                     onClick={() => setNewCategory(!showNewCategory)}
                     className="text-blue-400 font-bold text-xs ml-1"
-                    title="Remove"
+                    title="Add"
                     >
                       Add New +
                   </button>
@@ -386,6 +461,7 @@ function Transactions() {
               onClick={() => {
                 setNewCategory(false);
                 setCategoryPopup(null);
+                setAppliedFilters(prev => ({ ...prev }));
               }}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
@@ -444,7 +520,12 @@ function Transactions() {
         {transaction.category?.map((catItem, idx) => (
           <div
             key={idx}
-            onClick={() => setCategoryPopup(transaction.category)}
+            onClick={() => {
+              console.log(transaction.id)
+              setCategoryPopup(transaction.category || []);
+              setSelectedTransactionId(transaction.id);
+            }}
+
             className="flex items-center gap-1 cursor-pointer select-none bg-blue-50 rounded px-2 py-1 hover:bg-blue-200"
             title={`Click ${catItem}`}
           >
