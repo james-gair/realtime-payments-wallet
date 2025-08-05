@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SavedContacts } from "../components/SavedContacts";
-import { SendToUserForm } from "../components/SendToUserForm";
-import { SendToBankForm } from "../components/SendToBankForm";
 import { authFetch } from "../services/firebaseFetch";
 import type { Card, PaymentRequest, SentPayment, Contact } from "../types";
 
@@ -14,20 +12,79 @@ interface SendFormData {
   description: string;
 }
 
-const MOCK_SENT_PAYMENTS: SentPayment[] = [
-  {
-    id: 1,
-    recipient: "Alice",
-    amount: 150,
-    description: "Payment for project",
-  },
-  {
-    id: 2,
-    recipient: "Charlie",
-    amount: 300,
-    description: "Payment for consulting",
-  },
-];
+interface SuccessModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  amount: string;
+  recipient: string;
+  currency: string;
+  currencySymbol: string;
+}
+
+function SuccessModal({
+  isOpen,
+  onClose,
+  amount,
+  recipient,
+  currency,
+  currencySymbol,
+}: SuccessModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg
+              className="h-6 w-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Transfer Successful!
+          </h3>
+
+          <div className="space-y-2 text-sm text-gray-600 mb-6">
+            <p>
+              <span className="font-medium">Amount:</span> {currencySymbol}
+              {amount}
+            </p>
+            <p>
+              <span className="font-medium">To:</span> {recipient}
+            </p>
+            <p>
+              <span className="font-medium">Currency:</span> {currency}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl transition-all"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const SendMoney: React.FC = () => {
   const navigate = useNavigate();
@@ -47,14 +104,17 @@ const SendMoney: React.FC = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
-  const [activeTab, setActiveTab] = useState<"requests" | "user" | "bank">("requests");
+  const [activeTab, setActiveTab] = useState<"send" | "requests">("send");
 
-  // Mock user wallets - in real app this would come from API
-  const userWallets = [
-    { currency: 'AUD', currencyCode: 'AUD' },
-    { currency: 'USD', currencyCode: 'USD' },
-    { currency: 'EUR', currencyCode: 'EUR' }
-  ];
+  // Transfer functionality
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successDetails, setSuccessDetails] = useState({
+    amount: "",
+    recipient: "",
+    currency: "",
+    symbol: "",
+  });
 
   // Check if we're returning from adding a contact
   useEffect(() => {
@@ -123,7 +183,23 @@ const SendMoney: React.FC = () => {
     }));
   };
 
-  const handleSubmitSend = (e: React.FormEvent) => {
+  const getTransferWallet = () => {
+    return cards.find((card) => card.currency === formData.currency);
+  };
+
+  const getTransferSymbol = () => {
+    const wallet = getTransferWallet();
+    return wallet?.symbol || "";
+  };
+
+  const formatBalance = (balance: number, currency: string): string => {
+    return balance.toLocaleString(undefined, {
+      minimumFractionDigits: currency === "JPY" ? 0 : 2,
+      maximumFractionDigits: currency === "JPY" ? 0 : 2,
+    });
+  };
+
+  const handleSubmitSend = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedContact) {
@@ -136,8 +212,70 @@ const SendMoney: React.FC = () => {
       return;
     }
 
-    // Go to confirmation step
-    setCurrentStep('confirmation');
+    const amount = parseFloat(formData.amount);
+    const wallet = getTransferWallet();
+
+    if (!wallet || amount > wallet.balance) {
+      alert("Insufficient balance");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Determine recipient based on contact type
+      let recipientUsername = "";
+      if (selectedContact.username) {
+        recipientUsername = selectedContact.username;
+      } else if (selectedContact.email) {
+        recipientUsername = selectedContact.email;
+      } else if (selectedContact.phone) {
+        recipientUsername = selectedContact.phone;
+      } else {
+        throw new Error("Invalid contact information");
+      }
+
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/transfer",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recipientUsername: recipientUsername,
+            currencyCode: formData.currency,
+            amount: amount,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        // Store success details
+        setSuccessDetails({
+          amount: formData.amount,
+          recipient: selectedContact.nickname || selectedContact.name,
+          currency: formData.currency,
+          symbol: getTransferSymbol(),
+        });
+
+        // Reset form
+        setFormData({ currency: '', amount: '', description: '' });
+        setSelectedContact(null);
+        setCurrentStep('select-contact');
+
+        // Show success modal
+        setShowSuccessModal(true);
+      } else {
+        const errorData = await response.json();
+        alert(`Transfer failed: ${errorData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error transferring money:", error);
+      alert("Error transferring money. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmSend = () => {
@@ -146,20 +284,8 @@ const SendMoney: React.FC = () => {
       return;
     }
 
-    // TODO: Submit send to backend
-    console.log("Send money:", {
-      contact: selectedContact,
-      currency: formData.currency,
-      amount: formData.amount,
-      description: formData.description
-    });
-
-    alert(`Payment sent to ${selectedContact.nickname || selectedContact.name} for ${formData.currency} ${formData.amount}`);
-    
-    // Reset and go back to contact selection
-    setCurrentStep('select-contact');
-    setSelectedContact(null);
-    setFormData({ currency: '', amount: '', description: '' });
+    // Go to confirmation step
+    setCurrentStep('confirmation');
   };
 
   const handleBackToContacts = () => {
@@ -170,6 +296,11 @@ const SendMoney: React.FC = () => {
 
   const handleBackToDetails = () => {
     setCurrentStep('send-details');
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessDetails({ amount: "", recipient: "", currency: "", symbol: "" });
   };
 
   // Payment request handlers
@@ -222,12 +353,20 @@ const SendMoney: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Send Money</h1>
         <p className="text-gray-600 mt-2">
-          Pay friends quickly or send money to any bank account
+          Pay friends quickly or settle payment requests
         </p>
       </div>
 
       {/* Tab Toggle */}
       <div className="flex gap-4 border-b border-gray-200 pb-4">
+        <button
+          onClick={() => setActiveTab("send")}
+          className={`px-4 py-2 font-semibold ${
+            activeTab === "send" ? "border-b-2 border-black text-black" : "text-gray-500"
+          }`}
+        >
+          Send to Someone
+        </button>
         <button
           onClick={() => setActiveTab("requests")}
           className={`px-4 py-2 font-semibold ${
@@ -236,28 +375,32 @@ const SendMoney: React.FC = () => {
         >
           Settle Payment Requests
         </button>
-        <button
-          onClick={() => setActiveTab("user")}
-          className={`px-4 py-2 font-semibold ${
-            activeTab === "user" ? "border-b-2 border-black text-black" : "text-gray-500"
-          }`}
-        >
-          Send to Users
-        </button>
-        <button
-          onClick={() => setActiveTab("bank")}
-          className={`px-4 py-2 font-semibold ${
-            activeTab === "bank" ? "border-b-2 border-black text-black" : "text-gray-500"
-          }`}
-        >
-          Send to Bank
-        </button>
       </div>
 
       {/* Conditional Content */}
+      {activeTab === "send" && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Who are you sending to?
+            </h2>
+            <p className="text-gray-600">
+              Select a contact to send money to them quickly
+            </p>
+          </div>
+
+          <SavedContacts 
+            onSelect={handleContactSelect}
+            onAddNew={handleAddNewContact}
+            actionText="Send Money"
+            showEditModal={false}
+          />
+        </div>
+      )}
+
       {activeTab === "requests" && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2"> Payment Requests from Friends</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Requests from Friends</h2>
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <ul role="list" className="divide-y divide-gray-100">
               {loadingRequests ? (
@@ -293,47 +436,6 @@ const SendMoney: React.FC = () => {
           </div>
         </div>
       )}
-
-      {activeTab === "user" && (
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Friend</h2>
-          <p className="text-gray-600 mb-4">
-            Transfer money instantly to another user by username
-          </p>
-          <SendToUserForm cards={cards} />
-        </div>
-      )}
-
-      {activeTab === "bank" && (
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Send to Bank Account</h2>
-          <p className="text-gray-600 mb-4">
-            Transfer money directly to any bank account
-          </p>
-          <SendToBankForm
-            cards={cards}
-            selectedCard={selectedCard}
-            setSelectedCard={setSelectedCard}
-          />
-        </div>
-      )}
-
-      {/* Send to Contact Section */}
-      <div className="pt-8 border-t border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Who are you sending to?
-        </h2>
-        <p className="text-gray-600 mb-4">
-          Select a contact to send money to them quickly
-        </p>
-
-        <SavedContacts 
-          onSelect={handleContactSelect}
-          onAddNew={handleAddNewContact}
-          actionText="Send Money"
-          showEditModal={false}
-        />
-      </div>
     </div>
   );
 
@@ -375,9 +477,9 @@ const SendMoney: React.FC = () => {
               required
             >
               <option value="">Select a currency</option>
-              {userWallets.map(wallet => (
-                <option key={wallet.currencyCode} value={wallet.currencyCode}>
-                  {wallet.currency}
+              {cards.map(card => (
+                <option key={card.currency} value={card.currency}>
+                  {card.currency} ({card.symbol})
                 </option>
               ))}
             </select>
@@ -388,18 +490,50 @@ const SendMoney: React.FC = () => {
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
               Amount *
             </label>
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              placeholder="Enter amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              required
-              min="0"
-              step="0.01"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 text-lg">
+                  {formData.currency === 'AUD' ? 'A$' : 
+                   formData.currency === 'USD' ? '$' : 
+                   formData.currency === 'EUR' ? '€' : 
+                   formData.currency === 'JPY' ? '¥' : ''}
+                </span>
+              </div>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                placeholder="Enter amount"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 pl-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                required
+                min="0"
+                step="0.01"
+                max={getTransferWallet()?.balance || 0}
+              />
+            </div>
+
+            {/* Balance Display */}
+            {getTransferWallet() && (
+              <p className="text-sm text-gray-500 mt-1">
+                Available Balance: {getTransferSymbol()}
+                {formatBalance(getTransferWallet()!.balance, formData.currency)}
+              </p>
+            )}
+
+            {/* Insufficient balance warning */}
+            {getTransferWallet() &&
+              formData.amount &&
+              parseFloat(formData.amount) > getTransferWallet()!.balance && (
+                <p className="text-red-600 text-sm mt-1">
+                  Insufficient balance. Available: {getTransferSymbol()}
+                  {formatBalance(
+                    getTransferWallet()!.balance,
+                    formData.currency
+                  )}
+                </p>
+              )}
           </div>
 
           {/* Description */}
@@ -421,9 +555,42 @@ const SendMoney: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-lg transition-all"
+            disabled={
+              !formData.amount ||
+              !formData.currency ||
+              !selectedContact ||
+              isLoading ||
+              (getTransferWallet() &&
+                parseFloat(formData.amount) > getTransferWallet()!.balance)
+            }
+            className="w-full flex items-center justify-center space-x-3 py-4 bg-black hover:bg-zinc-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition-all font-semibold hover:cursor-pointer"
           >
-            Continue to Review
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Processing Transfer...</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                <span>
+                  Send {getTransferSymbol()}
+                  {formData.amount || "0"} to {selectedContact?.nickname || selectedContact?.name || "contact"}
+                </span>
+              </>
+            )}
           </button>
         </form>
       </div>
@@ -460,7 +627,12 @@ const SendMoney: React.FC = () => {
           </div>
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
             <span className="text-gray-600">Amount:</span>
-            <span className="font-semibold">{formData.currency} {formData.amount}</span>
+            <span className="font-semibold">
+              {formData.currency === 'AUD' ? 'A$' : 
+               formData.currency === 'USD' ? '$' : 
+               formData.currency === 'EUR' ? '€' : 
+               formData.currency === 'JPY' ? '¥' : ''}{formData.amount}
+            </span>
           </div>
           {formData.description && (
             <div className="flex justify-between items-start py-3 border-b border-gray-200">
@@ -477,10 +649,18 @@ const SendMoney: React.FC = () => {
         {/* Action Buttons */}
         <div className="mt-8 space-y-3">
           <button
-            onClick={handleConfirmSend}
-            className="w-full py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-lg transition-all"
+            onClick={handleSubmitSend}
+            disabled={isLoading}
+            className="w-full py-3 bg-black hover:bg-zinc-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all"
           >
-            Send Payment
+            {isLoading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              "Send Payment"
+            )}
           </button>
           <button
             onClick={handleBackToDetails}
@@ -542,6 +722,16 @@ const SendMoney: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        amount={successDetails.amount}
+        recipient={successDetails.recipient}
+        currency={successDetails.currency}
+        currencySymbol={successDetails.symbol}
+      />
     </div>
   );
 };
