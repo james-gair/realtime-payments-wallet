@@ -15,10 +15,11 @@ INSERT INTO currencies (currency_id, code, symbol) VALUES
 
 
 INSERT INTO wallets (wallet_id, account_id, currency_id, balance) VALUES
-  (4, 4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
-  (3, 2, 2, 1000.00),
   (1, 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
-  (2, 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
+  (2, 3, 1, 50.00),    -- nouser's AUD wallet (account_id=3)
+  (3, 2, 2, 1000.00),  -- testuserverified's USD wallet (account_id=2)
+  (4, 4, 1, 5000.00),  -- Edwin's AUD wallet (account_id=4)
+  (5, 2, 1, 1000.00);  -- testuserverified's AUD wallet (account_id=2)
 
 
 INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time, currency) VALUES
@@ -28,16 +29,13 @@ INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wa
     ('Netflix', 20.00, '{"entertainment","subscription"}', 2, 4, '2023-10-10T18:00:00.000Z', 2),
     ('Dinner with Friends', 75.00, '{"food", "restaurant"}', 1, 3, '2023-10-12T20:00:00.000Z', 1);
 
--- Example: added by bank account (not linked to an account)
+-- Example: Australian bank account (not linked to an account)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
-VALUES (1, NULL, 'Bank Buddy', 'Sally Account', 'bank_account', '123-456 987654321', NULL, NULL, '123-456 987654321');
+VALUES (1, NULL, 'Aussie Bank', 'James Johnson', 'bank_account', '802985-12345678', 'james.johnson@example.com', NULL, '802985-12345678');
 
-INSERT INTO wallets (account_id, currency_id, balance) VALUES
-  (4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
-  (2, 2, 1000.00),
-  (2, 1, 1000.00),
-  (1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
-  (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
+-- Example: US bank account (not linked to an account)
+INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
+VALUES (1, NULL, 'US Bank', 'Sarah Johnson', 'bank_account', '021000021-1234567890', 'sarah.johnson@example.com', NULL, '021000021-1234567890');
 
 -------------------------------------------------------
 -- Bill Payments test data
@@ -49,7 +47,7 @@ INSERT INTO bill_payments (
   type, first_payment_date, status, next_run_at
 )
 VALUES (
-  2, 2, 50.00, 'bankAcct',
+  2, 3, 50.00, 'bankAcct',
   '062000', '12345678',
   'Electricity Company', 'Electricity Bill',
   'one-time', NOW(), 'active', CURRENT_DATE
@@ -63,7 +61,7 @@ INSERT INTO bill_payments (
   type, frequency, first_payment_date, status, next_run_at
 )
 VALUES (
-  2, 2, 75.00, 'bpay',
+  2, 3, 75.00, 'bpay',
   '222222', '88888888',
   'Insurance Co.', 'Car Insurance',
   'recurring', 'monthly', NOW(), 'active', CURRENT_DATE
@@ -77,7 +75,7 @@ INSERT INTO bill_payments (
   type, frequency, first_payment_date, status, next_run_at
 )
 VALUES (
-  2, 2, 2000.00, 'bankAcct',
+  2, 3, 2000.00, 'bankAcct',
   '063333', '98765432',
   'Internet Co.', 'Home Internet',
   'recurring', 'monthly', NOW(), 'active', CURRENT_DATE
@@ -91,7 +89,7 @@ INSERT INTO bill_payments (
   type, first_payment_date, status, next_run_at
 )
 VALUES (
-  2, 2, 60.00, 'bpay',
+  2, 3, 60.00, 'bpay',
   '333333', '99999999',
   'Streaming Service', 'Netflix One-Time',
   'one-time', NOW(), 'active', CURRENT_DATE
@@ -108,7 +106,7 @@ INSERT INTO bill_payments (
   reminder, remind_before_num_days
 )
 VALUES (
-  2, 2, 40.00, 'bpay',
+  2, 3, 40.00, 'bpay',
   '123123', '45645678',
   'Water Co.', 'Water Bill',
   'recurring', 'monthly', NOW(), 'active', '2025-08-02',
@@ -124,7 +122,7 @@ INSERT INTO bill_payments (
   reminder, remind_before_num_days
 )
 VALUES (
-  2, 2, 88.00, 'bankAcct',
+  2, 3, 88.00, 'bankAcct',
   '062000', '87654321',
   'Gas Corp', 'Gas Bill',
   'recurring', 'monthly', NOW(), 'active', '2025-08-03',

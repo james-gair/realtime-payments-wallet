@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import type { Contact } from "../types";
+import { EditNicknameModal } from "./EditNicknameModal";
 
 export function SavedContacts({
   onSelect,
   onAddNew,
   actionText = "Select",
+  showEditModal = true,
+  filterAccountOnly = false,
 }: {
   onSelect: (contact: Contact) => void;
   onAddNew?: () => void;
   actionText?: string;
+  showEditModal?: boolean;
+  filterAccountOnly?: boolean;
 }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch contacts from backend
   useEffect(() => {
@@ -38,14 +45,21 @@ export function SavedContacts({
     fetchContacts();
   }, []);
 
-  // Filter contacts based on search query
+  // Filter contacts based on search query and account-only filter
   useEffect(() => {
+    let filtered = contacts;
+    
+    // Filter to only show account contacts if requested
+    if (filterAccountOnly) {
+      filtered = contacts.filter(contact => contact.contact_account_id !== null);
+    }
+    
     if (!searchQuery.trim()) {
-      setFilteredContacts(contacts);
+      setFilteredContacts(filtered);
     } else {
       const q = searchQuery.toLowerCase();
       setFilteredContacts(
-        contacts.filter(contact =>
+        filtered.filter(contact =>
           (contact.nickname || "").toLowerCase().includes(q) ||
           (contact.name || "").toLowerCase().includes(q) ||
           (contact.username || "").toLowerCase().includes(q) ||
@@ -55,10 +69,54 @@ export function SavedContacts({
         )
       );
     }
-  }, [searchQuery, contacts]);
+  }, [searchQuery, contacts, filterAccountOnly]);
 
   const handleSelect = (contact: Contact) => {
-    onSelect(contact);
+    if (showEditModal) {
+      setSelectedContact(contact);
+      setIsEditModalOpen(true);
+    } else {
+      // Directly call onSelect without opening modal
+      onSelect(contact);
+    }
+  };
+
+  const handleSaveNickname = async (contactId: number, nickname: string | null) => {
+    try {
+      const response = await authFetch("http://localhost:4000/api/saved-contacts", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ contactId, nickname }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update nickname");
+      }
+
+      const updatedContact = await response.json();
+      
+      // Update the contact in the local state
+      setContacts(prevContacts =>
+        prevContacts.map(contact =>
+          contact.id === contactId
+            ? { ...contact, nickname: updatedContact.nickname }
+            : contact
+        )
+      );
+
+      // Call the original onSelect callback
+      onSelect(selectedContact!);
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to update nickname");
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedContact(null);
   };
 
   const clearSearch = () => {
@@ -195,10 +253,6 @@ export function SavedContacts({
                     <div className="text-xs sm:text-sm text-gray-500">
                       {getSubLabel(contact)}
                     </div>
-                    {/*
-                    // Uncomment and extend here for more details in the future, e.g.:
-                    // {contact.bank_account && <div>Bank: {contact.bank_account}</div>}
-                    */}
                   </div>
                 </div>
                 {/* Action Button */}
@@ -217,7 +271,7 @@ export function SavedContacts({
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
                         strokeWidth={2} 
-                        d="M9 5l7 7-7 7" 
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
                       />
                     </svg>
                   </div>
@@ -310,6 +364,14 @@ export function SavedContacts({
           </button>
         </div>
       )}
+
+      {/* Edit Nickname Modal */}
+      <EditNicknameModal
+        contact={selectedContact}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveNickname}
+      />
     </div>
   );
 }

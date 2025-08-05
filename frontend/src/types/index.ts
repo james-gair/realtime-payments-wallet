@@ -48,7 +48,7 @@ export interface PaymentRequest {
   account_id_to: number;
   amount: number;
   description: string;
-  status: "pending" | "completed" | "cancelled";
+  status: "pending" | "approved" | "rejected";
   created_at: string;
   updated_at: string;
 }
@@ -141,8 +141,15 @@ export interface Contact {
   email?: string | null;
   phone?: string | null;
   bank_account?: string | null; // for future use
+  contact_account_id?: number | null; // account_id if contact has an account
   added_by: "username" | "email" | "phone" | "bank_account"; // how the contact was added
   added_value: string; // the value used to add the contact
+  // Bank account specific fields (for extensibility)
+  bsb?: string | null;
+  routing_number?: string | null;
+  account_number?: string | null;
+  account_holder_name?: string | null;
+  account_email?: string | null;
 }
 
 // ============================================================================
