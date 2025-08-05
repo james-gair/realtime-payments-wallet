@@ -148,7 +148,7 @@ export function SendToUserForm({ cards }: SendToUserFormProps) {
 
     try {
       const response = await authFetch(
-        "http://localhost:4000/api/dashboard/transfer",
+        "http://localhost:4000/api/send-money",
         {
           method: "POST",
           headers: {
