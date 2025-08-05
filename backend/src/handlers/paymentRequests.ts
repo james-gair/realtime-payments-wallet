@@ -25,7 +25,7 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
 
     const { account_id: account_id_from, username: username_from } = senderResult[0];
     // Validate required fields
-    if (!recipient || !amount || !description) {
+    if (!recipient || !amount) {
       res.status(400).json({ error: "Missing required fields." });
       return;
     }
