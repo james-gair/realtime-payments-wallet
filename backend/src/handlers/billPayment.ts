@@ -5,39 +5,8 @@ import { BillInputs, billPaymentSchema } from "../schemas/billPayment.schema";
 import { getAccountId } from "../utils/getAccountId";
 import { payBillAction } from "../utils/billPayments";
 import { checkPaymentLimitForWalletId } from "../services/checkPaymentLimits";
+import { Bill, SavedBillRes, UpcomingBillRes } from "../types/billPayments";
 
-export interface BillRecord {
-  billId: string;
-  type: "one-time" | "recurring";
-  billDisplayName?: string;
-  billerDisplayName?: string;
-  billerBsb?: string;
-  billerBankAccountNumber?: string;
-  billerBpayCode?: string;
-  billerBpayRef?: string;
-  amount: number;
-  nextRunAt: Date;
-  currencyCode: string;
-}
-
-export interface Bill {
-  id: number;
-  accountId: number;
-  walletId: number;
-  amount: number;
-  payMethod: string;
-  billDisplayName?: string;
-  billerBsb?: string;
-  billerBankAccountNumber?: string;
-  billerBpayCode?: string;
-  billerBpayRef?: string;
-}
-
-export type UpcomingBillRes = BillRecord;
-export interface SavedBillRes extends BillInputs {
-  currencyCode: string;
-  nextRunAt: Date;
-}
 export async function payBill(req: Request, res: Response) {
   // get user id
   const firebase_id = (req as any).user?.uid;
@@ -55,83 +24,94 @@ export async function payBill(req: Request, res: Response) {
 
   const data = parseResult.data;
 
-  // If this is a recurring bill and NOT scheduled,
-  // set the next run at to the next run time:
-  // const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
+  try {
+    // Get the account_id:
+    const accountId = await getAccountId(firebase_id);
+    // If the user wants to pay it immediately, we
+    // check if there's enough fund first
+    if (isDateToday(data.firstPaymentDate)) {
+      const balance = await sql`
+        SELECT balance
+        FROM wallets
+        WHERE wallet_id = ${data.walletId}
+      `;
 
-  // Save the bill payment to db:
-  // get the account_id:
-  const accountId = await getAccountId(firebase_id);
-  // insert value to db
-  const result = await sql`
-  INSERT INTO bill_payments (
-    account_id,
-    wallet_id,
-    amount,
-    pay_method,
-    biller_bsb,
-    biller_bank_account_number,
-    biller_bpay_code,
-    biller_bpay_ref,
-    biller_display_name,
-    bill_display_name,
-    type,
-    first_payment_date,
-    next_run_at,
-    frequency,
-    reminder,
-    remind_before_num_days,
-    status
-  ) VALUES (
-    ${accountId},
-    ${data.walletId},
-    ${data.amount},
-    ${data.payMethod},
-    ${data.billerBsb ?? null},
-    ${data.billerBankAccountNumber ?? null},
-    ${data.billerBpayCode ?? null},
-    ${data.billerBpayRef ?? null},
-    ${data.billerDisplayName ?? null},
-    ${data.billDisplayName ?? null},
-    ${data.type},
-    ${data.firstPaymentDate},
-    ${data.firstPaymentDate},
-    ${data.frequency ?? null},
-    ${data.reminder ?? false},
-    ${data.reminderDays ?? null},
-    -- set the processing status if the first payment date is today
-    -- so that we can prevent potential racing conditions
-    -- between the immediate payment and the scheduled cron jobs for today
-   
-    ${isDateToday(data.firstPaymentDate) ? "processing" : "active"}
-  )
-  RETURNING id;
-`;
+      if (Number(balance[0].balance) < Number(data.amount)) {
+        res.status(400).send({
+          error: "Insufficient funds. Failed to create this bill payment.",
+        });
+        return;
+      }
+    }
+    // insert value to db
+    const result = await sql`
+    INSERT INTO bill_payments (
+      account_id,
+      wallet_id,
+      amount,
+      pay_method,
+      biller_bsb,
+      biller_bank_account_number,
+      biller_bpay_code,
+      biller_bpay_ref,
+      biller_display_name,
+      bill_display_name,
+      type,
+      first_payment_date,
+      next_run_at,
+      frequency,
+      reminder,
+      remind_before_num_days,
+      status
+    ) VALUES (
+      ${accountId},
+      ${data.walletId},
+      ${data.amount},
+      ${data.payMethod},
+      ${data.billerBsb ?? null},
+      ${data.billerBankAccountNumber ?? null},
+      ${data.billerBpayCode ?? null},
+      ${data.billerBpayRef ?? null},
+      ${data.billerDisplayName ?? null},
+      ${data.billDisplayName ?? null},
+      ${data.type},
+      ${data.firstPaymentDate},
+      ${data.firstPaymentDate},
+      ${data.frequency ?? null},
+      ${data.reminder ?? false},
+      ${data.reminderDays ?? null},
+      -- set the processing status if the first payment date is today
+      -- so that we can prevent potential racing conditions
+      -- between the immediate payment and the scheduled cron jobs for today
+      ${isDateToday(data.firstPaymentDate) ? "processing" : "active"}
+    )
+    RETURNING id;
+  `;
+    // pay bills that are not scheduled.
+    if (isDateToday(data.firstPaymentDate)) {
+      const bill: Bill = {
+        id: result[0].id,
+        accountId: Number(accountId),
+        walletId: data.walletId,
+        amount: data.amount,
+        payMethod: data.payMethod,
+        billDisplayName: data.billDisplayName,
+        billerBsb: data.billerBsb,
+        billerBankAccountNumber: data.billerBankAccountNumber,
+        billerBpayCode: data.billerBpayCode?.toString(),
+        billerBpayRef: data.billerBpayRef,
+      };
+      await payBillAction(bill);
+    }
+    res.status(200).json({ billId: result[0].id });
+  } catch (error) {
+    console.error("Error creating bill payments:", error);
+    res.status(500).send({ error: "Internal Server Error" });
+  }
 
-  res.status(200).json({ billId: result[0].id });
-
-  /******************
-   * pay bills that are not scheduled.
-   *******************
-   */
-  const bill: Bill = {
-    id: result[0].id,
-    accountId: Number(accountId),
-    walletId: data.walletId,
-    amount: data.amount,
-    payMethod: data.payMethod,
-    billDisplayName: data.billDisplayName,
-    billerBsb: data.billerBsb,
-    billerBankAccountNumber: data.billerBankAccountNumber,
-    billerBpayCode: data.billerBpayCode?.toString(),
-    billerBpayRef: data.billerBpayRef,
-  };
-
+  // Check the payment limit the user set
   checkPaymentLimitForWalletId(data.walletId.toString());
 
-  if (isDateToday(data.firstPaymentDate)) {
-    await payBillAction(bill);
-  }
   return;
 }
 
@@ -146,7 +126,10 @@ export async function getUpcomingBills(req: Request, res: Response) {
 
   try {
     let results: UpcomingBillRes[] = [];
-
+    // Get the upcoming bills. We only fetch bills that are
+    // after today (avoid issues that may happen when we do
+    // scheduled jobs for all the scheduled payments due that day
+    // at the same time) and active.
     await sql.begin(async (sql) => {
       await sql`SET TIME ZONE 'Australia/Sydney'`;
       results = await sql<UpcomingBillRes[]>`
@@ -166,6 +149,7 @@ export async function getUpcomingBills(req: Request, res: Response) {
       JOIN wallets w ON bp.wallet_id = w.wallet_id
       JOIN currencies c ON w.currency_id = c.currency_id
       WHERE bp.status = 'active' 
+        AND bp.next_run_at::date > CURRENT_DATE
         AND bp.next_run_at::date > CURRENT_DATE
     `;
     });
@@ -332,7 +316,7 @@ export async function updateBillInfo(req: Request, res: Response) {
   const data = parseResult.data;
   const account_id = await getAccountId(firebase_id);
 
-  // Ensure the bill exists and belongs to the user
+  // Ensure the bill exists and belongs to the user, other wise, deny access
   const existing = await sql`
     SELECT id FROM bill_payments 
     WHERE id = ${billId} AND account_id = ${account_id}
@@ -342,7 +326,15 @@ export async function updateBillInfo(req: Request, res: Response) {
     return;
   }
 
-  const nextRunAt = getNextRunAtIfDueToday(data) ?? data.firstPaymentDate;
+  // Can't have time travel behavior to pay a bill before today
+  if (
+    toDateOnlyString(new Date(data.firstPaymentDate)) <
+    toDateOnlyString(new Date())
+  ) {
+    res.status(400).json({
+      error: "Please enter a valid payment date. (It has to be today or after)",
+    });
+  }
 
   try {
     const result = await sql`
@@ -359,7 +351,7 @@ export async function updateBillInfo(req: Request, res: Response) {
         bill_display_name = ${data.billDisplayName ?? null},
         type = ${data.type},
         first_payment_date = ${data.firstPaymentDate ?? null},
-        next_run_at = ${nextRunAt},
+        next_run_at = ${data.firstPaymentDate ?? null},
         frequency = ${data.frequency ?? null},
         reminder = ${data.reminder ?? false},
         remind_before_num_days = ${data.reminderDays ?? null}
@@ -376,37 +368,12 @@ export async function updateBillInfo(req: Request, res: Response) {
   }
 }
 
-function toDateStringOnly(date: Date): string {
-  return date.toISOString().split("T")[0]; // "2025-07-21"
+// Only get the date part of Date
+function toDateOnlyString(date: Date): string {
+  return date.toISOString().split("T")[0]; // "2025-08-04"
 }
 
-function getNextRunAtIfDueToday(data: BillInputs): string | null {
-  const isToday =
-    toDateStringOnly(new Date(data.firstPaymentDate)) ===
-    toDateStringOnly(new Date());
-
-  if (data.type === "recurring" && isToday) {
-    const nextDate = new Date();
-
-    switch (data.frequency) {
-      case "weekly":
-        nextDate.setDate(nextDate.getDate() + 7);
-        break;
-      case "fortnightly":
-        nextDate.setDate(nextDate.getDate() + 14);
-        break;
-      case "monthly":
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        break;
-      default:
-        throw new Error("Invalid frequency: " + data.frequency);
-    }
-    return nextDate.toISOString();
-  }
-
-  return null;
-}
-
+// Check if given date is today.
 function isDateToday(date: Date): boolean {
   const today = new Date();
   return (

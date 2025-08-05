@@ -1,8 +1,4 @@
-type ModalProps = {
-  modalName: string;
-  displayMessage: string | null;
-  onClose: () => void;
-};
+import type { ModalProps } from "../types";
 
 export function Modal({ modalName, displayMessage, onClose }: ModalProps) {
   return (

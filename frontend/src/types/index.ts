@@ -40,7 +40,6 @@ export interface Transaction {
 // PAYMENT TYPES
 // ============================================================================
 
-
 export interface PaymentRequest {
   id: number;
   account_id_from: number;
@@ -240,3 +239,8 @@ export type KYCIdType = "passport" | "driver_license";
 export type KYCResult = "verified" | "rejected";
 export type TransactionType = "income" | "expense";
 export type ChangeType = "positive" | "negative";
+export type ModalProps = {
+  modalName: string;
+  displayMessage: string | null;
+  onClose: () => void;
+};
