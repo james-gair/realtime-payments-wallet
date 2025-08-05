@@ -18,6 +18,7 @@ import GroupPaymentsDashboard from "./pages/GroupPaymentsDashboard";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import LoginPage from "./pages/LoginPage";
+import Cashback from "./pages/CashBack";
 import Payments from "./pages/Payments";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
@@ -45,6 +46,7 @@ function App() {
           <Route path="/add-money" element={<AddMoney />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/cashback" element={<Cashback />} />
           <Route path="/request-money" element={<RequestPayment />} />
           <Route path="/send-money" element={<SendMoney />} />
           <Route path="/bill-payments" element={<BillPayments />} />
