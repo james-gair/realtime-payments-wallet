@@ -20,23 +20,32 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
     `;
 
     if (senderResult.length === 0) {
+      console.log("sender wasnt found");
       res.status(404).json({ error: "Sender not found" });
       return;
     }
 
     const { account_id: account_id_from, username: username_from } = senderResult[0];
     // Validate required fields
-    if (!recipient || !amount) {
+     if (!recipientId || !amount) {
+      console.log("missing fields");
       res.status(400).json({ error: "Missing required fields." });
       return;
     }
 
     // Lookup recipient's account_id and username
-    const recipientUser = await sql`
-      SELECT account_id, username FROM accounts WHERE username = ${recipient}
+    console.log("got to looking this up");
+   // const recipientUser = await sql`
+   //   SELECT account_id, username FROM accounts WHERE username = ${recipient}
+   // `;
+
+  const recipientUser = await sql`
+    SELECT account_id, username FROM accounts WHERE account_id = ${recipientId}
     `;
 
+
     if (recipientUser.length === 0) {
+      console.log("got here recipent not found");
       res.status(404).json({ error: "Recipient not found." });
       return;
     }
@@ -54,7 +63,6 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
     }
 
     const currencyId = currencyResult[0].currency_id;
-
     // Insert into payment_requests table
     const result = await sql`
       INSERT INTO payment_requests (

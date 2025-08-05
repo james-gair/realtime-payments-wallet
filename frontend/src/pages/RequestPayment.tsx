@@ -78,6 +78,7 @@ const RequestPage: React.FC = () => {
   };
 
   const handleContactSelect = (contact: Contact) => {
+    console.log("Selected contact:", contact); 
     setSelectedContact(contact);
     setCurrentStep('request-details');
   };
@@ -121,6 +122,7 @@ const RequestPage: React.FC = () => {
         description: formData.description,
         currencyCode: formData.currency
       };
+//       console.log("Sending payment request with:", requestData);
 
       const response = await authFetch("http://localhost:4000/api/payment-request", {
         method: "POST",
@@ -129,8 +131,11 @@ const RequestPage: React.FC = () => {
         },
         body: JSON.stringify(requestData),
       });
+      console.log("Raw response:", response);
 
       if (!response.ok) {
+        const errorText = await response.text(); // Log server response message
+        console.error("❌ Server returned error:", response.status, errorText);
         throw new Error("Failed to send payment request");
       }
 
@@ -149,6 +154,7 @@ const RequestPage: React.FC = () => {
       await fetchSentRequests();
     } catch (err) {
       console.error("Error:", err);
+      console.error("❌ Error caught in handleSubmitRequest:", err);
       alert("Failed to send payment request. Please try again.");
     }
   };
