@@ -14,10 +14,18 @@ INSERT INTO currencies (currency_id, code, symbol) VALUES
   (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
 
 
-INSERT INTO wallets (wallet_id, account_id, currency_id, balance) VALUES
-  (1, 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
-  (2, 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
+-- INSERT INTO wallets (wallet_id, account_id, currency_id, balance) VALUES
+--   (1, 1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
+--   (2, 3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
+INSERT INTO wallets (account_id, currency_id, balance) VALUES
+  (4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
+  (2, 2, 1000.00),
+  (2, 1, 1000.00),
+  (1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
+  (1, 2, 200.00),  -- testuser's USD wallet (account_id=1)
+  (1, 3, 200.00),  -- testuser's YEN wallet (account_id=1)
+  (3, 1, 100.00);  -- nouser's AUD wallet (account_id=3)
 
 INSERT INTO transactions (name, amount, category, sender_wallet_id, recipient_wallet_id, event_time, currency) VALUES
     ('Figma Subscription', 15.00, '{"subscription"}', 1, 4, '2023-10-01T10:00:00.000Z', 1),
@@ -33,15 +41,6 @@ VALUES (1, NULL, 'Aussie Bank', 'James Johnson', 'bank_account', '802985-1234567
 -- Example: US bank account (not linked to an account)
 INSERT INTO saved_contacts (account_id, contact_account_id, nickname, name, added_by, added_value, email, phone, bank_account)
 VALUES (1, NULL, 'US Bank', 'Sarah Johnson', 'bank_account', '021000021-1234567890', 'sarah.johnson@example.com', NULL, '021000021-1234567890');
-
-INSERT INTO wallets (account_id, currency_id, balance) VALUES
-  (4, 1, 5000.00), -- Edwin's AUD wallet (account_id=4)
-  (2, 2, 1000.00),
-  (2, 1, 1000.00),
-  (1, 1, 200.00),  -- testuser's AUD wallet (account_id=1)
-  (1, 2, 200.00),  -- testuser's USD wallet (account_id=2)
-  (1, 3, 200.00),  -- testuser's YEN wallet (account_id=3)
-  (3, 1, 50.00);      -- nouser's AUD wallet (account_id=3)
 
 INSERT INTO cashback_deals (deal_wallet_id, min_spend_amount, cashback_amount) VALUES
   (7, 10, 2);
