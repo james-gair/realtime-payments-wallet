@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import billPaymentsRouter from "./routes/billPayment";
 import paymentLimitsRouter from "./routes/paymentLimits";
 import userDashboard from "./routes/dashboard";
+import sendMoneyRouter from "./routes/sendMoney";
 import fxRatesRouter from "./routes/fxRates";
 import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
@@ -38,6 +39,7 @@ export function createApp() {
   app.use("/api", kycRouter);
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
+  app.use("/api", sendMoneyRouter);
   app.use("/api", profileRouter);
   app.use("/api/payment-request", paymentRequestRouter);
   app.use("/api", savedContactsRouter);

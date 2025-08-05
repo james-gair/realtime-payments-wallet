@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
+import { postSendMoney } from "./sendMoney";
 
 export async function postPaymentRequest(req: Request, res: Response):  Promise<void> {
   try {
-    console.log("Received POST /api/payment-request");
-    console.log("✅ POST /api/payment-request route was hit");
-    const { recipientId, amount, description } = req.body;
+    const { recipient, amount, description, currencyCode = "AUD" } = req.body;
 
     // Get Firebase UID from middleware auth
 
@@ -50,11 +49,20 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
       res.status(404).json({ error: "Recipient not found." });
       return;
     }
-    console.log("got here");
+
     const { account_id: account_id_to, username: username_to } = recipientUser[0];
 
+    // Get currency ID
+    const currencyResult = await sql`
+      SELECT currency_id FROM currencies WHERE code = ${currencyCode}
+    `;
 
-    console.log("got here 2");
+    if (currencyResult.length === 0) {
+      res.status(400).json({ error: "Invalid currency code." });
+      return;
+    }
+
+    const currencyId = currencyResult[0].currency_id;
     // Insert into payment_requests table
     const result = await sql`
       INSERT INTO payment_requests (
@@ -72,7 +80,7 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
         ${account_id_to},
         ${username_to},
         ${amount},
-        1,
+        ${currencyId},
         ${description},
         'pending'
       )
@@ -212,7 +220,7 @@ export async function deletePaymentRequest(req: Request, res: Response): Promise
   }
 }
 
-// before making a payment as settled, make the transfer and ensure the transfer is successfull
+// Settle a payment request by transferring money from recipient to requester
 
 export async function settlePaymentRequest(req: Request, res: Response): Promise<void> {
   try {
@@ -247,14 +255,113 @@ export async function settlePaymentRequest(req: Request, res: Response): Promise
       return;
     }
 
-    // Update the status to "approved"
-    await sql`
-      UPDATE payment_requests
-      SET status = 'approved'
-      WHERE id = ${id}
+    const paymentRequest = requestResult[0];
+
+    // Get the requester's username for the transfer
+    const requesterResult = await sql`
+      SELECT username FROM accounts WHERE account_id = ${paymentRequest.account_id_from}
     `;
 
-    res.status(200).json({ message: "Payment request marked as approved." });
+    if (requesterResult.length === 0) {
+      res.status(404).json({ error: "Requester account not found" });
+      return;
+    }
+
+    const requesterUsername = requesterResult[0].username;
+
+    // Get the currency code for this payment request
+    const currencyResult = await sql`
+      SELECT code FROM currencies WHERE currency_id = ${paymentRequest.currency_id}
+    `;
+
+    if (currencyResult.length === 0) {
+      res.status(400).json({ error: "Invalid currency in payment request" });
+      return;
+    }
+
+    const currencyCode = currencyResult[0].code;
+
+    // Check if the recipient has a wallet in the specified currency
+    const recipientWalletCheck = await sql`
+      SELECT w.balance, w.wallet_id, c.code 
+      FROM wallets w 
+      JOIN currencies c ON w.currency_id = c.currency_id 
+      WHERE w.account_id = ${account_id} AND c.code = ${currencyCode}
+    `;
+
+    if (recipientWalletCheck.length === 0) {
+      res.status(400).json({ 
+        error: `You don't have a ${currencyCode} wallet. Please create one first.` 
+      });
+      return;
+    }
+
+    // Convert to numbers to ensure proper comparison
+    const recipientBalance = parseFloat(recipientWalletCheck[0].balance);
+    const requestedAmount = parseFloat(paymentRequest.amount);
+
+    if (recipientBalance < requestedAmount) {
+      res.status(400).json({ 
+        error: `Insufficient balance in your ${currencyCode} wallet. You have ${recipientBalance} ${currencyCode} but need ${requestedAmount} ${currencyCode}.` 
+      });
+      return;
+    }
+
+    // Also check if the requester has a wallet in the specified currency
+    const requesterWalletCheck = await sql`
+      SELECT w.balance, w.wallet_id, c.code 
+      FROM wallets w 
+      JOIN currencies c ON w.currency_id = c.currency_id 
+      WHERE w.account_id = ${paymentRequest.account_id_from} AND c.code = ${currencyCode}
+    `;
+
+    if (requesterWalletCheck.length === 0) {
+      res.status(400).json({ 
+        error: `The requester (${requesterUsername}) doesn't have a ${currencyCode} wallet. They need to create one first.` 
+      });
+      return;
+    }
+
+    // Create a mock request object for the send money function
+    const transferReq = {
+      user: { uid: firebaseId },
+      body: {
+        recipientUsername: requesterUsername,
+        currencyCode: currencyCode,
+        amount: paymentRequest.amount,
+        description: `Payment request settlement: ${paymentRequest.description || 'No description'}`
+      }
+    } as any;
+
+    // Create a mock response object to capture the result
+    const transferRes = {
+      status: (code: number) => ({
+        json: (data: any) => {
+          if (code === 200) {
+            // Transfer successful, update payment request status
+            sql`
+              UPDATE payment_requests
+              SET status = 'approved'
+              WHERE id = ${id}
+            `;
+            res.status(200).json({ 
+              message: "Payment request settled successfully.",
+              transferDetails: data
+            });
+          } else {
+            // Transfer failed
+            res.status(code).json({ 
+              error: "Failed to settle payment request",
+              details: data
+            });
+          }
+        }
+      })
+    } as any;
+
+    // Execute the transfer using our send money function
+    await postSendMoney(transferReq, transferRes);
+
   } catch (error) {
     console.error("Error settling payment request:", error);
     res.status(500).json({ error: "Internal server error." });
