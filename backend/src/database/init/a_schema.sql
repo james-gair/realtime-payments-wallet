@@ -62,6 +62,19 @@ CREATE TABLE wallets (
   CONSTRAINT fk_wallets_currency FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
 );
 
+CREATE TABLE payment_requests (
+  id SERIAL PRIMARY KEY,
+  account_id_from INTEGER NOT NULL REFERENCES accounts(account_id),
+  username_from TEXT NOT NULL,
+  account_id_to INTEGER NOT NULL REFERENCES accounts(account_id),
+  username_to TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
+  currency_id INTEGER NOT NULL REFERENCES currencies(currency_id),
+  description TEXT,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE cashback_deals (
   deal_id SERIAL PRIMARY KEY,
   deal_wallet_id INTEGER NOT NULL REFERENCES wallets(wallet_id) ON DELETE CASCADE,

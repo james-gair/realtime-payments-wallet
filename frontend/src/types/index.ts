@@ -48,7 +48,7 @@ export interface PaymentRequest {
   account_id_to: number;
   amount: number;
   description: string;
-  status: "pending" | "completed" | "cancelled";
+  status: "pending" | "approved" | "rejected";
   created_at: string;
   updated_at: string;
 }

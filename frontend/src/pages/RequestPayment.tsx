@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SavedContacts } from "../components/SavedContacts";
-import type { Contact } from "../types";
+import { authFetch } from "../services/firebaseFetch";
+import type { Contact, Card } from "../types";
 
 type RequestStep = 'select-contact' | 'request-details';
 
@@ -22,6 +23,11 @@ const RequestPage: React.FC = () => {
     description: ''
   });
 
+  // Toggle state for viewing sent requests
+  const [view, setView] = useState<"request" | "sent">("request");
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
+
   // Check if we're returning from adding a contact
   useEffect(() => {
     const newContact = (location.state as any)?.newContact;
@@ -34,12 +40,42 @@ const RequestPage: React.FC = () => {
     }
   }, [location.state, navigate, location.pathname]);
 
-  // Mock user wallets - in real app this would come from API
-  const userWallets = [
-    { currency: 'AUD', currencyCode: 'AUD' },
-    { currency: 'USD', currencyCode: 'USD' },
-    { currency: 'EUR', currencyCode: 'EUR' }
-  ];
+  // Fetch sent requests when view changes to "sent"
+  useEffect(() => {
+    if (view === "sent") {
+      fetchSentRequests();
+    }
+  }, [view]);
+
+  const fetchSentRequests = async () => {
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/payment-request/sent"
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch sent payment requests");
+      }
+      const result = await response.json();
+      setSentRequests(result.data);
+    } catch (err) {
+      console.error("Error fetching sent requests:", err);
+    }
+  };
+
+  const fetchCards = async () => {
+    try {
+      const response = await authFetch(
+        "http://localhost:4000/api/dashboard/wallet",
+        {
+          method: "GET",
+        }
+      );
+      const data = await response.json();
+      setCards(data.wallets);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+    }
+  };
 
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
@@ -65,7 +101,7 @@ const RequestPage: React.FC = () => {
     }));
   };
 
-  const handleSubmitRequest = (e: React.FormEvent) => {
+  const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedContact) {
@@ -78,20 +114,62 @@ const RequestPage: React.FC = () => {
       return;
     }
 
-    // TODO: Submit request to backend
-    console.log("Payment request:", {
-      contact: selectedContact,
-      currency: formData.currency,
-      amount: formData.amount,
-      description: formData.description
-    });
+    try {
+      const requestData = {
+        amount: parseFloat(formData.amount),
+        recipient: selectedContact.username || selectedContact.email || selectedContact.phone,
+        description: formData.description
+      };
 
-    alert(`Payment request sent to ${selectedContact.nickname || selectedContact.name} for ${formData.currency} ${formData.amount}`);
-    
-    // Reset and go back to contact selection
-    setCurrentStep('select-contact');
-    setSelectedContact(null);
-    setFormData({ currency: '', amount: '', description: '' });
+      const response = await authFetch("http://localhost:4000/api/payment-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send payment request");
+      }
+
+      const result = await response.json();
+      console.log("Payment request submitted:", result);
+      
+      alert(`Payment request sent to ${selectedContact.nickname || selectedContact.name} for ${formData.currency} ${formData.amount}`);
+      
+      // Reset and go back to contact selection
+      setCurrentStep('select-contact');
+      setSelectedContact(null);
+      setFormData({ currency: '', amount: '', description: '' });
+      
+      // Switch to sent requests after submitting
+      setView("sent");
+      await fetchSentRequests();
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Failed to send payment request. Please try again.");
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    if (!window.confirm("Are you sure you want to cancel this payment request?")) return;
+
+    try {
+      const response = await authFetch(`http://localhost:4000/api/payment-request/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel payment request");
+      }
+
+      alert("Payment request cancelled.");
+      await fetchSentRequests();
+    } catch (err) {
+      console.error("Error cancelling payment request:", err);
+      alert("Error cancelling payment request");
+    }
   };
 
   const handleBackToContacts = () => {
@@ -100,35 +178,109 @@ const RequestPage: React.FC = () => {
     setFormData({ currency: '', amount: '', description: '' });
   };
 
+  useEffect(() => {
+    fetchCards();
+  }, []);
+
   const renderContactSelection = () => (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Request Payment</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {view === "request" ? "Request Payment" : "Previously Sent Requests"}
+        </h1>
         <p className="text-gray-600 mt-2">
-          Select a contact to request money from them
+          {view === "request" 
+            ? "Select a contact to request money from them"
+            : "View and manage your sent payment requests"
+          }
         </p>
       </div>
 
-      {/* Saved Contacts Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Select a Contact
-          </h2>
-          <p className="text-gray-600">
-            Choose a contact to request money from. You can only request from users who have an account.
-          </p>
-        </div>
-
-        <SavedContacts 
-          onSelect={handleContactSelect}
-          onAddNew={handleAddNewContact}
-          actionText="Request Money"
-          showEditModal={false}
-          filterAccountOnly={true}
-        />
+      {/* Toggle Buttons */}
+      <div className="flex justify-center border-b border-gray-300 mb-8">
+        <button
+          onClick={() => setView("request")}
+          className={`py-3 px-6 -mb-px font-semibold transition-colors duration-300 ${
+            view === "request"
+              ? "border-b-2 border-black text-black"
+              : "text-gray-500 hover:text-black"
+          }`}
+        >
+          Request Payment
+        </button>
+        <button
+          onClick={() => setView("sent")}
+          className={`py-3 px-6 -mb-px font-semibold transition-colors duration-300 ${
+            view === "sent"
+              ? "border-b-2 border-black text-black"
+              : "text-gray-500 hover:text-black"
+          }`}
+        >
+          Sent Requests
+        </button>
       </div>
+
+      {view === "request" && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Select a Contact
+            </h2>
+            <p className="text-gray-600">
+              Choose a contact to request money from. You can only request from users who have an account.
+            </p>
+          </div>
+
+          <SavedContacts 
+            onSelect={handleContactSelect}
+            onAddNew={handleAddNewContact}
+            actionText="Request Money"
+            showEditModal={false}
+            filterAccountOnly={true}
+          />
+        </div>
+      )}
+
+      {view === "sent" && (
+        <div>
+          {sentRequests.length === 0 ? (
+            <p className="text-gray-500">No sent requests yet.</p>
+          ) : (
+            <ul className="space-y-4">
+              {sentRequests.map((req) => (
+                <li
+                  key={req.id}
+                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="text-gray-800 font-medium">
+                     To: <span className="font-bold">@{req.recipient_username}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(req.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="text-gray-700">Amount: ${req.amount}</div>
+                  <div className="text-gray-600 text-sm mt-1">{req.description}</div>
+                  <div className="text-sm mt-2 text-purple-500 font-semibold">
+                    Status: {req.status}
+                  </div>
+
+                  {req.status === "pending" && (
+                    <button
+                      onClick={() => handleCancel(req.id)}
+                      className="mt-3 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -150,7 +302,7 @@ const RequestPage: React.FC = () => {
         </div>
         <p className="text-gray-600 mt-2">
           Request money from {selectedContact?.nickname || selectedContact?.name}
-        </p>  
+        </p>
       </div>
 
       {/* Request Form */}
@@ -170,9 +322,9 @@ const RequestPage: React.FC = () => {
               required
             >
               <option value="">Select a currency</option>
-              {userWallets.map(wallet => (
-                <option key={wallet.currencyCode} value={wallet.currencyCode}>
-                  {wallet.currency}
+              {cards.map(card => (
+                <option key={card.currency} value={card.currency}>
+                  {card.currency} ({card.symbol})
                 </option>
               ))}
             </select>
@@ -183,18 +335,28 @@ const RequestPage: React.FC = () => {
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
               Amount *
             </label>
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              placeholder="Enter amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              required
-              min="0"
-              step="0.01"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 text-lg">
+                  {formData.currency === 'AUD' ? 'A$' : 
+                   formData.currency === 'USD' ? '$' : 
+                   formData.currency === 'EUR' ? '€' : 
+                   formData.currency === 'JPY' ? '¥' : ''}
+                </span>
+              </div>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                placeholder="Enter amount"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 pl-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
           </div>
 
           {/* Description */}
