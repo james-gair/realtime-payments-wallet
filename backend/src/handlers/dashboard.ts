@@ -452,6 +452,11 @@ export async function postTransferCurrency(req: Request, res: Response) {
       `;
       if (!senderAccount) throw new Error("ERR");
 
+      const [senderUsername] = await sql`
+        SELECT username FROM accounts WHERE firebase_id = ${senderFirebaseId}
+      `;
+      if (!senderUsername) throw new Error("ERR");
+
       const [recipientAccount] = await sql`
         SELECT account_id FROM accounts WHERE username = ${recipientUsername}
       `;
@@ -497,6 +502,29 @@ export async function postTransferCurrency(req: Request, res: Response) {
         UPDATE wallets
         SET balance = balance + ${amount}
         WHERE wallet_id = ${recipientWallet.wallet_id}
+      `;
+
+      const transactionName = `${senderUsername.username} to ${recipientUsername}`;
+
+      const category = ["finance"]
+      await sql`
+        INSERT INTO transactions (
+          name,
+          amount,
+          category,
+          sender_wallet_id,
+          recipient_wallet_id,
+          event_time,
+          currency
+        ) VALUES (
+          ${transactionName},
+          ${amount},
+          ${category},
+          ${senderWallet.wallet_id},
+          ${recipientWallet.wallet_id},
+          ${new Date()},
+          ${currency.currency_id}
+        );
       `;
 
       console.log("Recipient wallet ID:", recipientWallet.wallet_id);
