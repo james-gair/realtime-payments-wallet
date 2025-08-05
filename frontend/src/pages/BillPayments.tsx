@@ -71,7 +71,7 @@ export function BillPayments() {
         </h2>
         {bills.length === 0 ? (
           <p className="text-gray-600 italic">
-            You have no upcoming bills yet.
+            You have no upcoming bills yet. 😊
           </p>
         ) : (
           bills.map((bill) => (

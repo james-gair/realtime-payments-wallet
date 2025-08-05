@@ -1,46 +1,15 @@
 import { CronJob } from "cron";
-import cron from "node-cron";
 import sql from "../database/client";
-import { Bill } from "../handlers/billPayment";
-import { payBillAction } from "../utils/billPayments";
 import {
   sendEmailByEmail,
   sendEmailToUserByAccountId,
 } from "../utils/notifyUserByEmail";
+import {
+  BankResponse,
+  BillReminderInfo,
+  SoftDeductionResult,
+} from "../types/scheduledJobs";
 
-interface SoftDeductionResult {
-  bill_payment_id: number;
-  soft_deduction_id: number | null;
-  account_id: number;
-  status: "success" | "failed";
-  error: string | null;
-  pay_method: "bankAcct" | "bpay";
-  amount: string;
-  biller_bsb: string | null;
-  biller_bank_account_number: string | null;
-  biller_bpay_code: string | null;
-  biller_bpay_ref: string | null;
-}
-
-interface BankResponse {
-  soft_deduction_id: number;
-  bill_payment_id: number;
-  status: "success" | "failed";
-  message: string;
-  pay_method: "bankAcct" | "bpay";
-  amount: string;
-  biller_bsb?: string | null;
-  biller_bank_account_number?: string | null;
-  biller_bpay_code?: string | null;
-  biller_bpay_ref?: string | null;
-}
-
-export interface BillReminderInfo {
-  email: string;
-  username: string;
-  remind_before_num_days: number;
-  scheduled_date: string; // use Date if you prefer
-}
 // argument * * * * *
 // minute (0 - 59), hour (0 - 23), day of the month (1 - 31), month (1 - 12), day of the week (0 - 6) (Sunday to Saturday)
 // node cron uses the server local time
@@ -85,6 +54,7 @@ export function processScheduledJobs() {
 async function payBillsDueTodayInBulk() {
   const bills = await softDeductBillPaymentInBulk();
   const softDeductedBills = await processSoftDeductionResult(bills);
+  // console.log(softDeductedBills);
   const bankResponses = await sendBillPaymentReqToTheBankInBulk(
     softDeductedBills
   );
@@ -96,7 +66,7 @@ async function softDeductBillPaymentInBulk() {
     const result = await sql<SoftDeductionResult[]>`
       SELECT * FROM soft_deduct_today_bills()
     `;
-    console.log("Soft deduction result:", result);
+    // console.log("Soft deduction result:", result);
     return result;
   } catch (error) {
     console.error("❌ Error running soft deduction job:", error);
@@ -108,6 +78,9 @@ async function processSoftDeductionResult(bills: SoftDeductionResult[]) {
   const failed = bills.filter((r) => r.status === "failed");
   const successful = bills.filter((r) => r.status === "success");
 
+  // TODO: functions to change the status of the failed to 'failed'
+
+  // send users email about the failed payments
   failed.forEach(async (bill) => {
     const billerInfo =
       bill.pay_method === "bankAcct"
@@ -153,7 +126,7 @@ async function sendBillPaymentReqToTheBankInBulk(bills: SoftDeductionResult[]) {
   // Log responses
   for (const res of responses) {
     console.log(
-      `🏦 Bank API result - Bill ID ${res.soft_deduction_id}, Status: ${res.status}, Message: ${res.message}`
+      `🏦 Bank API result - Bill ID ${res.bill_payment_id}, Status: ${res.status}, Message: ${res.message}`
     );
   }
   return responses;

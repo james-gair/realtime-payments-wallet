@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 
-import { ParsedQs } from 'qs';
+import { ParsedQs } from "qs";
 
 import { fetchSpecificExchangeRate } from "./fxRates";
 
@@ -124,89 +124,103 @@ export async function getUserWallet(req: Request, res: Response) {
 }
 
 export async function getUserTransactions(req: Request, res: Response) {
-    const auth_id = (req as any).user.uid;
+  const auth_id = (req as any).user.uid;
 
-    const { category, minAmount, maxAmount, 
-            startDate, endDate, sort, searchTerm} = req.query;
-    
-    try {
-      const baseConditions = [
-        sql`(sender_account.firebase_id = ${auth_id} OR recipient_account.firebase_id = ${auth_id})`
-      ];
+  const {
+    category,
+    minAmount,
+    maxAmount,
+    startDate,
+    endDate,
+    sort,
+    searchTerm,
+  } = req.query;
 
-      if (minAmount !== undefined) {
-        console.log("push");
-        baseConditions.push(sql`transactions.amount >= ${Number(minAmount)}`);
-      }
+  try {
+    const baseConditions = [
+      sql`(sender_account.firebase_id = ${auth_id} OR recipient_account.firebase_id = ${auth_id})`,
+    ];
 
-      if (maxAmount !== undefined) {
-        console.log("push");
-        baseConditions.push(sql`transactions.amount <= ${Number(maxAmount)}`);
-      }
+    if (minAmount !== undefined) {
+      console.log("push");
+      baseConditions.push(sql`transactions.amount >= ${Number(minAmount)}`);
+    }
 
-      function parseQueryParam(value: string | ParsedQs | (string | ParsedQs)[] | undefined): string | undefined {
-        if (typeof value === 'string') return value;
-        if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-        return undefined;
-      }
+    if (maxAmount !== undefined) {
+      console.log("push");
+      baseConditions.push(sql`transactions.amount <= ${Number(maxAmount)}`);
+    }
 
-      const rawStartDate = parseQueryParam(startDate);
+    function parseQueryParam(
+      value: string | ParsedQs | (string | ParsedQs)[] | undefined
+    ): string | undefined {
+      if (typeof value === "string") return value;
+      if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+      return undefined;
+    }
 
-      if (rawStartDate) {
-        const start = new Date(rawStartDate);
-        if (!isNaN(start.getTime())) {
-          start.setHours(0, 0, 0, 0);
-          baseConditions.push(sql`transactions.event_time >= ${start.toISOString()}`);
-        }
-      }
+    const rawStartDate = parseQueryParam(startDate);
 
-      const rawEndDate = parseQueryParam(endDate);
-
-      if (rawEndDate) {
-        const end = new Date(rawEndDate);
-        if (!isNaN(end.getTime())) {
-          baseConditions.push(sql`transactions.event_time <= ${end.toISOString()}`);
-        }
-      }
-
-      if (searchTerm) {
-        const term = `${searchTerm}%`;
-        baseConditions.push(sql`transactions.name ILIKE ${term}`);
-      }
-
-      if(category) {
-        console.log(category)
-        const catTerm = `${category}`;
-        baseConditions.push(sql`${catTerm} = ANY(transactions.category)`);
-      }
-
-      console.log("Sort param:", sort);
-      let orderBy = sql`time DESC`;
-      if (sort === 'date-asc') {
-        orderBy = sql`time ASC`;
-      } else if (sort === 'amount-desc') {
-        orderBy = sql`transactions.amount DESC`;
-      } else if (sort === 'amount-asc') {
-        orderBy = sql`transactions.amount ASC`;
-      } else if (sort === 'name-asc') {
-        orderBy = sql`name ASC`;
-      } else if (sort === 'name-desc') {
-        orderBy = sql`name DESC`;
-      }
-
-      function sqlJoin(sqlArray: any[], separator: any) {
-        if (sqlArray.length === 0) return null;
-        return sqlArray.reduce((acc, curr, i) =>
-          i === 0 ? curr : sql`${acc}${separator}${curr}`
+    if (rawStartDate) {
+      const start = new Date(rawStartDate);
+      if (!isNaN(start.getTime())) {
+        start.setHours(0, 0, 0, 0);
+        baseConditions.push(
+          sql`transactions.event_time >= ${start.toISOString()}`
         );
       }
+    }
 
-      const whereClause = baseConditions.length > 0
+    const rawEndDate = parseQueryParam(endDate);
+
+    if (rawEndDate) {
+      const end = new Date(rawEndDate);
+      if (!isNaN(end.getTime())) {
+        baseConditions.push(
+          sql`transactions.event_time <= ${end.toISOString()}`
+        );
+      }
+    }
+
+    if (searchTerm) {
+      const term = `${searchTerm}%`;
+      baseConditions.push(sql`transactions.name ILIKE ${term}`);
+    }
+
+    if (category) {
+      console.log(category);
+      const catTerm = `${category}`;
+      baseConditions.push(sql`${catTerm} = ANY(transactions.category)`);
+    }
+
+    console.log("Sort param:", sort);
+    let orderBy = sql`time DESC`;
+    if (sort === "date-asc") {
+      orderBy = sql`time ASC`;
+    } else if (sort === "amount-desc") {
+      orderBy = sql`transactions.amount DESC`;
+    } else if (sort === "amount-asc") {
+      orderBy = sql`transactions.amount ASC`;
+    } else if (sort === "name-asc") {
+      orderBy = sql`name ASC`;
+    } else if (sort === "name-desc") {
+      orderBy = sql`name DESC`;
+    }
+
+    function sqlJoin(sqlArray: any[], separator: any) {
+      if (sqlArray.length === 0) return null;
+      return sqlArray.reduce((acc, curr, i) =>
+        i === 0 ? curr : sql`${acc}${separator}${curr}`
+      );
+    }
+
+    const whereClause =
+      baseConditions.length > 0
         ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
         : sql``;
 
-          // SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
-      const transactions : Transaction[] = await sql`
+    // SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
+    const transactions: Transaction[] = await sql`
         SELECT transactions.transaction_id AS id,
         transactions.name,
         CASE 
@@ -255,71 +269,70 @@ export async function getUserTransactions(req: Request, res: Response) {
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
 
-      // const iconCategories = await sql`
-      //   SELECT c.category as category, COALESCE(c.icon, p.icon) AS icon, p.category as parent
-      //   FROM categories c
-      //   LEFT JOIN categories p on c.parent = p.category_id
-      // `;
-      // console.log("here")
-      // console.log(iconCategories)
+    // const iconCategories = await sql`
+    //   SELECT c.category as category, COALESCE(c.icon, p.icon) AS icon, p.category as parent
+    //   FROM categories c
+    //   LEFT JOIN categories p on c.parent = p.category_id
+    // `;
+    // console.log("here")
+    // console.log(iconCategories)
 
-      // const categoryToIcon = new Map<string, string>();
-      // const categoryToParent = new Map<string, string | undefined>();
+    // const categoryToIcon = new Map<string, string>();
+    // const categoryToParent = new Map<string, string | undefined>();
 
+    // for (const { category, icon, parent } of iconCategories) {
+    //   categoryToIcon.set(category, icon);
+    //   categoryToParent.set(category, parent);
+    // }
 
-      // for (const { category, icon, parent } of iconCategories) {
-      //   categoryToIcon.set(category, icon);
-      //   categoryToParent.set(category, parent);
-      // }
+    // function resolveIconFromCategories(categories: string[]): string {
+    //   // Sort longest paths first (most specific)
+    //   const sorted = [...categories].sort((a, b) => {
+    //     let depthA = getCategoryDepth(a);
+    //     let depthB = getCategoryDepth(b);
+    //     return depthB - depthA; // more specific first
+    //   });
 
-      // function resolveIconFromCategories(categories: string[]): string {
-      //   // Sort longest paths first (most specific)
-      //   const sorted = [...categories].sort((a, b) => {
-      //     let depthA = getCategoryDepth(a);
-      //     let depthB = getCategoryDepth(b);
-      //     return depthB - depthA; // more specific first
-      //   });
+    //   for (const cat of sorted) {
+    //     let resolved = resolveCategoryToIcon(cat);
+    //     if (resolved) return resolved;
+    //   }
 
-      //   for (const cat of sorted) {
-      //     let resolved = resolveCategoryToIcon(cat);
-      //     if (resolved) return resolved;
-      //   }
+    //   return "❓"; // Fallback
+    // }
 
-      //   return "❓"; // Fallback
-      // }
+    // function resolveCategoryToIcon(category: string): string | undefined {
+    //   // Traverse up the hierarchy to find icon
+    //   let current = category;
+    //   while (current) {
+    //     const icon = categoryToIcon.get(current);
+    //     if (icon) return icon;
+    //     current = categoryToParent.get(current) ?? "";
+    //   }
+    //   return undefined;
+    // }
 
-      // function resolveCategoryToIcon(category: string): string | undefined {
-      //   // Traverse up the hierarchy to find icon
-      //   let current = category;
-      //   while (current) {
-      //     const icon = categoryToIcon.get(current);
-      //     if (icon) return icon;
-      //     current = categoryToParent.get(current) ?? "";
-      //   }
-      //   return undefined;
-      // }
+    // function getCategoryDepth(category: string): number {
+    //   let depth = 0;
+    //   let current = category;
+    //   while (categoryToParent.has(current)) {
+    //     current = categoryToParent.get(current)!;
+    //     depth++;
+    //   }
+    //   return depth;
+    // }
 
-      // function getCategoryDepth(category: string): number {
-      //   let depth = 0;
-      //   let current = category;
-      //   while (categoryToParent.has(current)) {
-      //     current = categoryToParent.get(current)!;
-      //     depth++;
-      //   }
-      //   return depth;
-      // }
+    // const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
+    //   const icon = Array.isArray(tx.category)
+    //     ? resolveIconFromCategories(tx.category)
+    //     : "❓";
 
-      // const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
-      //   const icon = Array.isArray(tx.category)
-      //     ? resolveIconFromCategories(tx.category)
-      //     : "❓";
-
-      //   return {
-      //     ...tx,
-      //     // color: transaction_palette[c % transaction_palette.length],
-      //     icon
-      //   };
-      // });
+    //   return {
+    //     ...tx,
+    //     // color: transaction_palette[c % transaction_palette.length],
+    //     icon
+    //   };
+    // });
 
     res.json({
       transactions: transactions,
@@ -438,7 +451,7 @@ export async function postTransferCurrency(req: Request, res: Response) {
   const senderFirebaseId = (req as any).user.uid;
   const { recipientUsername, currencyCode, amount } = req.body;
 
-  console.log("transfermoney triggered")
+  console.log("transfermoney triggered");
 
   if (amount <= 0) {
     res.status(400).json({ error: "enter postive transfer amount" });
@@ -536,7 +549,7 @@ export async function postTransferCurrency(req: Request, res: Response) {
       `;
 
       if (deal && amount >= deal.min_spend_amount) {
-        console.log("cashback deal found")
+        console.log("cashback deal found");
         await sql`
           UPDATE wallets
           SET balance = balance + ${deal.cashback_amount}

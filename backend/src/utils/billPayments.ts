@@ -1,5 +1,5 @@
 import sql from "../database/client";
-import { Bill } from "../handlers/billPayment";
+import { Bill, InsufficientFundError } from "../types/billPayments";
 import { sendEmailToUserByAccountId } from "./notifyUserByEmail";
 
 interface BankResponse {
@@ -20,11 +20,15 @@ interface BankResponse {
  * @param account_id 
  */
 export async function payBillAction(bill: Bill) {
-  const softDeductionId = await softDeductBillPayment(
-    bill.id,
-    bill.walletId,
-    bill.amount
-  );
+  const softDeductionId = await softDeductBillPayment(bill);
+
+  // Soft deduction failed
+  // Do not continue
+  // All the errors occured in the soft dedcution phase should
+  // have been handled by the softDeductBillPayment function
+  if (!softDeductionId) {
+    return;
+  }
 
   let bankResponse: BankResponse | undefined;
   let billerInfo: string;
@@ -37,6 +41,7 @@ export async function payBillAction(bill: Bill) {
 
     // Perform bank transfer
     bankResponse = await bankTransferBillPayment(
+      bill.walletId,
       bill.billerBsb,
       bill.billerBankAccountNumber
     );
@@ -47,6 +52,7 @@ export async function payBillAction(bill: Bill) {
     }
     // Perform BPAY
     bankResponse = await bpayBillPayment(
+      bill.walletId,
       bill.billerBpayCode,
       bill.billerBpayRef
     );
@@ -58,7 +64,9 @@ export async function payBillAction(bill: Bill) {
   console.log(bankResponse);
   // Handle the bank response
   if (!bankResponse) {
-    throw new Error("Bank response is undefined");
+    throw new Error(
+      "Bank response is undefined in Bill Payments - payBillAction"
+    );
   }
 
   if (bankResponse.success) {
@@ -83,26 +91,24 @@ export async function payBillAction(bill: Bill) {
 
 // Deduct the bill payment amount from the account balance
 // The deduction is put into the soft deductions table
-async function softDeductBillPayment(
-  billPaymentId: number,
-  walletId: number,
-  amount: number
-): Promise<number> {
+async function softDeductBillPayment(bill: Bill): Promise<number | undefined> {
+  const billPaymentId = bill.id;
+  const { walletId, amount } = bill;
   try {
     const result = await sql.begin(async (sql) => {
       // For Update: lock the wallet row to prevent race conditions
-      const wallet = await sql`
-        SELECT * FROM wallets WHERE wallet_id = ${walletId} FOR UPDATE
+      // This operation will rollback if any errors are thrown in the process
+      const walletBalance = await sql`
+        SELECT balance FROM wallets WHERE wallet_id = ${walletId} FOR UPDATE
       `;
 
-      if (wallet.length === 0) {
+      if (walletBalance.length === 0) {
         throw new Error("Wallet not found");
       }
-
-      const walletData = wallet[0];
-
-      if (walletData.balance < amount) {
-        throw new Error("Insufficient funds");
+      // No change to the balance if there's insufficient fund
+      // Throw the error
+      if (Number(walletBalance[0].balance) < Number(amount)) {
+        throw new InsufficientFundError("Insufficient balance");
       }
 
       // Deduct from wallet
@@ -124,8 +130,18 @@ async function softDeductBillPayment(
 
     return result; // soft_deductions.id
   } catch (error) {
-    console.error("Soft deduction failed:", error);
-    throw error;
+    if (error instanceof InsufficientFundError) {
+      const billerInfo =
+        bill.payMethod === "bankAcct"
+          ? `BSB:${bill.billerBsb} Bank Account: ${bill.billerBankAccountNumber}`
+          : `BPAY code: ${bill.billerBpayCode} ref: ${bill.billerBpayRef}`;
+      sendEmailToUserByAccountId(bill.accountId, "Failed bill payment", {
+        text: `Your bill payment for ${billerInfo} has failed due to insufficient fund.`,
+      });
+    } else {
+      console.error("Soft deduction failed:", error);
+      throw error;
+    }
   }
 }
 
@@ -133,11 +149,13 @@ async function softDeductBillPayment(
 // (* This is reusable for other bank transfer actions, not just bill payments,
 //    if this has not been implemented by other teammember yet *)
 async function bankTransferBillPayment(
+  walletId: number | string,
   billerBsb: string,
   billerBankAccountNumber: string
 ): Promise<BankResponse> {
+  const currencyCode = await getCurrencyCodeByWalletId(walletId);
   console.log(
-    `Simulating bank transfer to ${billerBsb}-${billerBankAccountNumber}...`
+    `Simulating bank transfer to ${billerBsb}-${billerBankAccountNumber} in ${currencyCode}...`
   );
 
   // Assuming the mock bank API gives us a simple response
@@ -147,7 +165,9 @@ async function bankTransferBillPayment(
   return new Promise((resolve) => {
     setTimeout(() => {
       // e.g. success rate if 95%
-      const isSuccess: boolean = Math.random() < 0.95;
+      // const isSuccess: boolean = Math.random() < 0.95;
+      // for demo:
+      const isSuccess = true;
       // Simulate a "successful" bank response
       resolve({
         success: isSuccess,
@@ -158,12 +178,14 @@ async function bankTransferBillPayment(
 }
 
 // hit the bank API to perform BPAY
-function bpayBillPayment(
+async function bpayBillPayment(
+  walletId: number | string,
   billerBpayCode: string,
   billerBpayRef: string
 ): Promise<BankResponse> {
+  const currencyCode = await getCurrencyCodeByWalletId(walletId);
   console.log(
-    `Simulating BPAY payment to ${billerBpayCode} with ref ${billerBpayRef}...`
+    `Simulating BPAY payment to ${billerBpayCode} with ref ${billerBpayRef} in ${currencyCode}...`
   );
 
   // Assuming the mock bank API gives us a simple response
@@ -173,8 +195,9 @@ function bpayBillPayment(
   return new Promise((resolve) => {
     setTimeout(() => {
       // e.g. success rate if 95%
-      const isSuccess: boolean = Math.random() < 0.95;
-
+      // const isSuccess: boolean = Math.random() < 0.95;
+      // for demo
+      const isSuccess = true;
       resolve({
         success: isSuccess,
         externalRef: `bpay-ref-${Date.now()}`,
@@ -219,7 +242,7 @@ async function handleFailedBillPaymentToTheBank(
 
     If this was a scheduled or recurring payment, it has been cancelled. Since the payment could not be processed this time, future attempts are also likely to fail unless the underlying issue is resolved.
 
-    Please review your biller information and try again when ready.`;
+    Please also review your biller information and try again when ready.`;
 
   await sendEmailToUserByAccountId(accountId, "Bill Payment Failed", {
     text: textMsg,
@@ -238,14 +261,15 @@ async function handleSuccessfulBillPaymentToTheBank(
 ) {
   try {
     await sql.begin(async (sql) => {
-      // 1. Update soft_deductions
+      // update soft_deductions
       await sql`
         UPDATE soft_deductions
         SET status = 'success', external_ref = ${externalRef}
         WHERE id = ${softDeductionId}
       `;
 
-      // 2. Get bill type and frequency
+      // get bill type and frequency
+      // because this affects how we deal with the next_run_at
       const result = await sql`
         SELECT type, frequency FROM bill_payments
         WHERE id = ${bill.id}
@@ -284,11 +308,10 @@ async function handleSuccessfulBillPaymentToTheBank(
     });
 
     console.log(`✅ Payment ${bill.id} marked as successful.`);
-    // 3. Log the transaction
+    // log the transaction
     await logTransaction(bill);
   } catch (error) {
     console.error(`❌ Failed to mark payment ${bill.id} as successful:`, error);
-    // You can also choose to rethrow or return an error status
     throw error;
   }
 }
@@ -302,18 +325,30 @@ async function logTransaction(bill: Bill) {
   //
   // LEFT JOIN wallets recipient_wallet ON t.recipient_wallet_id = recipient_wallet.wallet_id
   // LEFT JOIN accounts recipient_account on recipient_wallet.account_id = recipient_account.account_id
-
+  bill.walletId;
   try {
+    const [wallet] = await sql<{ currency_id: number }[]>`
+      SELECT currency_id
+      FROM wallets
+      WHERE wallet_id = ${bill.walletId}
+    `;
+
+    if (!wallet || !wallet.currency_id) {
+      throw new Error(`Wallet with ID ${bill.walletId} not found.`);
+    }
+
     await sql`
       INSERT INTO transactions (
         name,
         amount,
+        currency,
         sender_wallet_id,
         recipient_wallet_id,
         category
       ) VALUES (
         ${bill.billDisplayName || "Bill Payment"},
         ${bill.amount},
+        ${wallet.currency_id},
         ${bill.walletId},
         NULL,
         ARRAY['bill', ${bill.payMethod}]
@@ -328,5 +363,20 @@ async function logTransaction(bill: Bill) {
     );
     // this should not happen
     throw error;
+  }
+}
+
+async function getCurrencyCodeByWalletId(walletId: string | number) {
+  try {
+    // Get the currency code, which the bank will need for payments
+    const result = await sql<{ currencyCode: string }[]>`
+      SELECT c.code AS "currencyCode"
+      FROM wallets w
+      JOIN currencies c ON w.currency_id = c.currency_id
+      WHERE w.wallet_id = ${walletId};
+    `;
+    return result.length > 0 ? result[0].currencyCode : null;
+  } catch (error) {
+    console.error(error);
   }
 }
