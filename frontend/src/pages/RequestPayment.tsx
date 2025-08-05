@@ -118,7 +118,8 @@ const RequestPage: React.FC = () => {
       const requestData = {
         amount: parseFloat(formData.amount),
         recipient: selectedContact.username || selectedContact.email || selectedContact.phone,
-        description: formData.description
+        description: formData.description,
+        currencyCode: formData.currency
       };
 
       const response = await authFetch("http://localhost:4000/api/payment-request", {

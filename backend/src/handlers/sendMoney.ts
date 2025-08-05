@@ -82,7 +82,11 @@ export async function postSendMoney(req: Request, res: Response) {
         throw new Error(`You don't have a ${transferData.currencyCode} wallet`);
       }
 
-      if (senderWallet.balance < transferData.amount) {
+      // Convert balance to number to ensure proper comparison
+      const senderBalance = parseFloat(senderWallet.balance);
+      const transferAmount = transferData.amount; // Already a number
+
+      if (senderBalance < transferAmount) {
         throw new Error("Insufficient balance");
       }
 
