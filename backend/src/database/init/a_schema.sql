@@ -62,6 +62,27 @@ CREATE TABLE wallets (
   CONSTRAINT fk_wallets_currency FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
 );
 
+CREATE TABLE payment_requests (
+  id SERIAL PRIMARY KEY,
+  account_id_from INTEGER NOT NULL REFERENCES accounts(account_id),
+  username_from TEXT NOT NULL,
+  account_id_to INTEGER NOT NULL REFERENCES accounts(account_id),
+  username_to TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
+  currency_id INTEGER NOT NULL REFERENCES currencies(currency_id),
+  description TEXT,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cashback_deals (
+  deal_id SERIAL PRIMARY KEY,
+  deal_wallet_id INTEGER NOT NULL REFERENCES wallets(wallet_id) ON DELETE CASCADE,
+  min_spend_amount NUMERIC(18,2) NOT NULL CHECK (min_spend_amount >= 0),
+  cashback_amount NUMERIC(18,2) NOT NULL CHECK (cashback_amount > 0)
+);
+
+
 CREATE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -81,10 +102,17 @@ CREATE TABLE transactions (
   amount NUMERIC(18, 2) DEFAULT 0 CHECK (amount >= 0),
   event_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   category TEXT[] NOT NULL DEFAULT '{}',
+  currency INTEGER REFERENCES currencies(currency_id),
   sender_wallet_id INTEGER REFERENCES wallets(wallet_id),
   recipient_wallet_id INTEGER REFERENCES wallets(wallet_id)
 );
 
+CREATE TABLE categories (
+  category_id SERIAL PRIMARY KEY,
+  category TEXT UNIQUE NOT NULL,
+  icon TEXT NOT NULL,
+  parent INTEGER REFERENCES categories(category_id) DEFAULT NULL
+);
 
 CREATE TYPE payment_type AS ENUM ('one-time', 'recurring');
 CREATE TYPE payment_frequency AS ENUM ('weekly', 'fortnightly', 'monthly');

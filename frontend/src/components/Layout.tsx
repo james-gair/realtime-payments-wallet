@@ -19,6 +19,7 @@ import {
   PlusIcon,
   UserGroupIcon,
   UserIcon,
+  CurrencyDollarIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { signOut } from "firebase/auth";
@@ -36,6 +37,7 @@ const navigation = [
   { name: "Contacts", href: "/contacts", icon: UserGroupIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Cashback", href: "/cashback", icon: CurrencyDollarIcon },
   { name: "Group Payments", href: "/group-payments", icon: UserGroupIcon },
   {
     name: "Payment Limits",

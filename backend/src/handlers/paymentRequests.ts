@@ -30,9 +30,9 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
       return;
     }
 
-    // Lookup recipient's account_id
+    // Lookup recipient's account_id and username
     const recipientUser = await sql`
-      SELECT account_id FROM accounts WHERE username = ${recipient}
+      SELECT account_id, username FROM accounts WHERE username = ${recipient}
     `;
 
     if (recipientUser.length === 0) {
@@ -40,22 +40,26 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
       return;
     }
 
-    const account_id_to = recipientUser[0].account_id;
+    const { account_id: account_id_to, username: username_to } = recipientUser[0];
 
-    // Insert into payment_request table
+    // Insert into payment_requests table
     const result = await sql`
-      INSERT INTO payment_request (
+      INSERT INTO payment_requests (
         account_id_from,
         username_from,
         account_id_to,
+        username_to,
         amount,
+        currency_id,
         description,
         status
       ) VALUES (
         ${account_id_from},
         ${username_from},
         ${account_id_to},
+        ${username_to},
         ${amount},
+        1,
         ${description},
         'pending'
       )
@@ -93,7 +97,7 @@ export async function getReceivedPaymentRequests(req: Request, res: Response): P
 
     // Get all payment requests where this user is the recipient (account_id_to) that havent been settled
     const paymentRequests = await sql`
-      SELECT * FROM payment_request
+      SELECT * FROM payment_requests
       WHERE account_id_to = ${account_id} AND status = 'pending'
       ORDER BY created_at DESC
     `;
@@ -133,7 +137,7 @@ export async function getSentPaymentRequests(req: Request, res: Response): Promi
       SELECT 
         pr.*,                  
         a.username AS recipient_username  
-      FROM payment_request pr
+      FROM payment_requests pr
       JOIN accounts a ON pr.account_id_to = a.account_id
       WHERE pr.account_id_from = ${account_id}
       ORDER BY pr.created_at DESC
@@ -174,7 +178,7 @@ export async function deletePaymentRequest(req: Request, res: Response): Promise
 
     // Verify the request exists and belongs to the user, and is still pending
     const requestResult = await sql`
-      SELECT * FROM payment_request
+      SELECT * FROM payment_requests
       WHERE id = ${id} AND account_id_from = ${account_id} AND status = 'pending'
     `;
 
@@ -185,7 +189,7 @@ export async function deletePaymentRequest(req: Request, res: Response): Promise
 
     // Delete the payment request
     await sql`
-      DELETE FROM payment_request WHERE id = ${id}
+      DELETE FROM payment_requests WHERE id = ${id}
     `;
 
     res.status(200).json({ message: "Payment request cancelled successfully." });
@@ -221,7 +225,7 @@ export async function settlePaymentRequest(req: Request, res: Response): Promise
 
     // Verify the payment request exists and belongs to the user as recipient
     const requestResult = await sql`
-      SELECT * FROM payment_request
+      SELECT * FROM payment_requests
       WHERE id = ${id} AND account_id_to = ${account_id} AND status = 'pending'
     `;
 
@@ -230,14 +234,14 @@ export async function settlePaymentRequest(req: Request, res: Response): Promise
       return;
     }
 
-    // Update the status to "settled"
+    // Update the status to "approved"
     await sql`
-      UPDATE payment_request
-      SET status = 'settled'
+      UPDATE payment_requests
+      SET status = 'approved'
       WHERE id = ${id}
     `;
 
-    res.status(200).json({ message: "Payment request marked as settled." });
+    res.status(200).json({ message: "Payment request marked as approved." });
   } catch (error) {
     console.error("Error settling payment request:", error);
     res.status(500).json({ error: "Internal server error." });
