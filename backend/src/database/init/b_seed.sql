@@ -1,17 +1,17 @@
-INSERT INTO accounts (account_id, firebase_id, username, email, phone, date_of_birth, is_verified, first_name, last_name) VALUES
-  (1, 'xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, 'Test', 'User'),
-  (2, 'ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, 'Test', 'User'),
-  (3, 'IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, 'No', 'User'),
-  (4, 'mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'Edwin', 'N'),
+INSERT INTO accounts (firebase_id, username, email, phone, date_of_birth, is_verified, first_name, last_name) VALUES
+  ('xQAGaT5lXreLsvTUeLimeVC6zKL2', 'testuser', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', false, 'Test', 'User'),
+  ('ImwaeGpTjUhxe5GStIi1nwbYDj72', 'testuserverified', 'test@gmail.com', '0414312212', '2000-12-01T00:00:00.000Z', true, 'Test', 'User'),
+  ('IdCcg1ruAUflcZX8SBJp6gJCGPE3', 'nouser', 'no@gmail.com', '0414325212', '2000-12-12T00:00:00.000Z', false, 'No', 'User'),
+  ('mGL5NcnAZvOUdQuqxxCDiXcWRBn2', 'EN', 'edwinni@outlook.com.au', '0481088688', '2001-09-19T00:00:00.000Z', 'f', 'Edwin', 'N'),
  -- For api doc testing:
-  (5, 'mock-user', 'mockmarker', 'marker@example.com', '0400000000', '1990-01-01T00:00:00.000Z',false,'Marker','Test');
+  ('mock-user', 'mockmarker', 'marker@example.com', '0400000000', '1990-01-01T00:00:00.000Z',false,'Marker','Test');
 
 /* 
 pword for test is testtest
 pword for no is nononono
 */
-INSERT INTO currencies (currency_id, code, symbol) VALUES
-  (1, 'AUD', 'A$'), (2, 'USD', '$'), (3, 'JPY', '¥');
+INSERT INTO currencies (code, symbol) VALUES
+  ('AUD', 'A$'), ('USD', '$'), ('JPY', '¥');
 
 
 -- INSERT INTO wallets (wallet_id, account_id, currency_id, balance) VALUES
