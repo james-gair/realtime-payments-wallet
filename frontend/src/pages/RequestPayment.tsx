@@ -118,11 +118,11 @@ const RequestPage: React.FC = () => {
     try {
       const requestData = {
         amount: parseFloat(formData.amount),
-        recipient: selectedContact.username || selectedContact.email || selectedContact.phone,
+        recipientId:  selectedContact.contact_account_id,
         description: formData.description,
         currencyCode: formData.currency
       };
-//       console.log("Sending payment request with:", requestData);
+
 
       const response = await authFetch("http://localhost:4000/api/payment-request", {
         method: "POST",
