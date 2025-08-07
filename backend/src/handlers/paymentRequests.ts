@@ -4,7 +4,7 @@ import { postSendMoney } from "./sendMoney";
 
 export async function postPaymentRequest(req: Request, res: Response):  Promise<void> {
   try {
-    const { recipient, amount, description, currencyCode = "AUD" } = req.body;
+    const { recipientId, amount, description, currencyCode = "AUD" } = req.body;
 
     // Get Firebase UID from middleware auth
 
@@ -34,10 +34,6 @@ export async function postPaymentRequest(req: Request, res: Response):  Promise<
     }
 
     // Lookup recipient's account_id and username
-    console.log("got to looking this up");
-   // const recipientUser = await sql`
-   //   SELECT account_id, username FROM accounts WHERE username = ${recipient}
-   // `;
 
   const recipientUser = await sql`
     SELECT account_id, username FROM accounts WHERE account_id = ${recipientId}
