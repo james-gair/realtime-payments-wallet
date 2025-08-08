@@ -9,7 +9,7 @@ import { SavedContacts } from "../components/SavedContacts";
 import type { Contact } from "../types";
 import { MOCK_GROUPS } from "./GroupPaymentsDashboard";
 
-const MOCK_BALANCES = [
+const CONFIG_MOCK_BALANCES = [
   {
     id: 1,
     name: "You",
@@ -40,6 +40,69 @@ const MOCK_BALANCES = [
   },
 ];
 
+const CONFIG_MOCK_EXPENSES = [
+  {
+    id: 1,
+    description: "Dinner",
+    amount: 20.0,
+    payer: "You",
+  },
+  {
+    id: 2,
+    description: "Gas",
+    amount: 5,
+    payer: "@Person",
+  },
+];
+
+const CONFIG_MOCK_ACTIVITY = [
+  {
+    id: 1,
+    type: "expense_added",
+    description: "You added an expense",
+    details: "Dinner - $20.00",
+    timestamp: "2 hours ago",
+    user: "You",
+    icon: "💰",
+  },
+  {
+    id: 2,
+    type: "payment_made",
+    description: "@Person paid @Pizza",
+    details: "$15.00",
+    timestamp: "1 day ago",
+    user: "@Person",
+    icon: "💸",
+  },
+  {
+    id: 3,
+    type: "expense_added",
+    description: "@Person added an expense",
+    details: "Gas - $5.00",
+    timestamp: "2 days ago",
+    user: "@Person",
+    icon: "💰",
+  },
+  {
+    id: 4,
+    type: "member_joined",
+    description: "@Apple joined the group",
+    details: "",
+    timestamp: "3 days ago",
+    user: "@Apple",
+    icon: "👋",
+  },
+  {
+    id: 5,
+    type: "payment_settled",
+    description: "You settled up with @Pizza",
+    details: "$10.00",
+    timestamp: "5 days ago",
+    user: "You",
+    icon: "✅",
+  },
+];
+
 export default function GroupPayments() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -53,6 +116,9 @@ export default function GroupPayments() {
   const [customAmounts, setCustomAmounts] = useState<{ [key: string]: string }>(
     {}
   );
+  const [MOCK_BALANCES, setMOCK_BALANCES] = useState(CONFIG_MOCK_BALANCES);
+  const [MOCK_EXPENSES, setMOCK_EXPENSES] = useState(CONFIG_MOCK_EXPENSES);
+  const [MOCK_ACTIVITY, setMOCK_ACTIVITY] = useState(CONFIG_MOCK_ACTIVITY);
 
   // SavedContacts functionality
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -94,6 +160,33 @@ export default function GroupPayments() {
         [memberName]: amount,
       }));
     }
+  };
+
+  const addActivity = (
+    type: string,
+    description: string,
+    details: string,
+    user: string
+  ) => {
+    const icons: { [key: string]: string } = {
+      expense_added: "💰",
+      payment_made: "💸",
+      payment_settled: "✅",
+      member_joined: "👋",
+      member_left: "👋",
+    };
+
+    const newActivity = {
+      id: MOCK_ACTIVITY.length + 1,
+      type,
+      description,
+      details,
+      timestamp: "Just now",
+      user,
+      icon: icons[type] || "📝",
+    };
+
+    setMOCK_ACTIVITY([newActivity, ...MOCK_ACTIVITY]);
   };
 
   const calculateSplit = () => {
@@ -145,9 +238,56 @@ export default function GroupPayments() {
     ) {
       // TODO: Submit expense to backend
       const splits = calculateSplit();
+      const totalAmount = parseFloat(expenseAmount);
+
+      // TODO: Get payer name from backend
+      const payerName = "You"; // Assuming "You" is the person who paid the expense
+
       console.log("Expense splits:", splits);
       alert(
         `Expense "${expenseDescription}" for $${expenseAmount} added and split between ${selectedMembers.length} members!`
+      );
+
+      // Add the new expense to the expenses list (newest first)
+      const newExpense = {
+        id: MOCK_EXPENSES.length + 1,
+        description: expenseDescription,
+        amount: totalAmount,
+        payer: payerName,
+      };
+      setMOCK_EXPENSES([newExpense, ...MOCK_EXPENSES]);
+
+      // Add activity log for the expense
+      addActivity(
+        "expense_added",
+        `${payerName} added an expense`,
+        `${expenseDescription} - $${totalAmount.toFixed(2)}`,
+        payerName
+      );
+
+      // Update balances
+      setMOCK_BALANCES(
+        MOCK_BALANCES.map((balance) => {
+          if (
+            balance.name === payerName &&
+            selectedMembers.includes(balance.name)
+          ) {
+            // The payer gets back the total amount minus their own share
+            const payerShare = splits[balance.name] || 0;
+            const amountToReceive = totalAmount - payerShare;
+            return {
+              ...balance,
+              amount: balance.amount + amountToReceive,
+            };
+          } else if (selectedMembers.includes(balance.name)) {
+            // Other members owe their share
+            return {
+              ...balance,
+              amount: balance.amount - splits[balance.name],
+            };
+          }
+          return balance;
+        })
       );
       closeModal();
       // Reset form
@@ -260,23 +400,81 @@ export default function GroupPayments() {
 
           {activeTab === "expenses" && (
             <div className="px-4 md:px-8 py-6">
-              <div className="text-center py-16">
-                <p className="text-gray-500 text-sm">No expenses yet</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  Add an expense to get started
-                </p>
-              </div>
+              {MOCK_EXPENSES.length > 0 ? (
+                <div className="space-y-1">
+                  {MOCK_EXPENSES.map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between py-4 hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">
+                          💰
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {expense.description}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Paid by {expense.payer}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-base font-semibold text-gray-900">
+                          ${expense.amount.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 text-sm">No expenses yet</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Add an expense to get started
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "activity" && (
             <div className="px-4 md:px-8 py-6">
-              <div className="text-center py-16">
-                <p className="text-gray-500 text-sm">No activity yet</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  Activity will appear here
-                </p>
-              </div>
+              {MOCK_ACTIVITY.length > 0 ? (
+                <div className="space-y-3">
+                  {MOCK_ACTIVITY.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 py-3 hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2"
+                    >
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                        {activity.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.description}
+                        </p>
+                        {activity.details && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {activity.details}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          {activity.timestamp}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 text-sm">No activity yet</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Activity will appear here
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
