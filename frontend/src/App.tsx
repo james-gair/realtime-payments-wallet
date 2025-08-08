@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router-dom";
 import NavbarLayout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddMoney from "./pages/AddMoney";
+import AddContact from "./pages/AddContact";
+import ContactDetails from "./pages/ContactDetails";
 import { BillConfirmation } from "./pages/BillConfirmation";
 import { BillPayments } from "./pages/BillPayments";
 import Contacts from "./pages/Contacts";
@@ -16,7 +18,7 @@ import GroupPaymentsDashboard from "./pages/GroupPaymentsDashboard";
 import { KYCApplication } from "./pages/KYCApplication";
 import KYCVerificationSuccess from "./pages/KYCVerificationSuccess";
 import LoginPage from "./pages/LoginPage";
-import Payments from "./pages/Payments";
+import Cashback from "./pages/CashBack";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import RequestPayment from "./pages/RequestPayment";
@@ -24,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SendMoney from "./pages/SendMoney";
 import Transactions from "./pages/Transactions";
 import "./styles/App.css";
+import PaymentLimits from "./pages/PaymentLimits";
 
 function App() {
   return (
@@ -40,11 +43,12 @@ function App() {
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-money" element={<AddMoney />} />
-          <Route path="/payments" element={<Payments />} />
           <Route path="/forex" element={<Forex />} />
+          <Route path="/cashback" element={<Cashback />} />
           <Route path="/request-money" element={<RequestPayment />} />
           <Route path="/send-money" element={<SendMoney />} />
           <Route path="/bill-payments" element={<BillPayments />} />
+          <Route path="/payment-limits" element={<PaymentLimits />} />
           <Route
             path="/bill-payments/confirmation/:id"
             element={<BillConfirmation />}
@@ -56,6 +60,8 @@ function App() {
           />
           <Route path="/profile" element={<Profile />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts/:contactId" element={<ContactDetails />} />
+          <Route path="/add-contact" element={<AddContact />} />
           <Route path="/kyc" element={<KYCApplication />} />
           <Route path="/kyc/success" element={<KYCVerificationSuccess />} />
           <Route path="/group-payments" element={<GroupPaymentsDashboard />} />

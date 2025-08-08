@@ -3,18 +3,26 @@ import dotenv from "dotenv";
 import express from "express";
 import { errorHandler } from "./middleware/errorHandler";
 import billPaymentsRouter from "./routes/billPayment";
+import paymentLimitsRouter from "./routes/paymentLimits";
 import userDashboard from "./routes/dashboard";
+import sendMoneyRouter from "./routes/sendMoney";
 import fxRatesRouter from "./routes/fxRates";
 import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
+import transactionsRouter from "./routes/transactions";
+import savedContactsRouter from "./routes/savedContacts";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
+import { processScheduledJobs } from "./cronJobs/scheduledJobs";
+import paymentRequestRouter from "./routes/paymentRequests";
 
 dotenv.config();
 export function createApp() {
   const app = express();
+
+  processScheduledJobs();
 
   app.use(cors({ origin: "http://localhost:5173" }));
   // Middleware to parse JSON
@@ -27,11 +35,16 @@ export function createApp() {
   app.use("/api", userLogin);
   // app.use("/api", userDashboard);
   app.use("/api", billPaymentsRouter);
+  app.use("/api", paymentLimitsRouter);
   app.use("/api", kycRouter);
   app.use("/api", fxRatesRouter);
   app.use("/api", userDashboard);
+  app.use("/api", sendMoneyRouter);
   app.use("/api", profileRouter);
+  app.use("/api/payment-request", paymentRequestRouter);
+  app.use("/api", savedContactsRouter);
   app.use("/api", paymentsRouter);
+  app.use("/api", transactionsRouter);
   app.use(errorHandler);
 
   return app;

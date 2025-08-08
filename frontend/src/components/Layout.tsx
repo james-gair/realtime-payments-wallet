@@ -7,9 +7,11 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 import {
+  AdjustmentsVerticalIcon,
   ArrowPathIcon,
   ArrowRightEndOnRectangleIcon,
   Bars3Icon,
+  CurrencyDollarIcon,
   DocumentTextIcon,
   GlobeAltIcon,
   HomeIcon,
@@ -37,6 +39,12 @@ const navigation = [
   { name: "Contacts", href: "/contacts", icon: UsersIcon },
   { name: "Bill Payments", href: "/bill-payments", icon: DocumentTextIcon },
   { name: "Forex", href: "/forex", icon: GlobeAltIcon },
+  { name: "Cashback", href: "/cashback", icon: CurrencyDollarIcon },
+  {
+    name: "Payment Limits",
+    href: "/payment-limits",
+    icon: AdjustmentsVerticalIcon,
+  },
 ];
 
 function classNames(...classes: string[]) {

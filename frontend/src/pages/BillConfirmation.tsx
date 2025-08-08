@@ -67,12 +67,17 @@ export function BillConfirmation() {
       </p>
 
       <div className="bg-gray-100 p-4 rounded shadow max-w-md space-y-2">
-        <p>
-          <strong>Bill Name:</strong> {bill.billDisplayName || "N/A"}
-        </p>
-        <p>
-          <strong>Recipient:</strong> {bill.billerDisplayName || "N/A"}
-        </p>
+        {bill.billDisplayName && (
+          <p>
+            <strong>Bill Name:</strong> {bill.billDisplayName}
+          </p>
+        )}
+        {bill.billerDisplayName && (
+          <p>
+            <strong>Recipient:</strong> {bill.billerDisplayName}
+          </p>
+        )}
+
         <p>
           <strong>Amount:</strong> {bill.currencyCode} {bill.amount}
         </p>

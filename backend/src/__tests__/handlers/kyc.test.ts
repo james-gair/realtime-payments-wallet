@@ -1,10 +1,8 @@
 import FormData from "form-data";
 import { kycHandler } from "../../handlers/kyc";
-import * as formUtils from "../../utils/constructKycFormData";
 import * as kycServices from "../../services/verifyKyc";
 import { AxiosError } from "axios";
-import * as kycDbUtils from "../../utils/updateKycVerificationStatus";
-import * as saveIdUtils from "../../utils/saveVerifiedAccountIdInDb";
+import * as kycUtils from "../../utils/kyc";
 
 const mockReq = {
   user: {
@@ -21,10 +19,11 @@ const createMockRes = () => {
 
 const mockRes = createMockRes();
 
-jest.mock("../../utils/constructKycFormData");
+jest.mock("../../utils/kyc");
 jest.mock("../../services/verifyKyc");
-jest.mock("../../utils/updateKycVerificationStatus");
-jest.mock("../../utils/saveVerifiedAccountIdInDb");
+jest.mock("../../utils/kyc");
+jest.mock("../../utils/kyc");
+jest.mock("../../database/client");
 
 describe("kyc", () => {
   beforeEach(() => {
@@ -44,7 +43,7 @@ describe("kyc", () => {
   });
 
   it("send code 400, if formData sending to the mock verification API is not created successfully", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockImplementation(() => {
+    (kycUtils.constructKycFormData as jest.Mock).mockImplementation(() => {
       throw new Error("validation failed");
     });
     await kycHandler(mockReq, mockRes);
@@ -57,7 +56,7 @@ describe("kyc", () => {
   });
 
   it("send code 400, if rejected result from mock API", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
     (kycServices.verifyKyc as jest.Mock).mockReturnValue({
@@ -74,7 +73,7 @@ describe("kyc", () => {
   });
 
   it("send code any, if mock API gives other errors", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
     const axiosError = {
@@ -98,7 +97,7 @@ describe("kyc", () => {
   });
 
   it("send 502, if the mock API is unreachable", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
     const axiosError = {
@@ -115,7 +114,7 @@ describe("kyc", () => {
   });
 
   it("send 500, unexpected error from mock API", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
 
@@ -133,7 +132,7 @@ describe("kyc", () => {
   });
 
   it("send 200, if user is verified susccessfully", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
 
@@ -141,10 +140,11 @@ describe("kyc", () => {
       result: "verified",
     });
 
-    (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
-    (saveIdUtils.saveVerifiedAccountIdInDb as jest.Mock).mockReturnValue([
+    (kycUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
+    (kycUtils.saveVerifiedAccountIdInDb as jest.Mock).mockReturnValue([
       "account_id",
     ]);
+
     await kycHandler(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.json).toHaveBeenCalledWith(
@@ -155,7 +155,7 @@ describe("kyc", () => {
   });
 
   it("send 404, if user is not found in db", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
 
@@ -163,9 +163,7 @@ describe("kyc", () => {
       result: "verified",
     });
 
-    (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(
-      false
-    );
+    (kycUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(false);
 
     await kycHandler(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(404);
@@ -177,7 +175,7 @@ describe("kyc", () => {
   });
 
   it("send 500, if db throws error", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
 
@@ -185,7 +183,7 @@ describe("kyc", () => {
       result: "verified",
     });
 
-    (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockRejectedValue(
+    (kycUtils.updataKycVerificationStatus as jest.Mock).mockRejectedValue(
       new Error("db error")
     );
 
@@ -197,7 +195,7 @@ describe("kyc", () => {
   });
 
   it("send 500, if db throws error", async () => {
-    (formUtils.constructKycFormData as jest.Mock).mockReturnValue(
+    (kycUtils.constructKycFormData as jest.Mock).mockReturnValue(
       new FormData()
     );
 
@@ -205,8 +203,8 @@ describe("kyc", () => {
       result: "verified",
     });
 
-    (kycDbUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
-    (saveIdUtils.saveVerifiedAccountIdInDb as jest.Mock).mockRejectedValue(
+    (kycUtils.updataKycVerificationStatus as jest.Mock).mockReturnValue(true);
+    (kycUtils.saveVerifiedAccountIdInDb as jest.Mock).mockRejectedValue(
       new Error("db error")
     );
 

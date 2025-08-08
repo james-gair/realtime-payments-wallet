@@ -1,11 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import {
-  UpcomingBillCard,
-  type UpcomingBill,
-} from "../components/UpcomingBillCard";
+import { UpcomingBillCard } from "../components/UpcomingBillCard";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import { ErrorModal } from "../components/ErrorModal";
+import type { UpcomingBill } from "../types";
 
 export function BillPayments() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -73,7 +71,7 @@ export function BillPayments() {
         </h2>
         {bills.length === 0 ? (
           <p className="text-gray-600 italic">
-            You have no upcoming bills yet.
+            You have no upcoming bills yet. 😊
           </p>
         ) : (
           bills.map((bill) => (

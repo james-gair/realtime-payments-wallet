@@ -158,6 +158,14 @@ export function BillForm({
     setFieldErrors({});
   };
 
+  function removeFieldError(fieldName: string) {
+    setFieldErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[fieldName];
+      return updated;
+    });
+  }
+
   return (
     <>
       <h1 className="text-3xl font-bold text-gray-900">Bill Payment</h1>
@@ -239,6 +247,7 @@ export function BillForm({
                 name="billerBankAccountNumber"
                 defaultValue={billData?.billerBankAccountNumber}
                 className="block border px-2 py-1 w-full rounded"
+                onChange={() => removeFieldError("billerBankAccountNumber")}
                 required
               />
             </label>
@@ -253,6 +262,7 @@ export function BillForm({
                 name="billerBsb"
                 defaultValue={billData?.billerBsb}
                 className="block border px-2 py-1 w-full rounded"
+                onChange={() => removeFieldError("billerBsb")}
                 required
               />
             </label>
@@ -286,6 +296,7 @@ export function BillForm({
                 name="billerBpayCode"
                 defaultValue={billData?.billerBpayCode}
                 className="block border px-2 py-1 w-full rounded"
+                onChange={() => removeFieldError("billerBpayCode")}
                 required
               />
             </label>
@@ -357,6 +368,7 @@ export function BillForm({
               checked={isScheduled}
               onChange={(e) => {
                 setIsScheduled(e.target.checked);
+                if (!e.target.checked) setIsReminder(false);
               }}
             />
             <div>
@@ -371,7 +383,10 @@ export function BillForm({
                   type="date"
                   name="firstPaymentDate"
                   defaultValue={formatDateToInput(billData?.nextRunAt)}
-                  onChange={(e) => setScheduledDate(e.target.value)}
+                  onChange={(e) => {
+                    setScheduledDate(e.target.value);
+                    removeFieldError("firstPaymentDate");
+                  }}
                   className="mt-1 block border px-2 py-1 rounded"
                 />
               )}
@@ -417,43 +432,46 @@ export function BillForm({
           </section>
 
           {/* Reminder */}
+          {isScheduled &&
+            scheduledDate &&
+            isDateAfterToday(new Date(scheduledDate)) && (
+              <section className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={isReminder}
+                  onChange={(e) => setIsReminder(e.target.checked)}
+                  name="reminderEnabled"
+                  className="mt-1"
+                />
+                <div>
+                  <label className="font-medium">Set a reminder</label>
+                  <p className="italic text-sm text-gray-500">
+                    We’ll notify you before the scheduled or recurring payment
+                    is sent.
+                  </p>
+                  {isReminder && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <label className="text-sm">Remind me</label>
+                      <input
+                        type="number"
+                        defaultValue={billData?.reminderDays}
+                        name="reminderDays"
+                        min="1"
+                        max={maxReminderDays}
+                        className="w-16 border px-2 py-1 rounded"
+                      />
+                      <span className="text-sm">days before</span>
+                    </div>
+                  )}
 
-          <section className="flex items-start gap-2">
-            <input
-              type="checkbox"
-              checked={isReminder}
-              onChange={(e) => setIsReminder(e.target.checked)}
-              name="reminderEnabled"
-              className="mt-1"
-            />
-            <div>
-              <label className="font-medium">Set a reminder</label>
-              <p className="italic text-sm text-gray-500">
-                We’ll notify you before the scheduled or recurring payment is
-                sent.
-              </p>
-              {isReminder && (
-                <div className="mt-1 flex items-center gap-2">
-                  <label className="text-sm">Remind me</label>
-                  <input
-                    type="number"
-                    defaultValue={billData?.reminderDays}
-                    name="reminderDays"
-                    min="1"
-                    max={maxReminderDays}
-                    className="w-16 border px-2 py-1 rounded"
-                  />
-                  <span className="text-sm">days before</span>
+                  {fieldErrors.reminderDays && (
+                    <p className="text-sm text-red-600">
+                      {fieldErrors.reminderDays}
+                    </p>
+                  )}
                 </div>
-              )}
-
-              {fieldErrors.reminderDays && (
-                <p className="text-sm text-red-600">
-                  {fieldErrors.reminderDays}
-                </p>
-              )}
-            </div>
-          </section>
+              </section>
+            )}
         </div>
         <div className="flex flex-row items-center gap-3">
           <button
@@ -464,7 +482,6 @@ export function BillForm({
           </button>
           {Object.keys(fieldErrors).length > 0 && (
             <span className="text-sm text-red-600">
-              {Object.keys(fieldErrors)}
               There are some issues in the form. Please review and try again.
             </span>
           )}
@@ -493,4 +510,13 @@ function formatDateToInput(dateString?: string) {
   if (!dateString) return "";
   const d = new Date(dateString);
   return d.toISOString().split("T")[0];
+}
+
+function isDateAfterToday(date: Date): boolean {
+  const today = new Date();
+  // just comparing the dates
+  today.setHours(0, 0, 0, 0);
+  const givenDate = new Date(date);
+  givenDate.setHours(0, 0, 0, 0);
+  return givenDate > today;
 }

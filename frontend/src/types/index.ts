@@ -42,9 +42,14 @@ export interface Transaction {
 
 export interface PaymentRequest {
   id: number;
-  recipient: string;
+  account_id_from: number;
+  username_from: string;
+  account_id_to: number;
   amount: number;
   description: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SentPayment {
@@ -60,6 +65,10 @@ export interface BankAccountForm {
   accountNumber: string;
   description: string;
 }
+
+// ============================================================================
+// Payment Limits Types
+// ============================================================================
 
 // ============================================================================
 // FOREX & RATES TYPES
@@ -124,11 +133,22 @@ export interface SavedBillRes extends BillInputs {
 // ============================================================================
 
 export interface Contact {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
+  id: number; // saved contact id
+  nickname?: string | null;
+  name: string; // always present, certified at time of adding
+  username?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  bank_account?: string | null; // for future use
+  contact_account_id?: number | null; // account_id if contact has an account
+  added_by: "username" | "email" | "phone" | "bank_account"; // how the contact was added
+  added_value: string; // the value used to add the contact
+  // Bank account specific fields (for extensibility)
+  bsb?: string | null;
+  routing_number?: string | null;
+  account_number?: string | null;
+  account_holder_name?: string | null;
+  account_email?: string | null;
 }
 
 // ============================================================================
@@ -147,7 +167,7 @@ export interface UserProfile {
 
 export interface KYCVerifyResultResponse {
   result: "verified" | "rejected";
-  validatedData: any; // Using any for now, can be refined based on schema
+  validatedData: unknown; // Using any for now, can be refined based on schema
   verifiedAt: string; // ISO timestamp string
   idType: "passport" | "driver_license";
 }
@@ -219,3 +239,8 @@ export type KYCIdType = "passport" | "driver_license";
 export type KYCResult = "verified" | "rejected";
 export type TransactionType = "income" | "expense";
 export type ChangeType = "positive" | "negative";
+export type ModalProps = {
+  modalName: string;
+  displayMessage: string | null;
+  onClose: () => void;
+};
