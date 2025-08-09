@@ -4,5 +4,6 @@
     "verbatimModuleSyntax": false,
     "esModuleInterop": true
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  "include": ["src", "src/declarations.d.ts"],
 }

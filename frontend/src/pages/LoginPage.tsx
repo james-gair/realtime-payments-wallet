@@ -31,18 +31,39 @@ function LoginPage() {
         setLoading(false);
         return;
       } else {
-        const data = await response.json();
-        // Store user info in localStorage for use in other components - do we need this?
-        // if (data.user) {
-        //   localStorage.setItem('userInfo', JSON.stringify(data.user));
-        // }
+        await response.json();
       }
 
       // need to put multi factor authentication before acessing the dashboard
       navigate("/dashboard");
     } catch (error: any) {
-      setError("Login failed: " + error.message);
-      setLoading(false);
+      let message = "Login failed. Please try again.";
+
+      switch (error.code) {
+        case "auth/invalid-email":
+          message = "The email address is not valid.";
+          break;
+        case "auth/user-disabled":
+          message = "This user account has been disabled.";
+          break;
+        case "auth/user-not-found":
+          message = "No account found with this email.";
+          break;
+        case "auth/wrong-password":
+          message = "Incorrect password.";
+          break;
+        case "auth/too-many-requests":
+          message = "Too many login attempts. Please try again later.";
+          break;
+        case "auth/invalid-credential":
+          message = "Invalid email or password.";
+          break;
+        default:
+          message = error.message || message;
+      }
+
+    setError(message);
+    setLoading(false);
     }
   };
 
