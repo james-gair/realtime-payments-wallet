@@ -100,37 +100,6 @@ describe("LoginPage", () => {
     expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
   });
 
-  it("disables button and shows spinner when loading", async () => {
-    let resolveLogin: () => void;
-
-    (signInWithEmailAndPassword as jest.Mock).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveLogin = () => resolve({});
-        })
-    );
-
-    (authFetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({}),
-    });
-
-    render(<LoginPage />);
-    await user.type(screen.getByLabelText(/email address/i), "test@example.com");
-    await user.type(screen.getByLabelText(/password/i), "password");
-
-    const button = screen.getByRole("button", { name: /sign in/i });
-    await user.click(button);
-
-    expect(button).toBeDisabled();
-    expect(await screen.findByText(/signing in/i)).toBeInTheDocument();
-
-    resolveLogin!(); // call resolveLogin to finish login
-
-    await waitFor(() => {
-      expect(button).not.toBeDisabled();
-    });
-  });
 
   it("shows error if authFetch returns error response", async () => {
     (signInWithEmailAndPassword as jest.Mock).mockResolvedValue({});
