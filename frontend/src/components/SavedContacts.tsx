@@ -9,15 +9,18 @@ export function SavedContacts({
   actionText = "Select",
   showEditModal = true,
   filterAccountOnly = false,
+  allowedTypes,
 }: {
   onSelect: (contact: Contact) => void;
   onAddNew?: () => void;
   actionText?: string;
   showEditModal?: boolean;
   filterAccountOnly?: boolean;
+  allowedTypes?: Array<'sendit' | 'payid' | 'bank'>;
 }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +34,8 @@ export function SavedContacts({
       setError(null);
       try {
         const response = await authFetch("http://localhost:4000/api/saved-contacts");
-        const text = await response.text();
-        console.log("Raw response text:", text);
-        const data = JSON.parse(text);
-        setContacts(data);
+        const data = await response.json();
+        setContacts(Array.isArray(data) ? data : []);
       } catch (err: any) {
         console.error("Failed to load saved contacts:", err);
         setError("Failed to load saved contacts.");
@@ -45,37 +46,58 @@ export function SavedContacts({
     fetchContacts();
   }, []);
 
-  // Filter contacts based on search query and account-only filter
+  // Debounce search query
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+
+  // Helpers for normalisation
+  const normalise = (s: string) => (s || "").toLowerCase().trim();
+  const normalisePhone = (s: string) => (s || "").replace(/\D/g, "");
+
+  // Compute filtered contacts
   useEffect(() => {
     let filtered = contacts;
-    
-    // Filter to only show account contacts if requested
+
+    // Apply type guards
     if (filterAccountOnly) {
-      filtered = contacts.filter(contact => contact.contact_account_id !== null);
+      filtered = filtered.filter(contact => contact.contact_account_id !== null || contact.contact_type === 'sendit');
     }
-    
-    if (!searchQuery.trim()) {
+    if (allowedTypes && allowedTypes.length > 0) {
+      filtered = filtered.filter(c => !c.contact_type || allowedTypes.includes(c.contact_type as any));
+    }
+
+    const q = normalise(debouncedQuery);
+    const cleanQuery = q.startsWith('@') ? q.substring(1) : q;
+    const qDigits = normalisePhone(debouncedQuery);
+
+    if (!q && !qDigits) {
       setFilteredContacts(filtered);
-    } else {
-      const q = searchQuery.toLowerCase();
-      setFilteredContacts(
-        filtered.filter(contact => {
-          // Remove @ symbol from search query for username matching
-          const cleanQuery = q.startsWith('@') ? q.substring(1) : q;
-          
-          return (
-            (contact.nickname || "").toLowerCase().includes(q) ||
-            (contact.name || "").toLowerCase().includes(q) ||
-            (contact.username || "").toLowerCase().includes(cleanQuery) ||
-            (contact.email || "").toLowerCase().includes(q) ||
-            (contact.phone || "").toLowerCase().includes(q) ||
-            // Also match @username format
-            (contact.username && `@${contact.username.toLowerCase()}`.includes(q))
-          );
-        })
-      );
+      return;
     }
-  }, [searchQuery, contacts, filterAccountOnly]);
+
+    const result = filtered.filter(contact => {
+      const nn = normalise(contact.nickname || "");
+      const nm = normalise(contact.name || "");
+      const un = normalise(contact.username || "");
+      const em = normalise(contact.email || "");
+      const ph = normalise(contact.phone || "");
+      const phDigits = normalisePhone(contact.phone || "");
+
+      return (
+        nn.includes(q) ||
+        nm.includes(q) ||
+        un.includes(cleanQuery) ||
+        (contact.username && `@${normalise(contact.username)}`.includes(q)) ||
+        em.includes(q) ||
+        ph.includes(q) ||
+        (qDigits && phDigits.includes(qDigits))
+      );
+    });
+
+    setFilteredContacts(result);
+  }, [contacts, debouncedQuery, filterAccountOnly, allowedTypes]);
 
   const handleSelect = (contact: Contact) => {
     if (showEditModal) {
@@ -103,7 +125,6 @@ export function SavedContacts({
       }
 
       const updatedContact = await response.json();
-      
       // Update the contact in the local state
       setContacts(prevContacts =>
         prevContacts.map(contact =>
@@ -112,9 +133,6 @@ export function SavedContacts({
             : contact
         )
       );
-
-      // Call the original onSelect callback
-      onSelect(selectedContact!);
     } catch (err: any) {
       throw new Error(err.message || "Failed to update nickname");
     }
@@ -252,8 +270,11 @@ export function SavedContacts({
           {filteredContacts.map((contact, index) => (
             <div 
               key={contact.id} 
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(contact); } }}
               onClick={() => handleSelect(contact)}
-              className="group relative p-3 sm:p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 hover:cursor-pointer bg-white hover:bg-blue-50/30"
+              className="group relative p-3 sm:p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 hover:cursor-pointer bg-white hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               {/* Subtle gradient background on hover */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-transparent rounded-xl transition-all duration-200"></div>
