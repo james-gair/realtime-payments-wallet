@@ -3,7 +3,7 @@ import sql from "../database/client";
 import { getAccountId } from "../utils/getAccountId";
 import { AddContactReq } from "../dtos/AddContactReq";
 import { lookupPayIDContact } from "../services/payidService";
-import { lookupBankAccountContact } from "../services/bankAccountService";
+import { lookupBankAccountContact, lookupJPBankAccountContact } from "../services/bankAccountService";
 import { lookupUSBankAccountContact } from "../services/usBankAccountService";
 
 export async function getSavedContacts(req: Request, res: Response) {
@@ -31,24 +31,44 @@ export async function getSavedContacts(req: Request, res: Response) {
     `;
     console.log("Contacts fetched from DB:", contacts);
 
-    const result = contacts.map(row => ({
-      id: row.id,
-      nickname: row.nickname,
-      name: row.name,
-      username: row.added_by === 'username' ? row.account_username : null,
-      added_by: row.added_by,
-      added_value: row.added_value,
-      email: row.added_by === 'email' ? row.email : null,
-      phone: row.added_by === 'phone' ? row.phone : null,
-      bank_account: row.added_by === 'bank_account' ? row.bank_account : null,
-      contact_account_id: row.contact_account_id,
-      // Bank account specific fields
-      bsb: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 6 ? row.bank_account?.split('-')[0] : null,
-      routing_number: row.added_by === 'bank_account' && row.bank_account?.split('-')[0]?.length === 9 ? row.bank_account?.split('-')[0] : null,
-      account_number: row.added_by === 'bank_account' ? row.bank_account?.split('-')[1] : null,
-      account_holder_name: row.added_by === 'bank_account' ? row.name : null,
-      account_email: row.added_by === 'bank_account' ? row.email : null,
-    }));
+    const result = contacts.map(row => {
+      const isBank = row.added_by === 'bank_account';
+      const parts: string[] = isBank && typeof row.bank_account === 'string' ? row.bank_account.split('-') : [];
+      const isAU = isBank && parts[0]?.length === 6 && parts.length === 2;
+      const isUS = isBank && parts[0]?.length === 9 && parts.length === 2;
+      const isJP = isBank && parts.length === 3; // bankCode-branchCode-accountNumber
+
+      // Normalized contact type classification
+      const contactType = row.contact_account_id
+        ? 'sendit'
+        : isBank
+          ? 'bank'
+          : (row.added_by === 'email' || row.added_by === 'phone')
+            ? 'payid'
+            : 'unknown';
+
+      return {
+        id: row.id,
+        nickname: row.nickname,
+        name: row.name,
+        username: row.contact_account_id ? row.account_username : null,
+        added_by: row.added_by,
+        added_value: row.added_value,
+        email: contactType === 'bank' ? null : row.email,
+        phone: contactType === 'bank' ? null : row.phone,
+        bank_account: isBank ? row.bank_account : null,
+        contact_account_id: row.contact_account_id,
+        contact_type: contactType,
+        // Bank account specific fields
+        bsb: isAU ? parts[0] : null,
+        routing_number: isUS ? parts[0] : null,
+        account_number: isBank ? parts[isJP ? 2 : 1] : null,
+        jp_bank_code: isJP ? parts[0] : null,
+        jp_branch_code: isJP ? parts[1] : null,
+        account_holder_name: isBank ? row.name : null,
+        account_email: isBank ? row.email : null,
+      };
+    });
 
     console.log("Result to send:", result);
 
@@ -201,11 +221,21 @@ export async function addContact(req: Request, res: Response) {
 
         const account = accountQuery[0];
         const name = `${account.first_name} ${account.last_name}`.trim();
-        
+
+        // Prevent adding the same SendIt account twice
+        const existingByContactId = await sql`
+          SELECT id FROM saved_contacts 
+          WHERE account_id = ${account_id} AND contact_account_id = ${account.account_id}
+        `;
+        if (existingByContactId.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
+          return;
+        }
+
         contactInfo = {
           name,
-          added_by: searchValue.startsWith('@') ? 'username' : searchValue.includes('@') ? 'email' : 'phone',
-          added_value: searchValue,
+          added_by: 'username',
+          added_value: `@${account.username}`,
           contact_account_id: account.account_id,
           email: account.email,
           phone: account.phone
@@ -216,6 +246,16 @@ export async function addContact(req: Request, res: Response) {
         // Handle PayID-based contact addition
         const payidInfo = await lookupPayIDContact(contactData.payid);
         
+        // Ensure PayID uniqueness per (method,value)
+        const existingPayId = await sql`
+          SELECT id FROM saved_contacts
+          WHERE account_id = ${account_id} AND added_by = ${contactData.payid.includes('@') ? 'email' : 'phone'} AND added_value = ${contactData.payid}
+        `;
+        if (existingPayId.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
+          return;
+        }
+
         contactInfo = {
           name: payidInfo.name,
           added_by: contactData.payid.includes('@') ? 'email' : 'phone',
@@ -247,8 +287,28 @@ export async function addContact(req: Request, res: Response) {
           bankInfo = await lookupUSBankAccountContact(contactData.routingNumber, contactData.accountNumber);
           addedValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
           bankAccountValue = `${contactData.routingNumber}-${contactData.accountNumber}`;
+        } else if (contactData.country === 'JP') {
+          if (!contactData.bankCode || !contactData.branchCode) {
+            res.status(400).json({ error: "Bank code and branch code are required for JP bank accounts" });
+            return;
+          }
+          const jpInfo = await lookupJPBankAccountContact(contactData.bankCode, contactData.branchCode, contactData.accountNumber);
+          bankInfo = jpInfo;
+          // Encode JP as bankCode-branchCode-accountNumber
+          addedValue = `${contactData.bankCode}-${contactData.branchCode}-${contactData.accountNumber}`;
+          bankAccountValue = addedValue;
         } else {
           res.status(400).json({ error: "Unsupported country for bank account" });
+          return;
+        }
+
+        // Ensure bank account uniqueness by full encoded bank_account value
+        const existingBank = await sql`
+          SELECT id FROM saved_contacts
+          WHERE account_id = ${account_id} AND added_by = 'bank_account' AND added_value = ${addedValue}
+        `;
+        if (existingBank.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
           return;
         }
         
@@ -267,10 +327,20 @@ export async function addContact(req: Request, res: Response) {
     }
 
     // Check if contact already exists
-    const existingContact = await sql`
-      SELECT id FROM saved_contacts 
-      WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
-    `;
+    let existingContact;
+    if (contactInfo.contact_account_id) {
+      // For SendIt accounts, enforce uniqueness by contact_account_id
+      existingContact = await sql`
+        SELECT id FROM saved_contacts 
+        WHERE account_id = ${account_id} AND contact_account_id = ${contactInfo.contact_account_id}
+      `;
+    } else {
+      // For PayID and bank accounts, uniqueness by (added_by, added_value)
+      existingContact = await sql`
+        SELECT id FROM saved_contacts 
+        WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
+      `;
+    }
 
     if (existingContact.length > 0) {
       res.status(409).json({ error: "Contact already exists" });

@@ -25,3 +25,26 @@ export async function lookupBankAccountContact(bsb: string, accountNumber: strin
     email: 'account.holder@example.com'
   };
 } 
+
+export interface JPBankAccountContactInfo {
+  name: string;
+  accountNumber: string;
+  bankCode: string;
+  branchCode: string;
+  email?: string;
+}
+
+export async function lookupJPBankAccountContact(bankCode: string, branchCode: string, accountNumber: string): Promise<JPBankAccountContactInfo> {
+  // TODO: Implement actual Japan Bank Account lookup
+  console.log(`Looking up JP bank account: Bank ${bankCode}, Branch ${branchCode}, Account ${accountNumber}`);
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  return {
+    name: 'JP Account Holder',
+    accountNumber,
+    bankCode,
+    branchCode,
+    email: 'jp.account.holder@example.com'
+  };
+}

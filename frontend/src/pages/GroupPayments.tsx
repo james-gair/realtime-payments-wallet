@@ -498,11 +498,12 @@ export default function GroupPayments() {
           </div>
         )}
 
-                     <SavedContacts
+             <SavedContacts
                onSelect={handleContactSelect}
                onAddNew={handleAddNewContact}
                actionText="Add to Group"
                showEditModal={false}
+               allowedTypes={['sendit','payid','bank']}
              />
       </div>
     </div>

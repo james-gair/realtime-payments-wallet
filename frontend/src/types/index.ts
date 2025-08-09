@@ -149,6 +149,11 @@ export interface Contact {
   account_number?: string | null;
   account_holder_name?: string | null;
   account_email?: string | null;
+  // JP bank specifics
+  jp_bank_code?: string | null;
+  jp_branch_code?: string | null;
+  // Derived normalized type for UI consistency
+  contact_type?: "sendit" | "payid" | "bank" | "unknown";
 }
 
 // ============================================================================

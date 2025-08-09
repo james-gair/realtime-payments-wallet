@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SavedContacts } from "../components/SavedContacts";
 import { authFetch } from "../services/firebaseFetch";
-import type { Card, PaymentRequest, SentPayment, Contact } from "../types";
+import type { Card, PaymentRequest, Contact } from "../types";
 
 type SendStep = 'select-contact' | 'send-details' | 'confirmation';
 
@@ -101,7 +101,6 @@ const SendMoney: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [activeTab, setActiveTab] = useState<"send" | "requests">("send");
@@ -152,9 +151,7 @@ const SendMoney: React.FC = () => {
       );
       const data = await response.json();
       setCards(data.wallets);
-      if (data.wallets.length > 0) {
-        setSelectedCard(data.wallets[0]);
-      }
+      // optionally set a default card for display
     } catch (error) {
       console.error("Error fetching cards:", error);
     }
@@ -279,15 +276,13 @@ const SendMoney: React.FC = () => {
     }
   };
 
-  const handleConfirmSend = () => {
-    if (!selectedContact) {
-      alert("No contact selected");
-      return;
-    }
-
-    // Go to confirmation step
-    setCurrentStep('confirmation');
-  };
+  // const handleConfirmSend = () => {
+  //   if (!selectedContact) {
+  //     alert("No contact selected");
+  //     return;
+  //   }
+  //   setCurrentStep('confirmation');
+  // };
 
   const handleBackToContacts = () => {
     setCurrentStep('select-contact');
@@ -395,6 +390,7 @@ const SendMoney: React.FC = () => {
             onAddNew={handleAddNewContact}
             actionText="Send Money"
             showEditModal={false}
+            allowedTypes={['sendit','payid']}
           />
         </div>
       )}

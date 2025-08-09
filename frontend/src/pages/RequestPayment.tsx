@@ -245,6 +245,7 @@ const RequestPage: React.FC = () => {
             actionText="Request Money"
             showEditModal={false}
             filterAccountOnly={true}
+            allowedTypes={['sendit']}
           />
         </div>
       )}
