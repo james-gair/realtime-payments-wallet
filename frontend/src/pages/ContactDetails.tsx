@@ -9,7 +9,7 @@ const ContactDetails: React.FC = () => {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  // const [isEditing, setIsEditing] = useState(false);
   const [newNickname, setNewNickname] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
@@ -101,38 +101,29 @@ const ContactDetails: React.FC = () => {
   };
 
   const getContactTypeLabel = (contact: Contact) => {
-    switch (contact.added_by) {
-      case "username":
-        return "SendIt Account";
-      case "email":
-        return "Email Contact";
-      case "phone":
-        return "Phone Contact";
-      case "bank_account":
-        // Determine if it's Australian or US based on BSB vs routing number
-        if (contact.bsb) {
-          return "Australian Bank Account";
-        } else if (contact.routing_number) {
-          return "US Bank Account";
-        }
-        return "Bank Account";
-      default:
-        return "Unknown";
+    if (contact.contact_type === 'sendit') return 'SendIt Account';
+    if (contact.contact_type === 'payid') return 'PayID';
+    if (contact.contact_type === 'bank') {
+      if (contact.bsb) return 'Australian Bank Account';
+      if (contact.routing_number) return 'US Bank Account';
+      if (contact.jp_bank_code) return 'Japan Bank Account';
+      return 'Bank Account';
     }
+    return 'Unknown';
   };
 
-  const getContactValue = (contact: Contact) => {
-    switch (contact.added_by) {
-      case "username":
-        return contact.username ? `@${contact.username}` : contact.added_value;
-      case "email":
-      case "phone":
-      case "bank_account":
-        return contact.added_value;
-      default:
-        return contact.added_value;
-    }
-  };
+  // const getContactValue = (contact: Contact) => {
+  //   switch (contact.added_by) {
+  //     case "username":
+  //       return contact.username ? `@${contact.username}` : contact.added_value;
+  //     case "email":
+  //     case "phone":
+  //     case "bank_account":
+  //       return contact.added_value;
+  //     default:
+  //       return contact.added_value;
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -189,10 +180,10 @@ const ContactDetails: React.FC = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-semibold text-2xl shadow-sm mr-4 relative">
                 {(contact.nickname || contact.name).split(' ').map(n => n[0]).join('')}
                 {/* Flag indicator for bank accounts */}
-                {contact.added_by === 'bank_account' && (
+                {contact.contact_type === 'bank' && (
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs">
-                      {contact.bsb ? "🇦🇺" : contact.routing_number ? "🇺🇸" : "🏦"}
+                      {contact.bsb ? "🇦🇺" : contact.routing_number ? "🇺🇸" : contact.jp_bank_code ? "🇯🇵" : "🏦"}
                     </span>
                   </div>
                 )}
@@ -241,10 +232,19 @@ const ContactDetails: React.FC = () => {
                 
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600 font-medium">Account type:</span>
-                  <span className="font-semibold">{contact.added_by === 'bank_account' ? 'Private' : getContactTypeLabel(contact)}</span>
+                  <span className="font-semibold">{contact.contact_type === 'bank' ? 'Private' : getContactTypeLabel(contact)}</span>
                 </div>
 
-                {contact.added_by === 'bank_account' && contact.bsb && (
+                {contact.contact_type === 'bank' && contact.jp_bank_code && (
+                  <>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 font-medium">Account number:</span>
+                      <span className="font-semibold">{contact.account_number}</span>
+                    </div>
+                  </>
+                )}
+
+                {contact.contact_type === 'bank' && contact.bsb && (
                   <>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">BSB:</span>
@@ -258,7 +258,7 @@ const ContactDetails: React.FC = () => {
                   </>
                 )}
 
-                {contact.added_by === 'bank_account' && contact.routing_number && (
+                {contact.contact_type === 'bank' && contact.routing_number && (
                   <>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Routing number:</span>
@@ -272,21 +272,21 @@ const ContactDetails: React.FC = () => {
                   </>
                 )}
 
-                {contact.account_email && (
+                {contact.contact_type === 'bank' && contact.account_email && (
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 font-medium">Email (Optional):</span>
                     <span className="font-semibold">{contact.account_email}</span>
                   </div>
                 )}
 
-                {contact.email && contact.added_by !== 'bank_account' && (
+                {contact.email && contact.contact_type !== 'bank' && (
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 font-medium">Email:</span>
                     <span className="font-semibold">{contact.email}</span>
                   </div>
                 )}
 
-                {contact.phone && (
+                {contact.phone && contact.contact_type !== 'bank' && (
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 font-medium">Phone:</span>
                     <span className="font-semibold">{contact.phone}</span>
@@ -309,7 +309,7 @@ const ContactDetails: React.FC = () => {
                   </button>
                 </div>
 
-                {contact.added_by === 'bank_account' && contact.bsb && (
+                {contact.contact_type === 'bank' && contact.bsb && (
                   <>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Bank name:</span>
@@ -323,7 +323,7 @@ const ContactDetails: React.FC = () => {
                   </>
                 )}
 
-                {contact.added_by === 'bank_account' && contact.routing_number && (
+                {contact.contact_type === 'bank' && contact.routing_number && (
                   <>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Bank name:</span>
@@ -337,11 +337,24 @@ const ContactDetails: React.FC = () => {
                   </>
                 )}
 
-                {contact.added_by === 'username' && (
+                {contact.contact_type === 'sendit' && (
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 font-medium">Account provider:</span>
                     <span className="font-semibold">SendIt</span>
                   </div>
+                )}
+
+                {contact.contact_type === 'bank' && contact.jp_bank_code && (
+                  <>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 font-medium">Bank code:</span>
+                      <span className="font-semibold">{contact.jp_bank_code}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 font-medium">Branch code:</span>
+                      <span className="font-semibold">{contact.jp_branch_code}</span>
+                    </div>
+                  </>
                 )}
 
 

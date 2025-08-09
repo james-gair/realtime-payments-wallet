@@ -136,18 +136,31 @@ export function SavedContacts({
       : contact.name;
   };
 
-  // Sub-label: for username, show @username; for others, show the value used to add them
+  // Sub-label: standardized across contact types
   const getSubLabel = (contact: Contact) => {
-    switch (contact.added_by) {
-      case "username":
-        return contact.username ? `@${contact.username}` : `@${contact.added_value}`;
-      case "email":
-      case "phone":
-      case "bank_account":
-        return contact.added_value;
-      default:
-        return "";
+    if (contact.contact_account_id) {
+      return contact.username ? `@${contact.username}` : `@${contact.added_value}`;
     }
+    if (contact.added_by === "email") {
+      return contact.email || contact.added_value;
+    }
+    if (contact.added_by === "phone") {
+      return contact.phone || contact.added_value;
+    }
+    if (contact.added_by === "bank_account") {
+      const last4 = (contact.account_number || "").slice(-4);
+      if (contact.bsb) {
+        return `BSB ${contact.bsb} ••••${last4}`;
+      }
+      if (contact.routing_number) {
+        return `RTN ${contact.routing_number} ••••${last4}`;
+      }
+      if (contact.jp_bank_code) {
+        return `JP ${contact.jp_bank_code}-${contact.jp_branch_code} ••••${last4}`;
+      }
+      return contact.added_value;
+    }
+    return contact.added_value || "";
   };
 
   return (
