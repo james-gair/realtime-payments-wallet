@@ -54,8 +54,8 @@ export async function getSavedContacts(req: Request, res: Response) {
         username: row.contact_account_id ? row.account_username : null,
         added_by: row.added_by,
         added_value: row.added_value,
-        email: contactType === 'payid' ? row.email : null,
-        phone: contactType === 'payid' ? row.phone : null,
+        email: contactType === 'bank' ? null : row.email,
+        phone: contactType === 'bank' ? null : row.phone,
         bank_account: isBank ? row.bank_account : null,
         contact_account_id: row.contact_account_id,
         contact_type: contactType,
@@ -221,11 +221,21 @@ export async function addContact(req: Request, res: Response) {
 
         const account = accountQuery[0];
         const name = `${account.first_name} ${account.last_name}`.trim();
-        
+
+        // Prevent adding the same SendIt account twice
+        const existingByContactId = await sql`
+          SELECT id FROM saved_contacts 
+          WHERE account_id = ${account_id} AND contact_account_id = ${account.account_id}
+        `;
+        if (existingByContactId.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
+          return;
+        }
+
         contactInfo = {
           name,
-          added_by: searchValue.startsWith('@') ? 'username' : searchValue.includes('@') ? 'email' : 'phone',
-          added_value: searchValue,
+          added_by: 'username',
+          added_value: `@${account.username}`,
           contact_account_id: account.account_id,
           email: account.email,
           phone: account.phone
@@ -236,6 +246,16 @@ export async function addContact(req: Request, res: Response) {
         // Handle PayID-based contact addition
         const payidInfo = await lookupPayIDContact(contactData.payid);
         
+        // Ensure PayID uniqueness per (method,value)
+        const existingPayId = await sql`
+          SELECT id FROM saved_contacts
+          WHERE account_id = ${account_id} AND added_by = ${contactData.payid.includes('@') ? 'email' : 'phone'} AND added_value = ${contactData.payid}
+        `;
+        if (existingPayId.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
+          return;
+        }
+
         contactInfo = {
           name: payidInfo.name,
           added_by: contactData.payid.includes('@') ? 'email' : 'phone',
@@ -281,6 +301,16 @@ export async function addContact(req: Request, res: Response) {
           res.status(400).json({ error: "Unsupported country for bank account" });
           return;
         }
+
+        // Ensure bank account uniqueness by full encoded bank_account value
+        const existingBank = await sql`
+          SELECT id FROM saved_contacts
+          WHERE account_id = ${account_id} AND added_by = 'bank_account' AND added_value = ${addedValue}
+        `;
+        if (existingBank.length > 0) {
+          res.status(409).json({ error: "Contact already exists" });
+          return;
+        }
         
         contactInfo = {
           name: contactData.accountHolderName || bankInfo.name,
@@ -297,10 +327,20 @@ export async function addContact(req: Request, res: Response) {
     }
 
     // Check if contact already exists
-    const existingContact = await sql`
-      SELECT id FROM saved_contacts 
-      WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
-    `;
+    let existingContact;
+    if (contactInfo.contact_account_id) {
+      // For SendIt accounts, enforce uniqueness by contact_account_id
+      existingContact = await sql`
+        SELECT id FROM saved_contacts 
+        WHERE account_id = ${account_id} AND contact_account_id = ${contactInfo.contact_account_id}
+      `;
+    } else {
+      // For PayID and bank accounts, uniqueness by (added_by, added_value)
+      existingContact = await sql`
+        SELECT id FROM saved_contacts 
+        WHERE account_id = ${account_id} AND added_by = ${contactInfo.added_by} AND added_value = ${contactInfo.added_value}
+      `;
+    }
 
     if (existingContact.length > 0) {
       res.status(409).json({ error: "Contact already exists" });
