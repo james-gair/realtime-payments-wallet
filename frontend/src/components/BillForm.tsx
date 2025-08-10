@@ -8,6 +8,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { billPaymentSchema } from "../schema/billPaymentsSchema.schema";
 import { authFetch } from "../services/firebaseFetch";
 import type { BillInputs, Wallet } from "../types";
+import { VITE_BACKEND_URL } from "../constants";
 
 export function BillForm({
   handleActualSubmit,
@@ -18,7 +19,7 @@ export function BillForm({
   billData?: BillInputs;
   isEditMode?: boolean;
 }) {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = VITE_BACKEND_URL;
   const [payMethod, setPayMethod] = useState<"bankAcct" | "bpay">(
     billData?.payMethod || "bankAcct"
   );
@@ -40,7 +41,6 @@ export function BillForm({
   // Calculate how many full days are left until the scheduled date.
   // If the date is invalid or in the past, the result is 0.
   // Reminder options are only shown if this value is > 0.
-  console.log(scheduledDate);
   const maxReminderDays = scheduledDate
     ? Math.max(
         0,
@@ -52,7 +52,6 @@ export function BillForm({
     : 0;
 
   useEffect(() => {
-    console.log(billData);
     if (billData?.nextRunAt) {
       setIsScheduled(true);
       setScheduledDate(billData.nextRunAt);
@@ -65,7 +64,7 @@ export function BillForm({
       try {
         const res = await authFetch(`${backendUrl}/api/bill-payments/wallets`);
         const data = await res.json();
-        console.log("wallets: ", data);
+
         if (!res.ok) {
           setFieldErrors((prev) => ({
             ...prev,
@@ -180,6 +179,7 @@ export function BillForm({
             pay from
           </h3>
           <select
+            id="walletId"
             name="walletId"
             defaultValue={billData?.walletId}
             className="mt-3 block border px-2 py-1 rounded"
@@ -214,8 +214,9 @@ export function BillForm({
             <BanknotesIcon className="size-6" /> Where should the money go?
           </h3>
           <div className="mt-3 flex gap-4 font-medium">
-            <label htmlFor="payMethod" className="flex items-center gap-1">
+            <label htmlFor="payMethod-bank" className="flex items-center gap-1">
               <input
+                id="payMethod-bank"
                 type="radio"
                 name="payMethod"
                 value="bankAcct"
@@ -224,8 +225,9 @@ export function BillForm({
               />
               Bank Account
             </label>
-            <label className="flex items-center gap-1">
+            <label htmlFor="payMethod-bpay" className="flex items-center gap-1">
               <input
+                id="payMethod-bpay"
                 type="radio"
                 name="payMethod"
                 value="bpay"

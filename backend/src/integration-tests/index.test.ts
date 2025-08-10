@@ -1,10 +1,10 @@
 import { createApp } from "../createApp";
 import { Express } from "express";
-import request from "supertest";
 
-/**
- * Delete this after starting the actual project
- */
+jest.mock("../cronJobs/scheduledJobs", () => ({
+  processScheduledJobs: jest.fn(),
+}));
+
 describe("placeholder", () => {
   let app: Express;
   beforeAll(() => {
