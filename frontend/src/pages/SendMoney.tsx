@@ -117,12 +117,11 @@ const SendMoney: React.FC = () => {
 
   // Check if we're returning from adding a contact
   useEffect(() => {
-    const newContact = (location.state as any)?.newContact;
-    if (newContact) {
-      // If we have a new contact, automatically select it and go to send details
-      setSelectedContact(newContact);
+    const state = (location.state as any) || {};
+    const inbound = state.newContact || state.selectedContact;
+    if (inbound) {
+      setSelectedContact(inbound);
       setCurrentStep('send-details');
-      // Clear the state to prevent re-triggering
       navigate(location.pathname, { replace: true });
     }
   }, [location.state, navigate, location.pathname]);
@@ -220,16 +219,27 @@ const SendMoney: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Determine recipient based on contact type
-      let recipientUsername = "";
-      if (selectedContact.username) {
-        recipientUsername = selectedContact.username;
-      } else if (selectedContact.email) {
-        recipientUsername = selectedContact.email;
-      } else if (selectedContact.phone) {
-        recipientUsername = selectedContact.phone;
+      // Build payload based on standardized contact_type
+      const basePayload = {
+        currencyCode: formData.currency,
+        amount: amount,
+        description: formData.description,
+      } as any;
+
+      let payload: any = { ...basePayload };
+
+      if (selectedContact.contact_type === 'sendit' && selectedContact.username) {
+        payload.recipientUsername = selectedContact.username;
+      } else if (selectedContact.contact_type === 'payid') {
+        if (selectedContact.email) {
+          payload.recipientEmail = selectedContact.email;
+        } else if (selectedContact.phone) {
+          payload.recipientPhone = selectedContact.phone;
+        } else {
+          throw new Error('Selected PayID contact missing email/phone');
+        }
       } else {
-        throw new Error("Invalid contact information");
+        throw new Error('Unsupported contact type for this flow');
       }
 
       const response = await authFetch(
@@ -239,12 +249,7 @@ const SendMoney: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            recipientUsername: recipientUsername,
-            currencyCode: formData.currency,
-            amount: amount,
-            description: formData.description,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -639,7 +644,7 @@ const SendMoney: React.FC = () => {
           )}
           <div className="flex justify-between items-center py-3">
             <span className="text-gray-600">Contact Type:</span>
-            <span className="font-semibold capitalize">{selectedContact?.added_by?.replace('_', ' ')}</span>
+            <span className="font-semibold">{selectedContact?.contact_type === 'sendit' ? 'SendIt' : selectedContact?.contact_type === 'payid' ? 'PayID' : 'Bank'}</span>
           </div>
         </div>
 
