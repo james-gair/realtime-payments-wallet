@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import { ErrorModal } from "../components/ErrorModal";
 import { Modal } from "../components/Modal";
+import { VITE_BACKEND_URL } from "../constants";
 
 interface PaymentLimitInput {
   walletId: string;
@@ -10,7 +11,7 @@ interface PaymentLimitInput {
 }
 
 export function PaymentLimits() {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = VITE_BACKEND_URL;
   const [paymentLimits, setPaymentLimits] = useState<PaymentLimitInput[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>("");
   const [changeSaved, setChangeSaved] = useState(false);

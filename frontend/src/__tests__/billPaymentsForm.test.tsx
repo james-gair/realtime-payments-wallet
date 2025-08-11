@@ -2,7 +2,7 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BillForm } from "../components/BillForm";
 import { authFetch } from "../services/firebaseFetch";
-import user from "@testing-library/user-event";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../services/firebaseFetch", () => ({ authFetch: jest.fn() }));
 
@@ -17,15 +17,13 @@ jest.mock("../constants", () => ({
   VITE_BACKEND_URL: "http://mock-backend",
 }));
 
-const mockWalletsOnce = (
-  wallets = [
-    { walletId: "1", currency: "AUD", balance: 100.5 },
-    { walletId: "2", currency: "USD", balance: 200.5 },
-  ]
-) => {
+const mockWalletsOnce = () => {
   (authFetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
-    json: async () => wallets,
+    json: async () => [
+      { walletId: "1", currency: "AUD", balance: 100.5 },
+      { walletId: "2", currency: "USD", balance: 200.5 },
+    ],
   });
 };
 
@@ -74,6 +72,7 @@ describe("Bill form submission", () => {
   });
 
   it("submits Bank Account bill payments immediate payment successfully", async () => {
+    const user = userEvent.setup();
     const { handleActualSubmit } = renderForm();
 
     await waitFor(() => expect(getWalletSelect()).toBeInTheDocument());
@@ -102,6 +101,7 @@ describe("Bill form submission", () => {
     });
   });
   it("submits BPAY bill payments immediate payment successfully", async () => {
+    const user = userEvent.setup();
     const { handleActualSubmit } = renderForm();
 
     await waitFor(() => expect(getWalletSelect()).toBeInTheDocument());
@@ -133,6 +133,7 @@ describe("Bill form submission", () => {
     });
   });
   it("submits scheduled Bank Account payment successfully", async () => {
+    const user = userEvent.setup();
     const { handleActualSubmit } = renderForm();
 
     await waitFor(() => expect(getWalletSelect()).toBeInTheDocument());
@@ -166,6 +167,7 @@ describe("Bill form submission", () => {
     });
   });
   it("submit recurring and schedule with reminder Bank Account payment successfully", async () => {
+    const user = userEvent.setup();
     const { handleActualSubmit } = renderForm();
 
     await waitFor(() => expect(getWalletSelect()).toBeInTheDocument());
@@ -192,7 +194,7 @@ describe("Bill form submission", () => {
     // the scheduled payment checkbox is ticked, this one should be in the doc already
     await waitFor(() => expect(getReminderCheckbox()).toBeInTheDocument());
     await user.click(getReminderCheckbox());
-    fireEvent.change(getReminderDaysInput(), { target: { value: "2" } });
+    await user.type(getReminderDaysInput(), "2");
 
     await user.type(getBillerDisplayName(), fakeBillerNickName);
     await user.type(getBillDisplayName(), fakeBillName);
@@ -220,6 +222,7 @@ describe("Bill form submission", () => {
     });
   });
   it("does not allow time travel behavior trying to set a shcedule date in the past", async () => {
+    const user = userEvent.setup();
     const { handleActualSubmit } = renderForm();
 
     await waitFor(() => expect(getWalletSelect()).toBeInTheDocument());
