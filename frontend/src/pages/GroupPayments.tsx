@@ -5,6 +5,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BalanceDetailsModal from "../components/BalanceDetailsModal";
 import { SavedContacts } from "../components/SavedContacts";
 import type { Contact } from "../types";
 import { MOCK_GROUPS } from "./GroupPaymentsDashboard";
@@ -103,6 +104,22 @@ const CONFIG_MOCK_ACTIVITY = [
   },
 ];
 
+const CONFIG_MOCK_DEBTS = {
+  You: [
+    { from: "@Pizza", to: "You", amount: 15.0, reason: "Dinner expense" },
+    { from: "@Apple", to: "You", amount: 10.0, reason: "Gas expense" },
+  ],
+  "@Person": [
+    { from: "You", to: "@Person", amount: 5.0, reason: "Movie tickets" },
+  ],
+  "@Pizza": [
+    { from: "@Pizza", to: "@Person", amount: 8.0, reason: "Grocery shopping" },
+  ],
+  "@Apple": [
+    { from: "@Apple", to: "@Person", amount: 12.0, reason: "Concert tickets" },
+  ],
+};
+
 export default function GroupPayments() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -120,6 +137,12 @@ export default function GroupPayments() {
   const [MOCK_EXPENSES, setMOCK_EXPENSES] = useState(CONFIG_MOCK_EXPENSES);
   const [MOCK_ACTIVITY, setMOCK_ACTIVITY] = useState(CONFIG_MOCK_ACTIVITY);
 
+  // Balance modal functionality
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [selectedBalance, setSelectedBalance] = useState<
+    (typeof CONFIG_MOCK_BALANCES)[0] | null
+  >(null);
+
   // SavedContacts functionality
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showContactSuccess, setShowContactSuccess] = useState(false);
@@ -135,6 +158,16 @@ export default function GroupPayments() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  const openBalanceModal = (balance: (typeof CONFIG_MOCK_BALANCES)[0]) => {
+    setSelectedBalance(balance);
+    setIsBalanceModalOpen(true);
+  };
+
+  const closeBalanceModal = () => {
+    setIsBalanceModalOpen(false);
+    setSelectedBalance(null);
   };
 
   const toggleMemberSelection = (memberName: string) => {
@@ -371,7 +404,8 @@ export default function GroupPayments() {
                 {MOCK_BALANCES.map((balance) => (
                   <div
                     key={balance.id}
-                    className="flex items-center justify-between py-4 hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2"
+                    onClick={() => openBalanceModal(balance)}
+                    className="flex items-center justify-between py-4 hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2 cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">
@@ -684,6 +718,14 @@ export default function GroupPayments() {
           </div>
         </div>
       )}
+
+      {/* Balance Details Modal */}
+      <BalanceDetailsModal
+        isOpen={isBalanceModalOpen}
+        onClose={closeBalanceModal}
+        selectedBalance={selectedBalance}
+        debtsData={CONFIG_MOCK_DEBTS}
+      />
 
       {/* Saved Contacts Section */}
       <div className="pt-8 border-t border-gray-200">

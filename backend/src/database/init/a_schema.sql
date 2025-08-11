@@ -378,3 +378,27 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE TABLE groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  name TEXT NOT NULL,
+  icon TEXT NOT NULL
+);
+
+CREATE TABLE group_members (
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  balance NUMERIC(18, 2) NOT NULL DEFAULT 0,
+  PRIMARY KEY (group_id, account_id)
+);
+
+CREATE TABLE group_expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES groups(id),
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  amount NUMERIC(18, 2) NOT NULL,
+  description TEXT
+);
+

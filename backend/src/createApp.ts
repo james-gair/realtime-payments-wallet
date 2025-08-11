@@ -1,22 +1,23 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import swaggerUi from "swagger-ui-express";
+import { processScheduledJobs } from "./cronJobs/scheduledJobs";
+import { swaggerSpec } from "./docs/swagger";
 import { errorHandler } from "./middleware/errorHandler";
 import billPaymentsRouter from "./routes/billPayment";
-import paymentLimitsRouter from "./routes/paymentLimits";
 import userDashboard from "./routes/dashboard";
-import sendMoneyRouter from "./routes/sendMoney";
 import fxRatesRouter from "./routes/fxRates";
+import groupPaymentsRouter from "./routes/groupPayments";
 import kycRouter from "./routes/kyc";
 import userLogin from "./routes/login";
+import paymentLimitsRouter from "./routes/paymentLimits";
+import paymentRequestRouter from "./routes/paymentRequests";
 import paymentsRouter from "./routes/payments";
 import profileRouter from "./routes/profile";
-import transactionsRouter from "./routes/transactions";
 import savedContactsRouter from "./routes/savedContacts";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./docs/swagger";
-import { processScheduledJobs } from "./cronJobs/scheduledJobs";
-import paymentRequestRouter from "./routes/paymentRequests";
+import sendMoneyRouter from "./routes/sendMoney";
+import transactionsRouter from "./routes/transactions";
 
 dotenv.config();
 export function createApp() {
@@ -45,6 +46,7 @@ export function createApp() {
   app.use("/api", savedContactsRouter);
   app.use("/api", paymentsRouter);
   app.use("/api", transactionsRouter);
+  app.use("/api", groupPaymentsRouter);
   app.use(errorHandler);
 
   return app;
