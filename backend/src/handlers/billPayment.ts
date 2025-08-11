@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 import { CancelBillParams } from "../dtos/BillPaymentReq";
-import { BillInputs, billPaymentSchema } from "../schemas/billPayment.schema";
+import { billPaymentSchema } from "../schemas/billPayment.schema";
 import { getAccountId } from "../utils/getAccountId";
 import { payBillAction } from "../utils/billPayments";
 import { checkPaymentLimitForWalletId } from "../services/checkPaymentLimits";
@@ -19,6 +19,10 @@ export async function payBill(req: Request, res: Response) {
   const parseResult = billPaymentSchema.safeParse(req.body);
   if (!parseResult.success) {
     console.error(parseResult);
+    res.status(400).json({
+      error: "Invalid request body",
+      issues: parseResult.error.issues,
+    });
     return;
   }
 
@@ -167,12 +171,28 @@ export async function cancelUpcomingBillById(
   req: Request<CancelBillParams>,
   res: Response
 ) {
-  const billId = Number(req.params.id);
+  const firebase_id = (req as any).user?.uid;
 
-  if (isNaN(billId)) {
+  if (!firebase_id) {
+    res.status(401).json({ error: "Not authenticated. Please log in." });
+    return;
+  }
+
+  const idStr = req.params?.id;
+
+  // not a string or not a string of numbers
+  if (typeof idStr !== "string" || !/^\d+$/.test(idStr)) {
     res.status(400).json({ error: "Invalid bill ID." });
     return;
   }
+
+  const billId = Number(idStr);
+  // can't be negative
+  if (billId <= 0) {
+    res.status(400).json({ error: "Invalid bill ID." });
+    return;
+  }
+
   try {
     const result = await sql`
       UPDATE bill_payments
@@ -236,10 +256,25 @@ export async function getAvailableWallets(req: Request, res: Response) {
 
 export async function getSavedBillById(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
-  const account_id = await getAccountId(firebase_id);
-  const billId = Number(req.params.id);
 
-  if (isNaN(billId)) {
+  if (!firebase_id) {
+    res.status(401).json({ error: "Not authenticated. Please log in." });
+    return;
+  }
+
+  const account_id = await getAccountId(firebase_id);
+
+  const idStr = req.params?.id;
+
+  // not a string or not a string of numbers
+  if (typeof idStr !== "string" || !/^\d+$/.test(idStr)) {
+    res.status(400).json({ error: "Invalid bill ID." });
+    return;
+  }
+
+  const billId = Number(idStr);
+  // can't be negative
+  if (billId <= 0) {
     res.status(400).json({ error: "Invalid bill ID." });
     return;
   }
@@ -293,14 +328,23 @@ export async function getSavedBillById(req: Request, res: Response) {
 
 export async function updateBillInfo(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
-  const billId = Number(req.params.id);
 
   if (!firebase_id) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
   }
 
-  if (!billId || isNaN(billId)) {
+  const idStr = req.params?.id;
+
+  // not a string or not a string of numbers
+  if (typeof idStr !== "string" || !/^\d+$/.test(idStr)) {
+    res.status(400).json({ error: "Invalid bill ID." });
+    return;
+  }
+
+  const billId = Number(idStr);
+  // can't be negative
+  if (billId <= 0) {
     res.status(400).json({ error: "Invalid bill ID." });
     return;
   }
@@ -334,6 +378,7 @@ export async function updateBillInfo(req: Request, res: Response) {
     res.status(400).json({
       error: "Please enter a valid payment date. (It has to be today or after)",
     });
+    return;
   }
 
   try {
@@ -369,12 +414,12 @@ export async function updateBillInfo(req: Request, res: Response) {
 }
 
 // Only get the date part of Date
-function toDateOnlyString(date: Date): string {
+export function toDateOnlyString(date: Date): string {
   return date.toISOString().split("T")[0]; // "2025-08-04"
 }
 
 // Check if given date is today.
-function isDateToday(date: Date): boolean {
+export function isDateToday(date: Date): boolean {
   const today = new Date();
   return (
     date.getFullYear() === today.getFullYear() &&

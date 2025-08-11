@@ -5,6 +5,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { ErrorModal } from "./ErrorModal";
 
 import type { UpcomingBill } from "../types";
+import { VITE_BACKEND_URL } from "../constants";
 
 export function UpcomingBillCard({
   bill,
@@ -16,7 +17,7 @@ export function UpcomingBillCard({
   const [errorMessage, setErrorMessage] = useState<string | null>("");
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = VITE_BACKEND_URL;
 
   const handleCancel = async (billId: string) => {
     try {

@@ -39,6 +39,10 @@ CREATE TABLE saved_contacts (
   UNIQUE (account_id, added_by, added_value)
 );
 
+-- Enforce one SendIt account per user regardless of how it was added
+ALTER TABLE saved_contacts
+  ADD CONSTRAINT unique_account_per_contact UNIQUE (account_id, contact_account_id);
+
 -- Currencies table
 CREATE TABLE currencies (
   currency_id SERIAL PRIMARY KEY,

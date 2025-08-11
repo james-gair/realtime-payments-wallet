@@ -50,6 +50,9 @@ describe("KYCApplication", () => {
   beforeEach(() => {
     render(<KYCApplication />);
   });
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   it("submit the form, successful for driver's license", async () => {
     await user.type(getFullName(), "Emily Chen");
     await user.type(getDOB(), "1994-06-15");

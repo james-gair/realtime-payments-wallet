@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
+import { useSavedContacts } from "../hooks/useSavedContacts";
 import type { Contact } from "../types";
 import { EditNicknameModal } from "./EditNicknameModal";
 
@@ -9,73 +10,72 @@ export function SavedContacts({
   actionText = "Select",
   showEditModal = true,
   filterAccountOnly = false,
+  allowedTypes,
 }: {
   onSelect: (contact: Contact) => void;
   onAddNew?: () => void;
   actionText?: string;
   showEditModal?: boolean;
   filterAccountOnly?: boolean;
+  allowedTypes?: Array<'sendit' | 'payid' | 'bank'>;
 }) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const { contacts, loading, error, updateLocal } = useSavedContacts();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Fetch contacts from backend
+  // Debounce search query
   useEffect(() => {
-    const fetchContacts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await authFetch("http://localhost:4000/api/saved-contacts");
-        const text = await response.text();
-        console.log("Raw response text:", text);
-        const data = JSON.parse(text);
-        setContacts(data);
-      } catch (err: any) {
-        console.error("Failed to load saved contacts:", err);
-        setError("Failed to load saved contacts.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContacts();
-  }, []);
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
 
-  // Filter contacts based on search query and account-only filter
+  // Helpers for normalisation
+  const normalise = (s: string) => (s || "").toLowerCase().trim();
+  const normalisePhone = (s: string) => (s || "").replace(/\D/g, "");
+
+  // Compute filtered contacts
   useEffect(() => {
     let filtered = contacts;
-    
-    // Filter to only show account contacts if requested
     if (filterAccountOnly) {
-      filtered = contacts.filter(contact => contact.contact_account_id !== null);
+      filtered = filtered.filter(contact => contact.contact_account_id !== null || contact.contact_type === 'sendit');
     }
-    
-    if (!searchQuery.trim()) {
+    if (allowedTypes && allowedTypes.length > 0) {
+      filtered = filtered.filter(c => !c.contact_type || allowedTypes.includes(c.contact_type as any));
+    }
+
+    const q = normalise(debouncedQuery);
+    const cleanQuery = q.startsWith('@') ? q.substring(1) : q;
+    const qDigits = normalisePhone(debouncedQuery);
+
+    if (!q && !qDigits) {
       setFilteredContacts(filtered);
-    } else {
-      const q = searchQuery.toLowerCase();
-      setFilteredContacts(
-        filtered.filter(contact => {
-          // Remove @ symbol from search query for username matching
-          const cleanQuery = q.startsWith('@') ? q.substring(1) : q;
-          
-          return (
-            (contact.nickname || "").toLowerCase().includes(q) ||
-            (contact.name || "").toLowerCase().includes(q) ||
-            (contact.username || "").toLowerCase().includes(cleanQuery) ||
-            (contact.email || "").toLowerCase().includes(q) ||
-            (contact.phone || "").toLowerCase().includes(q) ||
-            // Also match @username format
-            (contact.username && `@${contact.username.toLowerCase()}`.includes(q))
-          );
-        })
-      );
+      return;
     }
-  }, [searchQuery, contacts, filterAccountOnly]);
+
+    const result = filtered.filter(contact => {
+      const nn = normalise(contact.nickname || "");
+      const nm = normalise(contact.name || "");
+      const un = normalise(contact.username || "");
+      const em = normalise(contact.email || "");
+      const ph = normalise(contact.phone || "");
+      const phDigits = normalisePhone(contact.phone || "");
+
+      return (
+        nn.includes(q) ||
+        nm.includes(q) ||
+        un.includes(cleanQuery) ||
+        (contact.username && `@${normalise(contact.username)}`.includes(q)) ||
+        em.includes(q) ||
+        ph.includes(q) ||
+        (qDigits && phDigits.includes(qDigits))
+      );
+    });
+
+    setFilteredContacts(result);
+  }, [contacts, debouncedQuery, filterAccountOnly, allowedTypes]);
 
   const handleSelect = (contact: Contact) => {
     if (showEditModal) {
@@ -103,18 +103,14 @@ export function SavedContacts({
       }
 
       const updatedContact = await response.json();
-      
       // Update the contact in the local state
-      setContacts(prevContacts =>
+      updateLocal(prevContacts =>
         prevContacts.map(contact =>
           contact.id === contactId
             ? { ...contact, nickname: updatedContact.nickname }
             : contact
         )
       );
-
-      // Call the original onSelect callback
-      onSelect(selectedContact!);
     } catch (err: any) {
       throw new Error(err.message || "Failed to update nickname");
     }
@@ -136,18 +132,31 @@ export function SavedContacts({
       : contact.name;
   };
 
-  // Sub-label: for username, show @username; for others, show the value used to add them
+  // Sub-label: standardized across contact types
   const getSubLabel = (contact: Contact) => {
-    switch (contact.added_by) {
-      case "username":
-        return contact.username ? `@${contact.username}` : `@${contact.added_value}`;
-      case "email":
-      case "phone":
-      case "bank_account":
-        return contact.added_value;
-      default:
-        return "";
+    if (contact.contact_account_id) {
+      return contact.username ? `@${contact.username}` : `@${contact.added_value}`;
     }
+    if (contact.added_by === "email") {
+      return contact.email || contact.added_value;
+    }
+    if (contact.added_by === "phone") {
+      return contact.phone || contact.added_value;
+    }
+    if (contact.added_by === "bank_account") {
+      const last4 = (contact.account_number || "").slice(-4);
+      if (contact.bsb) {
+        return `BSB ${contact.bsb} ••••${last4}`;
+      }
+      if (contact.routing_number) {
+        return `RTN ${contact.routing_number} ••••${last4}`;
+      }
+      if (contact.jp_bank_code) {
+        return `JP ${contact.jp_bank_code}-${contact.jp_branch_code} ••••${last4}`;
+      }
+      return contact.added_value;
+    }
+    return contact.added_value || "";
   };
 
   return (
@@ -239,8 +248,11 @@ export function SavedContacts({
           {filteredContacts.map((contact, index) => (
             <div 
               key={contact.id} 
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(contact); } }}
               onClick={() => handleSelect(contact)}
-              className="group relative p-3 sm:p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 hover:cursor-pointer bg-white hover:bg-blue-50/30"
+              className="group relative p-3 sm:p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 hover:cursor-pointer bg-white hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               {/* Subtle gradient background on hover */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-transparent rounded-xl transition-all duration-200"></div>

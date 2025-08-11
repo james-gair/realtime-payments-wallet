@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import { ErrorModal } from "../components/ErrorModal";
 import type { UpcomingBill } from "../types";
+import { VITE_BACKEND_URL } from "../constants";
 
 export function BillPayments() {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = VITE_BACKEND_URL;
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>("");
   const [bills, setBills] = useState<UpcomingBill[]>([]);

@@ -23,7 +23,9 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
-  const [bankCountry, setBankCountry] = useState<'AU' | 'US'>('AU');
+  const [bankCountry, setBankCountry] = useState<'AU' | 'US' | 'JP'>('AU');
+  const [jpBankCode, setJpBankCode] = useState('');
+  const [jpBranchCode, setJpBranchCode] = useState('');
 
   // Common fields
   const [nickname, setNickname] = useState('');
@@ -73,6 +75,10 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
             setError('Routing number is required for US bank accounts');
             return;
           }
+          if (bankCountry === 'JP' && (!jpBankCode.trim() || !jpBranchCode.trim())) {
+            setError('Bank code and branch code are required for Japan bank accounts');
+            return;
+          }
           if (!accountNumber.trim()) {
             setError('Account number is required');
             return;
@@ -84,7 +90,10 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
           requestData = {
             type: 'bank_account',
             country: bankCountry,
-            ...(bankCountry === 'AU' ? { bsb: bsb.trim() } : { routingNumber: routingNumber.trim() }),
+            ...(bankCountry === 'AU' ? { bsb: bsb.trim() }
+              : bankCountry === 'US' ? { routingNumber: routingNumber.trim() }
+              : { bankCode: jpBankCode.trim(), branchCode: jpBranchCode.trim() }
+            ),
             accountNumber: accountNumber.trim(),
             accountHolderName: accountHolderName.trim(),
             accountEmail: accountEmail.trim() || undefined,
@@ -115,7 +124,9 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
       setRoutingNumber('');
       setAccountNumber('');
       setAccountHolderName('');
-      setAccountEmail('');
+              setAccountEmail('');
+              setJpBankCode('');
+              setJpBranchCode('');
       setNickname('');
       setBankCountry('AU');
 
@@ -216,11 +227,12 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
               </label>
               <select
                 value={bankCountry}
-                onChange={(e) => setBankCountry(e.target.value as 'AU' | 'US')}
+                onChange={(e) => setBankCountry(e.target.value as 'AU' | 'US' | 'JP')}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
               >
                 <option value="AU">Australia</option>
                 <option value="US">United States</option>
+                <option value="JP">Japan</option>
               </select>
             </div>
             <div>
@@ -261,7 +273,7 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
                   maxLength={6}
                 />
               </div>
-            ) : (
+            ) : bankCountry === 'US' ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Routing number
@@ -275,6 +287,35 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
                   maxLength={9}
                 />
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bank code
+                  </label>
+                  <input
+                    type="text"
+                    value={jpBankCode}
+                    onChange={(e) => setJpBankCode(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="0001"
+                    maxLength={4}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Branch code
+                  </label>
+                  <input
+                    type="text"
+                    value={jpBranchCode}
+                    onChange={(e) => setJpBranchCode(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="001"
+                    maxLength={3}
+                  />
+                </div>
+              </div>
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -285,7 +326,7 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder={bankCountry === 'AU' ? "12345678" : "1234567890"}
+                placeholder={bankCountry === 'AU' ? "12345678" : bankCountry === 'US' ? "1234567890" : "1234567"}
               />
             </div>
           </div>

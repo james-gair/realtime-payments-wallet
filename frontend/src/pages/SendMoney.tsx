@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SavedContacts } from "../components/SavedContacts";
 import { authFetch } from "../services/firebaseFetch";
-import type { Card, PaymentRequest, SentPayment, Contact } from "../types";
+import type { Card, PaymentRequest, Contact } from "../types";
 
 type SendStep = 'select-contact' | 'send-details' | 'confirmation';
 
@@ -101,7 +101,6 @@ const SendMoney: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [activeTab, setActiveTab] = useState<"send" | "requests">("send");
@@ -118,12 +117,11 @@ const SendMoney: React.FC = () => {
 
   // Check if we're returning from adding a contact
   useEffect(() => {
-    const newContact = (location.state as any)?.newContact;
-    if (newContact) {
-      // If we have a new contact, automatically select it and go to send details
-      setSelectedContact(newContact);
+    const state = (location.state as any) || {};
+    const inbound = state.newContact || state.selectedContact;
+    if (inbound) {
+      setSelectedContact(inbound);
       setCurrentStep('send-details');
-      // Clear the state to prevent re-triggering
       navigate(location.pathname, { replace: true });
     }
   }, [location.state, navigate, location.pathname]);
@@ -152,9 +150,7 @@ const SendMoney: React.FC = () => {
       );
       const data = await response.json();
       setCards(data.wallets);
-      if (data.wallets.length > 0) {
-        setSelectedCard(data.wallets[0]);
-      }
+      // optionally set a default card for display
     } catch (error) {
       console.error("Error fetching cards:", error);
     }
@@ -223,16 +219,27 @@ const SendMoney: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Determine recipient based on contact type
-      let recipientUsername = "";
-      if (selectedContact.username) {
-        recipientUsername = selectedContact.username;
-      } else if (selectedContact.email) {
-        recipientUsername = selectedContact.email;
-      } else if (selectedContact.phone) {
-        recipientUsername = selectedContact.phone;
+      // Build payload based on standardized contact_type
+      const basePayload = {
+        currencyCode: formData.currency,
+        amount: amount,
+        description: formData.description,
+      } as any;
+
+      let payload: any = { ...basePayload };
+
+      if (selectedContact.contact_type === 'sendit' && selectedContact.username) {
+        payload.recipientUsername = selectedContact.username;
+      } else if (selectedContact.contact_type === 'payid') {
+        if (selectedContact.email) {
+          payload.recipientEmail = selectedContact.email;
+        } else if (selectedContact.phone) {
+          payload.recipientPhone = selectedContact.phone;
+        } else {
+          throw new Error('Selected PayID contact missing email/phone');
+        }
       } else {
-        throw new Error("Invalid contact information");
+        throw new Error('Unsupported contact type for this flow');
       }
 
       const response = await authFetch(
@@ -242,12 +249,7 @@ const SendMoney: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            recipientUsername: recipientUsername,
-            currencyCode: formData.currency,
-            amount: amount,
-            description: formData.description,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -279,15 +281,13 @@ const SendMoney: React.FC = () => {
     }
   };
 
-  const handleConfirmSend = () => {
-    if (!selectedContact) {
-      alert("No contact selected");
-      return;
-    }
-
-    // Go to confirmation step
-    setCurrentStep('confirmation');
-  };
+  // const handleConfirmSend = () => {
+  //   if (!selectedContact) {
+  //     alert("No contact selected");
+  //     return;
+  //   }
+  //   setCurrentStep('confirmation');
+  // };
 
   const handleBackToContacts = () => {
     setCurrentStep('select-contact');
@@ -395,6 +395,7 @@ const SendMoney: React.FC = () => {
             onAddNew={handleAddNewContact}
             actionText="Send Money"
             showEditModal={false}
+            allowedTypes={['sendit','payid']}
           />
         </div>
       )}
@@ -643,7 +644,7 @@ const SendMoney: React.FC = () => {
           )}
           <div className="flex justify-between items-center py-3">
             <span className="text-gray-600">Contact Type:</span>
-            <span className="font-semibold capitalize">{selectedContact?.added_by?.replace('_', ' ')}</span>
+            <span className="font-semibold">{selectedContact?.contact_type === 'sendit' ? 'SendIt' : selectedContact?.contact_type === 'payid' ? 'PayID' : 'Bank'}</span>
           </div>
         </div>
 
