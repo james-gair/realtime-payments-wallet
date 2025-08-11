@@ -26,7 +26,6 @@ function LoginPage() {
       if (!response.ok) {
         // Handle HTTP errors
         const errorData = await response.json();
-        console.error("Error response:", errorData);
         setError(errorData.error || "Login failed");
         setLoading(false);
         return;
