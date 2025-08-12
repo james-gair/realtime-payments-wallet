@@ -3,6 +3,7 @@ import sql from "../database/client";
 import { LimitsSchema } from "../schemas/paymentLimits.schema";
 import { PaymentLimit } from "../types/paymentLimits";
 
+// This function gives all the payment limits settings for each wallet the user has.
 export async function getPaymentLimits(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
 
@@ -28,6 +29,7 @@ export async function getPaymentLimits(req: Request, res: Response) {
   }
 }
 
+// This function saves the payment limits the user gives.
 export async function postPaymentLimits(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
 
@@ -35,7 +37,7 @@ export async function postPaymentLimits(req: Request, res: Response) {
     res.status(401).json({ error: "Not authenticated. Please log in." });
     return;
   }
-
+  // input validation
   const parseResult = LimitsSchema.safeParse(req.body);
 
   if (!parseResult.success) {

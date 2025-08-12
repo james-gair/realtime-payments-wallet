@@ -22,6 +22,10 @@ or choose your preferred clone method (HTTPS, SSH, or GitHub CLI).
 - backend/serviceAccountKey.json
 - backend/.env
 - frontend/.env
+- .env
+- backend/serviceAccountKey.json
+- backend/.env
+- frontend/.env
 
 ### 🔄 Run it in docker (from the repository root)
 
@@ -36,12 +40,8 @@ docker-compose up --build
 - **Frontend** 💻 http://localhost:5173
 - **Backend** 🛠️ http://localhost:4000
 - **Backend API docs** http://localhost:4000/api-docs
-- **Backend API docs**: http://localhost:4000/api-docs
-  📍 To access Backend API docs: Use `dev-bypass` in the Swagger **Authorize** dialog
-  _(click the green **Authorize** button at the top to open it)._
-
 - **Mock ID Check API docs** http://localhost:4001/api-docs
-  📍 To access Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog.
+  📍 To 'Try it out' Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog. (only sample data will pass the check. You can find the sample data in: /mock-idcheck-api/src/sampleData.ts)
 
 ### 🐳 Docker commands (from the repository root)
 
@@ -55,6 +55,12 @@ docker exec -it backend_app npm test
 
 ```bash
 docker exec -it frontend_app npm test
+```
+
+- Run mock ID check API tests inside Docker:
+
+```bash
+docker exec -it mock_idcheck_api npm test
 ```
 
 - Run sql function tests inside Docker:

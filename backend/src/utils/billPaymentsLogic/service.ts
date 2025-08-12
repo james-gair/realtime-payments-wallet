@@ -25,7 +25,7 @@ export async function payBillAction(bill: Bill) {
     throw Error("Unexpected error during softDecutBillPayment.");
   }
   const softDeductedBills = await processSoftDeductionResult(bills);
-  // console.log(softDeductedBills);
+
   const bankResponses = await sendBillPaymentReqToTheBankInBulk(
     softDeductedBills
   );

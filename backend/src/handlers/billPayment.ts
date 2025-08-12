@@ -7,6 +7,9 @@ import { checkPaymentLimitForWalletId } from "../services/checkPaymentLimits";
 import { Bill, SavedBillRes, UpcomingBillRes } from "../types/billPayments";
 import { payBillAction } from "../utils/billPaymentsLogic/service";
 
+// This function receive the request of creating a bill,
+// creates a row in the db bill_payments table,
+// pays the bill immediately if it is not scheduled.
 export async function payBill(req: Request, res: Response) {
   // get user id
   const firebase_id = (req as any).user?.uid;
@@ -16,6 +19,7 @@ export async function payBill(req: Request, res: Response) {
     return;
   }
 
+  // input validation
   const parseResult = billPaymentSchema.safeParse(req.body);
   if (!parseResult.success) {
     console.error(parseResult);
@@ -119,6 +123,7 @@ export async function payBill(req: Request, res: Response) {
   return;
 }
 
+// Get the a user's upcoming bills to show in the frontend.
 export async function getUpcomingBills(req: Request, res: Response) {
   // get user id
   const firebase_id = (req as any).user?.uid;
@@ -167,6 +172,7 @@ export async function getUpcomingBills(req: Request, res: Response) {
   }
 }
 
+// This function cancels an upcoming bill of the given id.
 export async function cancelUpcomingBillById(
   req: Request<CancelBillParams>,
   res: Response
@@ -219,6 +225,7 @@ export async function cancelUpcomingBillById(
   }
 }
 
+// Get the user's wallets to pay bill.
 export async function getAvailableWallets(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
 
@@ -254,6 +261,7 @@ export async function getAvailableWallets(req: Request, res: Response) {
   }
 }
 
+// This function gives the details of a saved bill.
 export async function getSavedBillById(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
 
@@ -326,6 +334,7 @@ export async function getSavedBillById(req: Request, res: Response) {
   }
 }
 
+// This function PATCH the update to an existing bill.
 export async function updateBillInfo(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
 
@@ -349,6 +358,7 @@ export async function updateBillInfo(req: Request, res: Response) {
     return;
   }
 
+  // input validation
   const parseResult = billPaymentSchema.safeParse(req.body);
   if (!parseResult.success) {
     res

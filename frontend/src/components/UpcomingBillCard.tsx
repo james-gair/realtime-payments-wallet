@@ -24,7 +24,7 @@ export function UpcomingBillCard({
       const res = await authFetch(
         `${backendUrl}/api/bill-payments/upcoming-payments/${billId}/cancel`,
         {
-          method: "PATCH",
+          method: "DELETE",
         }
       );
       const data = await res.json();

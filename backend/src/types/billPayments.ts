@@ -32,16 +32,3 @@ export interface SavedBillRes extends BillInputs {
   currencyCode: string;
   nextRunAt: Date;
 }
-
-export class InsufficientFundError extends Error {
-  constructor(message: string) {
-    super();
-    this.message = message;
-    this.name = "IndufficientFundError";
-  }
-}
-
-export interface BankResponse {
-  success: boolean;
-  externalRef?: string;
-}

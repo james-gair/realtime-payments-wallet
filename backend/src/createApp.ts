@@ -29,7 +29,17 @@ export function createApp() {
   app.use(express.json());
 
   // Swagger setup
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // Read-only docs (no “Try it out”)
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      swaggerOptions: {
+        supportedSubmitMethods: [],
+        tryItOutEnabled: false,
+      },
+    })
+  );
 
   // Delete this after starting the actual project
   app.use("/api", userLogin);

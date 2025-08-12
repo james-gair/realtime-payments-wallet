@@ -64,7 +64,6 @@ export async function softDeductBillPayment(
         biller_bpay_ref: bill.billerBpayRef ?? null,
       },
     ];
-    // return result; // soft_deductions.id
   } catch (error) {
     console.error("Soft deduction failed:", error);
     throw error;
