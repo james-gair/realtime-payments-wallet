@@ -18,10 +18,10 @@ or choose your preferred clone method (HTTPS, SSH, or GitHub CLI).
 
 ### 🗂️ Create the following files
 
-.env
-backend/serviceAccountKey.json
-backend/.env
-frontend/.env
+- .env
+- backend/serviceAccountKey.json
+- backend/.env
+- frontend/.env
 
 ### 🔄 Run it in docker (from the repository root)
 
@@ -33,16 +33,15 @@ docker-compose up --build
 
 ### 🔗 Access the webpages on your machine
 
-**Frontend** 💻 http://localhost:5173  
-**Backend** 🛠️ http://localhost:4000
-**Backend API docs** http://localhost:4000/api-docs
-**Backend API docs**: http://localhost:4000/api-docs
+- **Frontend** 💻 http://localhost:5173
+- **Backend** 🛠️ http://localhost:4000
+- **Backend API docs** http://localhost:4000/api-docs
+- **Backend API docs**: http://localhost:4000/api-docs
+  📍 To access Backend API docs: Use `dev-bypass` in the Swagger **Authorize** dialog
+  _(click the green **Authorize** button at the top to open it)._
 
-📍 To access Backend API docs: Use `dev-bypass` in the Swagger **Authorize** dialog
-_(click the green **Authorize** button at the top to open it)._
-
-**Mock ID Check API docs** http://localhost:4001/api-docs
-📍 To access Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog.
+- **Mock ID Check API docs** http://localhost:4001/api-docs
+  📍 To access Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog.
 
 ### 🐳 Docker commands (from the repository root)
 
