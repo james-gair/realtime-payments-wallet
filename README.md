@@ -22,10 +22,6 @@ or choose your preferred clone method (HTTPS, SSH, or GitHub CLI).
 - backend/serviceAccountKey.json
 - backend/.env
 - frontend/.env
-- .env
-- backend/serviceAccountKey.json
-- backend/.env
-- frontend/.env
 
 ### 🔄 Run it in docker (from the repository root)
 
