@@ -40,11 +40,11 @@ function Forex() {
     { code: "JPY", symbol: "¥", name: "Japanese Yen" },
   ];
 
-  // Show all currencies regardless of wallet ownership
-  const userWallets = availableCurrencies.map((currency) => ({
-    ...currency,
-    wallet: cards.find((card) => card.currency === currency.code),
-  }));
+  // // Show all currencies regardless of wallet ownership
+  // const userWallets = availableCurrencies.map((currency) => ({
+  //   ...currency,
+  //   wallet: cards.find((card) => card.currency === currency.code),
+  // }));
 
   const getFromWallet = () =>
     cards.find((card) => card.currency === fromCurrency);
