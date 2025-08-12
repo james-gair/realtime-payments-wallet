@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { BillForm } from "../components/BillForm";
 import { authFetch } from "../services/firebaseFetch";
 import userEvent from "@testing-library/user-event";
@@ -69,6 +75,7 @@ describe("Bill form submission", () => {
   });
   afterEach(() => {
     jest.clearAllMocks();
+    cleanup();
   });
 
   it("submits Bank Account bill payments immediate payment successfully", async () => {

@@ -40,3 +40,8 @@ export class InsufficientFundError extends Error {
     this.name = "IndufficientFundError";
   }
 }
+
+export interface BankResponse {
+  success: boolean;
+  externalRef?: string;
+}

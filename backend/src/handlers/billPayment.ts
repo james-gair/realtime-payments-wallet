@@ -3,9 +3,9 @@ import sql from "../database/client";
 import { CancelBillParams } from "../dtos/BillPaymentReq";
 import { billPaymentSchema } from "../schemas/billPayment.schema";
 import { getAccountId } from "../utils/getAccountId";
-import { payBillAction } from "../utils/billPayments";
 import { checkPaymentLimitForWalletId } from "../services/checkPaymentLimits";
 import { Bill, SavedBillRes, UpcomingBillRes } from "../types/billPayments";
+import { payBillAction } from "../utils/billPaymentsLogic/service";
 
 export async function payBill(req: Request, res: Response) {
   // get user id

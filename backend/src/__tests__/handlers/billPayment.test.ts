@@ -9,7 +9,7 @@ import {
   toDateOnlyString,
   updateBillInfo,
 } from "../../handlers/billPayment";
-import * as billutils from "../../utils/billPayments";
+import * as billutils from "../../utils/billPaymentsLogic/service";
 import * as getAccountId from "../../utils/getAccountId";
 
 const mockReq = {
@@ -30,9 +30,8 @@ const mockRes = createMockRes();
 
 jest.mock("../../database/client");
 jest.mock("../../services/checkPaymentLimits");
-jest.mock("../../utils/billPayments");
+jest.mock("../../utils/billPaymentsLogic/service");
 jest.mock("../../utils/getAccountId");
-jest.mock("../../services/checkPaymentLimits");
 
 describe("payBill", () => {
   beforeEach(() => {

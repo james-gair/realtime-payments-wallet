@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
 import { LimitsSchema } from "../schemas/paymentLimits.schema";
-interface PaymentLimit {
-  walletId: string;
-  limit: number | null;
-  currency: string;
-}
+import { PaymentLimit } from "../types/paymentLimits";
 
 export async function getPaymentLimits(req: Request, res: Response) {
   const firebase_id = (req as any).user?.uid;
