@@ -31,15 +31,21 @@ Start the frontend, backend, mock API and database.
 docker-compose up --build
 ```
 
-### 🔗 Access the webpages on your machine
+### 🐳 Docker commands & Testing (from the repository root)
 
-- **Frontend** 💻 http://localhost:5173
-- **Backend** 🛠️ http://localhost:4000
-- **Backend API docs** http://localhost:4000/api-docs
-- **Mock ID Check API docs** http://localhost:4001/api-docs
-  📍 To 'Try it out' Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog. (only sample data will pass the check. You can find the sample data in: /mock-idcheck-api/src/sampleData.ts)
+#### Run tests
 
-### 🐳 Docker commands (from the repository root)
+We use Jest for frontend and backend tests. Test files live in:
+
+- backend/src/\_\_tests\_\_
+
+- frontend/src/\_\_tests\_\_
+
+- mock-id-check-api/src/\_\_tests\_\_ (mock ID-check service)
+
+- SQL function tests are in backend/src/database/test.sql, run with backend/src/database/test_seeds.sql and run via psql.
+
+Run these commands to execute the tests:
 
 - Run backend tests inside Docker:
 
@@ -69,11 +75,21 @@ docker cp backend/src/database/test.sql        postgres_db:/tmp/test.sql
 docker exec -i postgres_db psql -U admin -d mydb -v ON_ERROR_STOP=1 -f /tmp/test.sql
 ```
 
+#### other commands
+
 - Reset database (clears all data and re-applies schema/seed) and rebuild:
 
 ```bash
 docker-compose down -v
 docker-compose up --build
 ```
+
+### 🔗 Access the webpages on your machine
+
+- **Frontend** 💻 http://localhost:5173
+- **Backend** 🛠️ http://localhost:4000
+- **Backend API docs** http://localhost:4000/api-docs
+- **Mock ID Check API docs** http://localhost:4001/api-docs
+  📍 To 'Try it out' Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog. (only sample data will pass the check. You can find the sample data in: /mock-idcheck-api/src/sampleData.ts)
 
 _Note: Don't forget to copy the .env file to local machine_
