@@ -18,6 +18,8 @@ or choose your preferred clone method (HTTPS, SSH, or GitHub CLI).
 
 ### 🗂️ Create the following files
 
+_(All required environment variables are listed in our Final Report – Installation Manual.)_
+
 - .env
 - backend/serviceAccountKey.json
 - backend/.env
