@@ -45,9 +45,11 @@ const formatBalance = (balance: number, currency: string): string => {
 };
 
 function Dashboard() {
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const navigate = useNavigate();
-  // done
+
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -63,6 +65,7 @@ function Dashboard() {
   const [expenseCategories] = useState<ExpenseCategory[]>(
     mockExpenseCategories
   );
+
   const [incomeExpenseData] = useState<IncomeExpenseData[]>(
     mockIncomeExpenseData
   );
@@ -80,12 +83,10 @@ function Dashboard() {
   };
 
   const fetchCards = async () => {
-    const response = await authFetch(
-      "http://localhost:4000/api/dashboard/wallet",
-      {
-        method: "GET",
-      }
-    );
+    const response = await authFetch(`${backendUrl}/api/dashboard/wallet`, {
+      method: "GET",
+    });
+
     const data = await response.json();
     if (data.wallets.length === 0) {
       // if no wallets, create a default one
@@ -104,12 +105,10 @@ function Dashboard() {
   };
 
   const fetchTransactions = async () => {
-    const response = await authFetch(
-      "http://localhost:4000/api/dashboard/transactions",
-      {
-        method: "GET",
-      }
-    );
+    const response = await authFetch(`${backendUrl}/api/dashboard/transactions`, {
+      method: "GET",
+    });
+    
     const data = await response.json();
     setTransactions(data.transactions);
   };
@@ -160,7 +159,7 @@ function Dashboard() {
                 className="flex transition-transform duration-300 ease-in-out"
                 style={{ transform: `translateX(-${currentCardIndex * 100}%)` }}
               >
-                {cards.map((card, index) => (
+                {cards.map((card) => (
                   <div key={card.id} className="w-full flex-shrink-0">
                     <div
                       className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-6 text-white relative overflow-hidden`}

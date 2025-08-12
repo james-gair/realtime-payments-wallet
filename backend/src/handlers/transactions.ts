@@ -6,16 +6,13 @@ interface category {
   text: string;
 }
 
-export async function getUserCategories(req: Request, res: Response) {
-  const auth_id = (req as any).user.uid;
-
+// gets list of all categories
+export async function getCategories(req: Request, res: Response) {
     try {        
       const categories : category[] = await sql`
-        SELECT category
+        SELECT category_id, category, parent
         FROM categories
       `;
-
-			// console.log(categories)
       res.json({categories});
 
       return;
@@ -23,26 +20,39 @@ export async function getUserCategories(req: Request, res: Response) {
       console.error("Error adding user:", error);
       res.status(500).send({ error: "Failed to add user" });
       return;
-    }
-    
+    }    
 }
 
+// deletes the category for a given transaction user
 export async function deleteCategory(req: Request, res: Response) {
-  const transactionId = req.params.transactionId;
-  const category = req.body.category;
-  console.log(transactionId);  
-  console.log(req.body.category);  
+  try { 
+      
+      const transactionId = Number(req.params.transactionId);
 
-  try {        
+      if (isNaN(transactionId)) {
+        res.status(400).send({ error: "Invalid transaction ID" });
+        return;
+      }
+
+      const category = req.body.category;
+
+      if (!Array.isArray(category)) {
+        res.status(400).json({ message: "Category must be an Array" });
+        return;
+      }
+
+    // enforces minimum 1 category restriction       
     const categories : category[] = await sql`
       UPDATE transactions
-      SET category = array_remove(category, ${category})
+      SET category = (
+        SELECT array_agg(elem) 
+        FROM unnest(category) elem 
+        WHERE elem <> ALL(${category})
+      )
       WHERE transaction_id = ${transactionId} 
       AND array_length(category, 1) > 1
       RETURNING category;
     `;
-
-		console.log(categories)
     res.json({categories});
 
     return;
@@ -50,28 +60,34 @@ export async function deleteCategory(req: Request, res: Response) {
     console.error("Error removing category:", error);
     res.status(500).send({ error: "Failed to remove category" });
     return;
-  }
-
-  res.json({});
-    
+  }    
 }
 
+// adds categories for a given transaction user
 export async function addCategory(req: Request, res: Response) {
-  const transactionId = req.params.transactionId;
-  const category = req.body.category;
-  console.log(transactionId);  
-  console.log(req.body.category);  
+  try { 
+    const transactionId = Number(req.params.transactionId);
 
-  try {        
+    if (isNaN(transactionId)) {
+      res.status(400).send({ error: "Invalid transaction ID" });
+      return;
+    }
+
+    const category = req.body.category;
+    
+    if (!Array.isArray(category)) {
+      res.status(400).json({ message: "Category must be a string" });
+      return;
+    }
+    
     const categories : category[] = await sql`
       UPDATE transactions
-      SET category = array_append(category, ${category})
+      SET category = category || ${category}
       WHERE transaction_id = ${transactionId} 
       AND array_length(category, 1) < 4
       RETURNING category;
     `;
 
-		console.log(categories)
     res.json({categories});
 
     return;
@@ -79,8 +95,5 @@ export async function addCategory(req: Request, res: Response) {
     console.error("Error adding user:", error);
     res.status(500).send({ error: "Failed to add user" });
     return;
-  }
-
-  res.json({});
-    
+  }    
 }

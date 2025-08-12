@@ -28,12 +28,6 @@ interface TransactionIcon extends Transaction {
   color?: string;
   icon: string;
 }
-// add colours for wallet here
-const walletPalette = [
-  "from-emerald-400 to-emerald-600",
-  "from-blue-400 to-blue-600",
-  "from-purple-400 to-purple-600",
-];
 
 interface IconCategory {
   category: string;
@@ -41,78 +35,43 @@ interface IconCategory {
   parent?: string;
 }
 
-// const iconCategories: IconCategory[] = [
-//   { category: "food", icon: "🍽️" },
-//   { category: "groceries", icon: "🛒", parent: "food" },
-//   { category: "restaurant", icon: "🍝", parent: "food" },
-//   { category: "fast food", icon: "🍟", parent: "food" },
-//   { category: "drink", icon: "🥤"},
-//   { category: "cafe", icon: "☕", parent: "drink" },
-//   { category: "alcohol", icon: "🍷", parent: "drink" },
+const walletPalette = [
+  "from-emerald-400 to-emerald-600",
+  "from-blue-400 to-blue-600",
+  "from-purple-400 to-purple-600",
+];
 
-//   { category: "housing", icon: "🏠" },
-//   { category: "rent", icon: "💸", parent: "housing" },
-//   { category: "mortgage", icon: "🏡", parent: "housing" },
-//   { category: "utilities", icon: "💡", parent: "housing" },
-//   { category: "internet", icon: "🌐", parent: "utilities" },
-//   { category: "electricity", icon: "🔌", parent: "utilities" },
-//   { category: "water", icon: "🚿", parent: "utilities" },
-
-//   { category: "finance", icon: "💳" },
-//   { category: "loan", icon: "🏦", parent: "finance" },
-//   { category: "investment", icon: "📈", parent: "finance" },
-//   { category: "income", icon: "💵", parent: "finance" },
-//   { category: "savings", icon: "💰", parent: "finance" },
-//   { category: "insurance", icon: "🛡️", parent: "finance" },
-
-//   { category: "shopping", icon: "🛍️" },
-//   { category: "clothing", icon: "👗", parent: "shopping" },
-//   { category: "electronics", icon: "📱", parent: "shopping" },
-//   { category: "furniture", icon: "🛋️", parent: "shopping" },
-//   { category: "online shopping", icon: "💻", parent: "shopping" },
-
-//   { category: "health", icon: "🏥" },
-//   { category: "pharmacy", icon: "💊", parent: "health" },
-//   { category: "doctor", icon: "🩺", parent: "health" },
-//   { category: "gym", icon: "🏋️", parent: "health" },
-
-//   { category: "entertainment", icon: "🎉" },
-//   { category: "movies", icon: "🎬", parent: "entertainment" },
-//   { category: "music", icon: "🎧", parent: "entertainment" },
-//   { category: "games", icon: "🎮", parent: "entertainment" },
-//   { category: "subscription", icon: "🔔", parent: "entertainment" },
-
-//   { category: "travel", icon: "✈️" },
-//   { category: "accommodation", icon: "🏨", parent: "travel" },
-//   { category: "flights", icon: "🛫", parent: "travel" },
-//   { category: "taxis", icon: "🚖", parent: "travel" },
-//   { category: "sightseeing", icon: "🗺️", parent: "travel" }
-// ];
-
-// const transaction_palette = ["bg-orange-100", "bg-red-100", "bg-green-100"];
-
+// returns user wallet given valid auth_id
 export async function getUserWallet(req: Request, res: Response) {
   const auth_id = (req as any).user.uid;
+
+  if (!auth_id) {
+    res.status(401).json({ error: "Not authenticated. Please log in." });
+    return;
+  }
 
   // get data from db excluding colour
   try {
     const wallets: Wallet[] = await sql`
-        SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
-        c.code AS currency, CAST(w.balance AS FLOAT), c.symbol
-        FROM wallets w 
-        JOIN accounts a ON w.account_id = a.account_id 
-        JOIN currencies c ON w.currency_id = c.currency_id
-        WHERE a.firebase_id = ${auth_id}
-      `;
+      SELECT ROW_NUMBER() OVER (ORDER BY w.wallet_id) AS id,
+      w.wallet_id AS wallet_id,
+      c.code AS currency, 
+      CAST(w.balance AS FLOAT) as balance,
+      c.symbol as symbol
+      FROM wallets w 
+      JOIN accounts a ON w.account_id = a.account_id 
+      JOIN currencies c ON w.currency_id = c.currency_id
+      WHERE a.firebase_id = ${auth_id}
+    `;
 
     // maps each wallet to a colour, ensure adjacent wallet do not have the same colour
-    const wallets_colour: WalletGradient[] = wallets.map((w, c) => ({
+    const walletsColour: WalletGradient[] = wallets.map((w, c) => ({
       ...w,
       gradient: walletPalette[c % walletPalette.length],
     }));
 
     res.json({
-      wallets: wallets_colour,
+      wallets: walletsColour,
     });
 
     return;
@@ -142,20 +101,19 @@ export async function getUserTransactions(req: Request, res: Response) {
     ];
 
     if (minAmount !== undefined) {
-      console.log("push");
       baseConditions.push(sql`transactions.amount >= ${Number(minAmount)}`);
     }
 
     if (maxAmount !== undefined) {
-      console.log("push");
       baseConditions.push(sql`transactions.amount <= ${Number(maxAmount)}`);
     }
 
-    function parseQueryParam(
-      value: string | ParsedQs | (string | ParsedQs)[] | undefined
-    ): string | undefined {
-      if (typeof value === "string") return value;
-      if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+    function parseQueryParam(value: string | ParsedQs | (string | ParsedQs)[] | undefined): string | undefined {
+      if (typeof value === "string") {
+        return value;
+      } else if (Array.isArray(value) && typeof value[0] === "string") {
+        return value[0];
+      }
       return undefined;
     }
 
@@ -188,13 +146,12 @@ export async function getUserTransactions(req: Request, res: Response) {
     }
 
     if (category) {
-      console.log(category);
       const catTerm = `${category}`;
       baseConditions.push(sql`${catTerm} = ANY(transactions.category)`);
     }
 
-    console.log("Sort param:", sort);
     let orderBy = sql`time DESC`;
+
     if (sort === "date-asc") {
       orderBy = sql`time ASC`;
     } else if (sort === "amount-desc") {
@@ -214,20 +171,19 @@ export async function getUserTransactions(req: Request, res: Response) {
       );
     }
 
-    const whereClause =
-      baseConditions.length > 0
+    const whereClause = baseConditions.length > 0
         ? sql`WHERE ${sqlJoin(baseConditions, sql` AND `)}`
         : sql``;
 
-    // SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
     const transactions: Transaction[] = await sql`
-        SELECT transactions.transaction_id AS id,
+        SELECT ROW_NUMBER() OVER (ORDER BY transactions.transaction_id) AS id,
+        transactions.transaction_id AS transaction_id,
         transactions.name,
         CASE 
           WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
-        currency.symbol,
+        currency.symbol as symbol,
         transactions.event_time as time, 
         transactions.category,
           (
@@ -269,75 +225,9 @@ export async function getUserTransactions(req: Request, res: Response) {
         ORDER BY ${orderBy}, transactions.transaction_id DESC
       `;
 
-    // const iconCategories = await sql`
-    //   SELECT c.category as category, COALESCE(c.icon, p.icon) AS icon, p.category as parent
-    //   FROM categories c
-    //   LEFT JOIN categories p on c.parent = p.category_id
-    // `;
-    // console.log("here")
-    // console.log(iconCategories)
-
-    // const categoryToIcon = new Map<string, string>();
-    // const categoryToParent = new Map<string, string | undefined>();
-
-    // for (const { category, icon, parent } of iconCategories) {
-    //   categoryToIcon.set(category, icon);
-    //   categoryToParent.set(category, parent);
-    // }
-
-    // function resolveIconFromCategories(categories: string[]): string {
-    //   // Sort longest paths first (most specific)
-    //   const sorted = [...categories].sort((a, b) => {
-    //     let depthA = getCategoryDepth(a);
-    //     let depthB = getCategoryDepth(b);
-    //     return depthB - depthA; // more specific first
-    //   });
-
-    //   for (const cat of sorted) {
-    //     let resolved = resolveCategoryToIcon(cat);
-    //     if (resolved) return resolved;
-    //   }
-
-    //   return "❓"; // Fallback
-    // }
-
-    // function resolveCategoryToIcon(category: string): string | undefined {
-    //   // Traverse up the hierarchy to find icon
-    //   let current = category;
-    //   while (current) {
-    //     const icon = categoryToIcon.get(current);
-    //     if (icon) return icon;
-    //     current = categoryToParent.get(current) ?? "";
-    //   }
-    //   return undefined;
-    // }
-
-    // function getCategoryDepth(category: string): number {
-    //   let depth = 0;
-    //   let current = category;
-    //   while (categoryToParent.has(current)) {
-    //     current = categoryToParent.get(current)!;
-    //     depth++;
-    //   }
-    //   return depth;
-    // }
-
-    // const transactions_time: TransactionIcon[] = transactions.map((tx, c) => {
-    //   const icon = Array.isArray(tx.category)
-    //     ? resolveIconFromCategories(tx.category)
-    //     : "❓";
-
-    //   return {
-    //     ...tx,
-    //     // color: transaction_palette[c % transaction_palette.length],
-    //     icon
-    //   };
-    // });
-
     res.json({
       transactions: transactions,
     });
-    console.log(transactions);
 
     return;
   } catch (error) {
