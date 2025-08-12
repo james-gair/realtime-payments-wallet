@@ -28,10 +28,8 @@ export function UpcomingBillCard({
         }
       );
       const data = await res.json();
-      console.log(data);
       if (!res.ok) {
         setErrorMessage(`Error ${res.status}: ${data.error}`);
-        console.log(data.error);
         return;
       }
       onCancelBill(bill.billId);
