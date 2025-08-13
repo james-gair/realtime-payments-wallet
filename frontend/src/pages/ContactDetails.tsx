@@ -1,21 +1,26 @@
-import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { authFetch } from "../services/firebaseFetch";
 import type { Contact } from "../types";
+import { Toast } from "../components/Toast";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 const ContactDetails: React.FC = () => {
   const navigate = useNavigate();
   const { contactId } = useParams();
+  const location = useLocation();
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // const [isEditing, setIsEditing] = useState(false);
   const [newNickname, setNewNickname] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Fetch contact details
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchContactDetails = async () => {
       if (!contactId) {
         setError("Contact ID is required");
@@ -47,6 +52,15 @@ const ContactDetails: React.FC = () => {
     fetchContactDetails();
   }, [contactId]);
 
+  // Show toast if navigated here with a message (e.g., after add)
+  useEffect(() => {
+    const state = location.state as any;
+    if (state && state.toast) {
+      setToastMessage(state.toast);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
   const handleEditNickname = async () => {
     if (!contact) return;
 
@@ -69,16 +83,15 @@ const ContactDetails: React.FC = () => {
       const updatedContact = await response.json();
       setContact(prev => prev ? { ...prev, nickname: updatedContact.nickname } : null);
       setShowNicknameModal(false);
+      setToastMessage("Nickname updated");
     } catch (err) {
       console.error("Failed to update nickname:", err);
-      alert("Failed to update nickname");
+      // Keep in-page error handling minimal
     }
   };
 
   const handleRemoveContact = async () => {
-    if (!contact || !window.confirm("Are you sure you want to remove this contact?")) {
-      return;
-    }
+    if (!contact) return;
 
     setIsRemoving(true);
     try {
@@ -90,11 +103,10 @@ const ContactDetails: React.FC = () => {
         throw new Error("Failed to remove contact");
       }
 
-      alert("Contact removed successfully");
-      navigate("/contacts");
+      navigate("/contacts", { state: { toast: `${contact.nickname || contact.name} removed` } });
     } catch (err) {
       console.error("Failed to remove contact:", err);
-      alert("Failed to remove contact");
+      // Keep in-page error handling minimal
     } finally {
       setIsRemoving(false);
     }
@@ -111,19 +123,6 @@ const ContactDetails: React.FC = () => {
     }
     return 'Unknown';
   };
-
-  // const getContactValue = (contact: Contact) => {
-  //   switch (contact.added_by) {
-  //     case "username":
-  //       return contact.username ? `@${contact.username}` : contact.added_value;
-  //     case "email":
-  //     case "phone":
-  //     case "bank_account":
-  //       return contact.added_value;
-  //     default:
-  //       return contact.added_value;
-  //   }
-  // };
 
   if (loading) {
     return (
@@ -209,7 +208,7 @@ const ContactDetails: React.FC = () => {
                 Send
               </button>
               <button
-                onClick={handleRemoveContact}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={isRemoving}
                 className="px-6 py-2 border border-red-500 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50"
               >
@@ -423,6 +422,19 @@ const ContactDetails: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+      {showDeleteConfirm && (
+        <ConfirmModal
+          message={`Are you sure you want to remove ${contact?.nickname || contact?.name}?`}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            handleRemoveContact();
+          }}
+        />
+      )}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       )}
     </div>
   );

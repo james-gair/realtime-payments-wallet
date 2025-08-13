@@ -28,16 +28,32 @@ const RequestPage: React.FC = () => {
   const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
 
-  // Check if we're returning from adding a contact
+  // Check if we're returning from adding a contact and resolve to full saved contact
   useEffect(() => {
     const newContact = (location.state as any)?.newContact;
-    if (newContact) {
-      // If we have a new contact, automatically select it and go to request details
-      setSelectedContact(newContact);
-      setCurrentStep('request-details');
-      // Clear the state to prevent re-triggering
-      navigate(location.pathname, { replace: true });
-    }
+    const resolveAndProceed = async () => {
+      if (!newContact) return;
+      if (newContact.id && newContact.contact_account_id) {
+        setSelectedContact(newContact);
+        setCurrentStep('request-details');
+        navigate(location.pathname, { replace: true });
+        return;
+      }
+      const id = newContact.contactId || newContact.id;
+      if (!id) return;
+      try {
+        const resp = await authFetch("http://localhost:4000/api/saved-contacts");
+        const list: Contact[] = await resp.json();
+        const found = Array.isArray(list) ? list.find(c => c.id === id) : null;
+        if (found) {
+          setSelectedContact(found);
+          setCurrentStep('request-details');
+        }
+      } finally {
+        navigate(location.pathname, { replace: true });
+      }
+    };
+    resolveAndProceed();
   }, [location.state, navigate, location.pathname]);
 
   // Fetch sent requests when view changes to "sent"
@@ -117,10 +133,14 @@ const RequestPage: React.FC = () => {
     try {
       const requestData = {
         amount: parseFloat(formData.amount),
-        recipientId:  selectedContact.contact_account_id,
+        recipientId: selectedContact.contact_account_id,
         description: formData.description,
-        currencyCode: formData.currency
-      };
+        currencyCode: formData.currency,
+      } as any;
+      // Ensure required fields for account-based requests
+      if (!requestData.recipientId) {
+        throw new Error("Selected contact is not a SendIt account");
+      }
 
 
       const response = await authFetch("http://localhost:4000/api/payment-request", {
