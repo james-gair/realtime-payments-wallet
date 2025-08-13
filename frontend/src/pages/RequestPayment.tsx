@@ -78,7 +78,6 @@ const RequestPage: React.FC = () => {
   };
 
   const handleContactSelect = (contact: Contact) => {
-    console.log("Selected contact:", contact); 
     setSelectedContact(contact);
     setCurrentStep('request-details');
   };
@@ -131,7 +130,6 @@ const RequestPage: React.FC = () => {
         },
         body: JSON.stringify(requestData),
       });
-      console.log("Raw response:", response);
 
       if (!response.ok) {
         const errorText = await response.text(); // Log server response message
