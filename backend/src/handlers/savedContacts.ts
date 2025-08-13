@@ -29,7 +29,6 @@ export async function getSavedContacts(req: Request, res: Response) {
       WHERE sc.account_id = ${account_id}
       ORDER BY sc.id
     `;
-    console.log("Contacts fetched from DB:", contacts);
 
     const result = contacts.map(row => {
       const isBank = row.added_by === 'bank_account';
@@ -69,8 +68,6 @@ export async function getSavedContacts(req: Request, res: Response) {
         account_email: isBank ? row.email : null,
       };
     });
-
-    console.log("Result to send:", result);
 
     res.status(200).json(result);
   } catch (error) {
