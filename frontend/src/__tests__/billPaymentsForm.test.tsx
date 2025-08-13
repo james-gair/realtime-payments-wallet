@@ -1,38 +1,4 @@
 import "@testing-library/jest-dom";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import { BillForm } from "../components/BillForm";
-import { authFetch } from "../services/firebaseFetch";
-import userEvent from "@testing-library/user-event";
-
-jest.mock("../services/firebaseFetch", () => ({ authFetch: jest.fn() }));
-
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: jest.fn(() => mockNavigate),
-}));
-
-// mock env
-jest.mock("../constants", () => ({
-  VITE_BACKEND_URL: "http://mock-backend",
-}));
-
-const mockWalletsOnce = () => {
-  (authFetch as jest.Mock).mockResolvedValueOnce({
-    ok: true,
-    json: async () => [
-      { walletId: "1", currency: "AUD", balance: 100.5 },
-      { walletId: "2", currency: "USD", balance: 200.5 },
-    ],
-  });
-};
-
 // mock ConfirmModal
 jest.mock("../components/ConfirmModal", () => {
   return {
@@ -53,6 +19,38 @@ jest.mock("../components/ConfirmModal", () => {
     ),
   };
 });
+jest.mock("../services/firebaseFetch", () => ({ authFetch: jest.fn() }));
+
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: jest.fn(() => mockNavigate),
+}));
+
+// mock env
+jest.mock("../constants", () => ({
+  VITE_BACKEND_URL: "http://mock-backend",
+}));
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { BillForm } from "../components/BillForm";
+import { authFetch } from "../services/firebaseFetch";
+import userEvent from "@testing-library/user-event";
+
+const mockWalletsOnce = () => {
+  (authFetch as jest.Mock).mockResolvedValueOnce({
+    ok: true,
+    json: async () => [
+      { walletId: "1", currency: "AUD", balance: 100.5 },
+      { walletId: "2", currency: "USD", balance: 200.5 },
+    ],
+  });
+};
 
 const renderForm = (props?: Partial<React.ComponentProps<typeof BillForm>>) => {
   const handleActualSubmit = jest.fn();

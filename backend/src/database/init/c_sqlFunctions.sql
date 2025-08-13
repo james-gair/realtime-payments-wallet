@@ -208,7 +208,7 @@ BEGIN
     currency
   )
   SELECT
-    COALESCE(bp.bill_display_name, '') || COALESCE(bp.biller_display_name, '') || 'Bill Payment',
+    COALESCE(bp.bill_display_name, bp.biller_display_name, 'Bill Payment'),
     bp.amount,
     bp.wallet_id,
     NULL,

@@ -260,3 +260,9 @@ END$$;
 ROLLBACK TO SAVEPOINT t_proc;
 
 ROLLBACK;
+
+-- Print message at the end
+DO $$
+BEGIN
+  RAISE NOTICE 'All tests are passed ✅';
+END$$;

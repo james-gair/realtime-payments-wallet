@@ -14,7 +14,6 @@ export async function softDeductBillPaymentInBulk() {
     const result = await sql<SoftDeductionResult[]>`
       SELECT * FROM soft_deduct_today_bills()
     `;
-    // console.log("Soft deduction result:", result);
     return result;
   } catch (error) {
     console.error("❌ Error running soft deduction job:", error);
