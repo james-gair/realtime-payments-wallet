@@ -133,7 +133,7 @@ CREATE TABLE bill_payments (
   biller_bsb VARCHAR(6),
   biller_bank_account_number VARCHAR(20),
 -- OR
-  biller_bpay_code VARCHAR(10),
+  biller_bpay_code VARCHAR(20),
   biller_bpay_ref VARCHAR(20),
 
   biller_display_name VARCHAR(40),        -- optional
