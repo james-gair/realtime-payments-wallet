@@ -119,11 +119,31 @@ const SendMoney: React.FC = () => {
   useEffect(() => {
     const state = (location.state as any) || {};
     const inbound = state.newContact || state.selectedContact;
-    if (inbound) {
-      setSelectedContact(inbound);
-      setCurrentStep('send-details');
-      navigate(location.pathname, { replace: true });
-    }
+    const resolveAndProceed = async () => {
+      if (!inbound) return;
+      // If we already have a fully shaped contact, use it
+      if (inbound.contact_type && inbound.id) {
+        setSelectedContact(inbound as Contact);
+        setCurrentStep('send-details');
+        navigate(location.pathname, { replace: true });
+        return;
+      }
+      // Otherwise, fetch saved contacts and find by id
+      const id = inbound.contactId || inbound.id;
+      if (!id) return;
+      try {
+        const resp = await authFetch("http://localhost:4000/api/saved-contacts");
+        const list: Contact[] = await resp.json();
+        const found = Array.isArray(list) ? list.find(c => c.id === id) : null;
+        if (found) {
+          setSelectedContact(found);
+          setCurrentStep('send-details');
+        }
+      } finally {
+        navigate(location.pathname, { replace: true });
+      }
+    };
+    resolveAndProceed();
   }, [location.state, navigate, location.pathname]);
 
   const fetchPaymentRequests = async () => {
@@ -227,6 +247,8 @@ const SendMoney: React.FC = () => {
       } as any;
 
       let payload: any = { ...basePayload };
+
+      console.log("Selected contact:", selectedContact);
 
       if (selectedContact.contact_type === 'sendit' && selectedContact.username) {
         payload.recipientUsername = selectedContact.username;
