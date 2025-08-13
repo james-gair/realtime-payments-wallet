@@ -156,7 +156,7 @@ export async function getSentPaymentRequests(req: Request, res: Response): Promi
         a.username AS recipient_username  
       FROM payment_requests pr
       JOIN accounts a ON pr.account_id_to = a.account_id
-      WHERE pr.account_id_from = ${account_id}
+      WHERE pr.account_id_from = ${account_id} 
       ORDER BY pr.created_at DESC
     `;
 
@@ -332,7 +332,7 @@ export async function settlePaymentRequest(req: Request, res: Response): Promise
     // Create a mock response object to capture the result
     const transferRes = {
       status: (code: number) => ({
-        json: (data: any) => {
+        json: async (data: any) => {
           if (code === 200) {
             // Transfer successful, update payment request status
             sql`
