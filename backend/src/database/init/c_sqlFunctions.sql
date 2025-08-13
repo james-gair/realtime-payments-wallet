@@ -135,8 +135,8 @@ BEGIN
   SET
       last_paid_at = CURRENT_TIMESTAMP,
       status = CASE
-          WHEN type = 'one-time' THEN 'completed'
-          ELSE status
+          WHEN type = 'one-time' THEN 'completed'::payment_status
+          ELSE 'active'::payment_status
       END,
       next_run_at = CASE
           WHEN type = 'recurring' THEN
@@ -208,7 +208,7 @@ BEGIN
     currency
   )
   SELECT
-    COALESCE(bp.bill_display_name, bp.biller_display_name, 'Bill Payment'),
+    COALESCE(bp.bill_display_name, bp.biller_display_name) || 'Bill Payment',
     bp.amount,
     bp.wallet_id,
     NULL,
