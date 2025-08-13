@@ -12,7 +12,6 @@ interface AddContactFormProps {
 export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Search fields
   const [searchValue, setSearchValue] = useState('');
@@ -34,7 +33,6 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       let requestData: any = {
@@ -116,8 +114,6 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
       }
 
       const result = await response.json();
-      setSuccess(`Contact "${result.name}" added successfully!`);
-      
       // Reset form
       setSearchValue('');
       setBsb('');
@@ -130,10 +126,7 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
       setNickname('');
       setBankCountry('AU');
 
-      // Call success callback with the new contact after a delay
-      setTimeout(() => {
-        onSuccess(result);
-      }, 2000);
+      onSuccess(result);
 
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
@@ -368,7 +361,7 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
             onChange={(e) => setNickname(e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             placeholder="Enter a nickname for this contact"
-            maxLength={50}
+            maxLength={40}
           />
         </div>
 
@@ -376,13 +369,6 @@ export function AddContactForm({ method, onSuccess, onCancel }: AddContactFormPr
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800">{success}</p>
           </div>
         )}
 

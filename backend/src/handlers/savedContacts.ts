@@ -88,8 +88,8 @@ export async function updateContactNickname(req: Request, res: Response): Promis
     return;
   }
 
-  if (nickname !== undefined && (typeof nickname !== 'string' || nickname.length > 50)) {
-    res.status(400).json({ error: "Nickname must be a string and cannot exceed 50 characters" });
+  if (nickname !== undefined && (typeof nickname !== 'string' || nickname.length > 40)) {
+    res.status(400).json({ error: "Nickname must be a string and cannot exceed 40 characters" });
     return;
   }
 
@@ -220,6 +220,11 @@ export async function addContact(req: Request, res: Response) {
         }
 
         const account = accountQuery[0];
+        // Prevent adding yourself
+        if (parseInt(String(account.account_id), 10) === parseInt(String(account_id), 10)) {
+          res.status(400).json({ error: "You cannot add yourself as a contact" });
+          return;
+        }
         const name = `${account.first_name} ${account.last_name}`.trim();
 
         // Prevent adding the same SendIt account twice
@@ -245,7 +250,6 @@ export async function addContact(req: Request, res: Response) {
       case 'payid':
         // Handle PayID-based contact addition
         const payidInfo = await lookupPayIDContact(contactData.payid);
-        
         // Ensure PayID uniqueness per (method,value)
         const existingPayId = await sql`
           SELECT id FROM saved_contacts
@@ -326,7 +330,11 @@ export async function addContact(req: Request, res: Response) {
         return;
     }
 
-    // Check if contact already exists
+    // Validate nickname length (if provided) and check if contact already exists
+    if (contactData.nickname && contactData.nickname.length > 40) {
+      res.status(400).json({ error: "Nickname cannot exceed 40 characters" });
+      return;
+    }
     let existingContact;
     if (contactInfo.contact_account_id) {
       // For SendIt accounts, enforce uniqueness by contact_account_id

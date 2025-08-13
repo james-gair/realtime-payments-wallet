@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
-import { useSavedContacts } from "../hooks/useSavedContacts";
 import type { Contact } from "../types";
 import { EditNicknameModal } from "./EditNicknameModal";
 
@@ -19,12 +18,33 @@ export function SavedContacts({
   filterAccountOnly?: boolean;
   allowedTypes?: Array<'sendit' | 'payid' | 'bank'>;
 }) {
-  const { contacts, loading, error, updateLocal } = useSavedContacts();
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Fetch contacts from backend
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await authFetch("http://localhost:4000/api/saved-contacts");
+        const data = await response.json();
+        setContacts(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        console.error("Failed to load saved contacts:", err);
+        setError("Failed to load saved contacts.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContacts();
+  }, []);
 
   // Debounce search query
   useEffect(() => {
@@ -104,7 +124,7 @@ export function SavedContacts({
 
       const updatedContact = await response.json();
       // Update the contact in the local state
-      updateLocal(prevContacts =>
+      setContacts(prevContacts =>
         prevContacts.map(contact =>
           contact.id === contactId
             ? { ...contact, nickname: updatedContact.nickname }

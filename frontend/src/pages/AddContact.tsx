@@ -22,12 +22,12 @@ function AddContact() {
   };
 
   const handleSuccess = (newContact?: any) => {
-    if (newContact && returnTo === "/request-money") {
-      // If we're returning to request-money, pass the new contact
-      navigate(returnTo, { state: { newContact } });
-    } else {
-      navigate(returnTo);
+    if (newContact && (newContact.contactId || newContact.id)) {
+      const id = newContact.contactId || newContact.id;
+      navigate(`/contacts/${id}`, { state: { toast: "Contact added" } });
+      return;
     }
+    navigate(returnTo);
   };
 
   const handleCancel = () => {
