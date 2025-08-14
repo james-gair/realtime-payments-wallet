@@ -97,22 +97,23 @@ export default function GroupPaymentsDashboard() {
       </BlackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {groups.map((group) => (
-          <button
-            key={group.id}
-            className="bg-white rounded-xl border border-gray-200 p-6 cursor-pointer hover:bg-slate-100 transition-all"
-            onClick={() => {
-              navigate(`/group-payments/${group.id}`);
-            }}
-          >
-            <div className="flex items-center justify-center mb-4">
-              <span className="text-5xl font-bold">{group.icon}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-              {group.name}
-            </h3>
-          </button>
-        ))}
+        {groups.length > 0 &&
+          groups.map((group) => (
+            <button
+              key={group.id}
+              className="bg-white rounded-xl border border-gray-200 p-6 cursor-pointer hover:bg-slate-100 transition-all"
+              onClick={() => {
+                navigate(`/group-payments/${group.id}`);
+              }}
+            >
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-5xl font-bold">{group.icon}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                {group.name}
+              </h3>
+            </button>
+          ))}
       </div>
 
       {/* Group Creation Modal */}
