@@ -53,21 +53,9 @@ function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // add all supported currencies to here, check correct
-  // currency code
-  const availableCurrencies = [
-    { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-    { code: "USD", symbol: "$", name: "US Dollar" },
-    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  ];
-
   // to do
   const [expenseCategories] = useState<ExpenseCategory[]>(
     mockExpenseCategories
-  );
-
-  const [incomeExpenseData] = useState<IncomeExpenseData[]>(
-    mockIncomeExpenseData
   );
 
   const nextCard = () => {
@@ -92,7 +80,7 @@ function Dashboard() {
       // if no wallets, create a default one
       setCards([
         {
-          id: 1,
+          wallet_id: 1,
           currency: "AUD",
           balance: 0,
           gradient: "from-emerald-400 to-emerald-600",
@@ -105,11 +93,15 @@ function Dashboard() {
   };
 
   const fetchTransactions = async () => {
-    const response = await authFetch(`${backendUrl}/api/dashboard/transactions`, {
-      method: "GET",
-    });
-    
+    const response = await authFetch(
+      `${backendUrl}/api/dashboard/transactions`,
+      {
+        method: "GET",
+      }
+    );
+
     const data = await response.json();
+    console.log(data);
     setTransactions(data.transactions);
   };
 
@@ -160,7 +152,7 @@ function Dashboard() {
                 style={{ transform: `translateX(-${currentCardIndex * 100}%)` }}
               >
                 {cards.map((card) => (
-                  <div key={card.id} className="w-full flex-shrink-0">
+                  <div key={card.wallet_id} className="w-full flex-shrink-0">
                     <div
                       className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-6 text-white relative overflow-hidden`}
                     >

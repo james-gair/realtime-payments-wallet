@@ -171,3 +171,370 @@ CREATE TABLE soft_deductions (
   external_ref TEXT -- to track sth like an id the bank gives us or a webhook id etc.
 );
 
+
+-- ============================================================================
+-- GROUP PAYMENT TABLES
+-- ============================================================================
+
+CREATE TABLE groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  name TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE group_members (
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  balance NUMERIC(18, 2) NOT NULL DEFAULT 0,
+  joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (group_id, account_id)
+);
+
+CREATE TABLE group_expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  payer_account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
+  description TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track individual splits for each expense
+CREATE TABLE group_expense_splits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  expense_id UUID NOT NULL REFERENCES group_expenses(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  amount NUMERIC(18, 2) NOT NULL CHECK (amount >= 0),
+  UNIQUE (expense_id, account_id)
+);
+
+-- Track group activity/events for history
+CREATE TABLE group_activity (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  account_id INTEGER REFERENCES accounts(account_id), -- NULL for system events
+  activity_type TEXT NOT NULL CHECK (activity_type IN ('expense_added', 'payment_made', 'payment_settled', 'member_joined', 'member_left', 'group_created', 'group_updated')),
+  description TEXT NOT NULL,
+  details TEXT,
+  amount NUMERIC(18, 2), -- optional, for money-related activities
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track settlements/payments between group members
+CREATE TABLE group_settlements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  payer_account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  recipient_account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+  amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'cancelled')),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMPTZ
+);
+
+-- Add triggers for updating timestamps
+CREATE TRIGGER update_groups_updated_at
+BEFORE UPDATE ON groups
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================================
+-- GROUP PAYMENT HELPER FUNCTIONS
+-- ============================================================================
+
+-- Function to add an expense and automatically update member balances
+CREATE OR REPLACE FUNCTION add_group_expense(
+  p_group_id UUID,
+  p_payer_account_id INTEGER,
+  p_amount NUMERIC(18,2),
+  p_description TEXT,
+  p_splits JSONB -- {"account_id": amount, "account_id": amount, ...}
+)
+RETURNS UUID AS $$
+DECLARE
+  expense_id UUID;
+  split_record RECORD;
+  total_splits NUMERIC(18,2) := 0;
+  payer_split NUMERIC(18,2) := 0;
+  amount_to_receive NUMERIC(18,2);
+BEGIN
+  -- Validate that splits add up to the total amount
+  SELECT SUM((value::text)::NUMERIC(18,2)) INTO total_splits
+  FROM jsonb_each(p_splits);
+  
+  IF total_splits != p_amount THEN
+    RAISE EXCEPTION 'Split amounts (%) do not equal total expense amount (%)', total_splits, p_amount;
+  END IF;
+
+  -- Insert the expense
+  INSERT INTO group_expenses (group_id, payer_account_id, amount, description)
+  VALUES (p_group_id, p_payer_account_id, p_amount, p_description)
+  RETURNING id INTO expense_id;
+
+  -- Insert splits and update balances
+  FOR split_record IN 
+    SELECT key::INTEGER as account_id, (value::text)::NUMERIC(18,2) as split_amount
+    FROM jsonb_each(p_splits)
+  LOOP
+    -- Insert the split record
+    INSERT INTO group_expense_splits (expense_id, account_id, amount)
+    VALUES (expense_id, split_record.account_id, split_record.split_amount);
+
+    -- Update member balance
+    IF split_record.account_id = p_payer_account_id THEN
+      -- Payer is owed the total amount minus their own share (positive balance)
+      payer_split := split_record.split_amount;
+      amount_to_receive := p_amount - payer_split;
+      
+      UPDATE group_members 
+      SET balance = balance + amount_to_receive
+      WHERE group_id = p_group_id AND account_id = p_payer_account_id;
+    ELSE
+      -- Other members owe their share (negative balance)
+      UPDATE group_members 
+      SET balance = balance - split_record.split_amount
+      WHERE group_id = p_group_id AND account_id = split_record.account_id;
+    END IF;
+  END LOOP;
+
+  -- Add activity log
+  INSERT INTO group_activity (group_id, account_id, activity_type, description, details, amount)
+  VALUES (
+    p_group_id, 
+    p_payer_account_id, 
+    'expense_added',
+    'Added an expense',
+    p_description || ' - $' || p_amount::TEXT,
+    p_amount
+  );
+
+  RETURN expense_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to settle debt between two group members
+-- TODO: This is only for AUD wallets for now
+CREATE OR REPLACE FUNCTION settle_group_debt(
+  p_group_id UUID,
+  p_payer_account_id INTEGER,
+  p_recipient_account_id INTEGER,
+  p_amount NUMERIC(18,2),
+  p_description TEXT DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+  settlement_id UUID;
+BEGIN
+
+  -- Check if payer has enough balance
+  IF (SELECT balance FROM wallets WHERE account_id = p_payer_account_id AND currency_id = 1) < p_amount THEN
+    RAISE EXCEPTION 'Payer does not have enough balance to settle debt';
+  END IF;
+
+  -- Check if p_amount is positive
+  IF p_amount <= 0 THEN
+    RAISE EXCEPTION 'Settlement amount must be positive';
+  END IF;
+
+
+  -- Insert settlement record
+  INSERT INTO group_settlements (group_id, payer_account_id, recipient_account_id, amount, description, status)
+  VALUES (p_group_id, p_payer_account_id, p_recipient_account_id, p_amount, p_description, 'completed')
+  RETURNING id INTO settlement_id;
+
+  -- Update balances
+  -- Payer reduces their debt (their balance increases toward zero from negative)
+  UPDATE group_members 
+  SET balance = balance + p_amount
+  WHERE group_id = p_group_id AND account_id = p_payer_account_id;
+
+  -- Update payer wallet balance
+  UPDATE wallets
+  SET balance = balance - p_amount
+  WHERE account_id = p_payer_account_id AND currency_id = 1;
+
+  -- Recipient is owed less (their balance decreases toward zero from positive)
+  UPDATE group_members 
+  SET balance = balance - p_amount
+  WHERE group_id = p_group_id AND account_id = p_recipient_account_id;
+
+  -- Update recipient wallet balance
+  UPDATE wallets
+  SET balance = balance + p_amount
+  WHERE account_id = p_recipient_account_id AND currency_id = 1;
+
+  -- Add activity log
+  INSERT INTO group_activity (group_id, account_id, activity_type, description, details, amount)
+  VALUES (
+    p_group_id, 
+    p_payer_account_id, 
+    'payment_made',
+    'Made a payment',
+    COALESCE(p_description, 'Settlement payment') || ' - $' || p_amount::TEXT,
+    p_amount
+  );
+
+  -- Add transaction
+  INSERT INTO transactions (
+    name,
+    amount,
+    sender_wallet_id,
+    recipient_wallet_id,
+    category,
+    currency
+  )
+  VALUES (
+    'Settlement payment',
+    p_amount,
+    (SELECT wallet_id FROM wallets WHERE account_id = p_payer_account_id AND currency_id = 1),
+    (SELECT wallet_id FROM wallets WHERE account_id = p_recipient_account_id AND currency_id = 1),
+    ARRAY['finance'],
+    1
+  );
+
+  -- Mark settlement as completed
+  UPDATE group_settlements 
+  SET completed_at = CURRENT_TIMESTAMP 
+  WHERE id = settlement_id;
+
+  RETURN settlement_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get member balances for a group
+-- Returns optimal settlement balances based on the calculate_optimal_settlements function
+CREATE OR REPLACE FUNCTION get_group_member_balances(p_group_id UUID)
+RETURNS TABLE (
+  account_id INTEGER,
+  username TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  balance NUMERIC(18,2),
+  joined_at TIMESTAMPTZ
+) AS $$
+BEGIN
+  RETURN QUERY
+  WITH optimal_balances AS (
+    -- Calculate optimal net balances from settlements
+    SELECT 
+      gm.account_id,
+      COALESCE(
+        SUM(
+          CASE 
+            -- If this member should pay in optimal settlements (they owe money)
+            WHEN os.debtor_account_id = gm.account_id THEN -os.amount
+            -- If this member should receive in optimal settlements (they are owed money)
+            WHEN os.creditor_account_id = gm.account_id THEN os.amount
+            ELSE 0
+          END
+        ), 0
+      ) as optimal_balance
+    FROM group_members gm
+    LEFT JOIN calculate_optimal_settlements(p_group_id) os 
+      ON (os.debtor_account_id = gm.account_id OR os.creditor_account_id = gm.account_id)
+    WHERE gm.group_id = p_group_id
+    GROUP BY gm.account_id
+  )
+  SELECT 
+    gm.account_id,
+    a.username,
+    a.first_name,
+    a.last_name,
+    COALESCE(ob.optimal_balance, 0) as balance,
+    gm.joined_at
+  FROM group_members gm
+  JOIN accounts a ON gm.account_id = a.account_id
+  LEFT JOIN optimal_balances ob ON ob.account_id = gm.account_id
+  WHERE gm.group_id = p_group_id
+  ORDER BY COALESCE(ob.optimal_balance, 0) DESC, a.username;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to calculate optimal settlements (who should pay whom)
+CREATE OR REPLACE FUNCTION calculate_optimal_settlements(p_group_id UUID)
+RETURNS TABLE (
+  debtor_account_id INTEGER,
+  debtor_username TEXT,
+  creditor_account_id INTEGER,
+  creditor_username TEXT,
+  amount NUMERIC(18,2)
+) AS $$
+DECLARE
+  debtor RECORD;
+  creditor RECORD;
+  settlement_amount NUMERIC(18,2);
+BEGIN
+  -- Get all members who owe money (negative balance)
+  FOR debtor IN
+    SELECT gm.account_id, a.username, gm.balance
+    FROM group_members gm
+    JOIN accounts a ON gm.account_id = a.account_id
+    WHERE gm.group_id = p_group_id AND gm.balance < 0
+    ORDER BY gm.balance ASC
+  LOOP
+    -- For each debtor, find creditors to pay
+    FOR creditor IN
+      SELECT gm.account_id, a.username, gm.balance
+      FROM group_members gm
+      JOIN accounts a ON gm.account_id = a.account_id
+      WHERE gm.group_id = p_group_id AND gm.balance > 0
+      ORDER BY gm.balance DESC
+    LOOP
+      -- Calculate how much the debtor should pay this creditor
+      settlement_amount := LEAST(ABS(debtor.balance), creditor.balance);
+      
+      IF settlement_amount > 0 THEN
+        debtor_account_id := debtor.account_id;
+        debtor_username := debtor.username;
+        creditor_account_id := creditor.account_id;
+        creditor_username := creditor.username;
+        amount := settlement_amount;
+        
+        RETURN NEXT;
+        
+        -- Update remaining balances for this calculation
+        debtor.balance := debtor.balance + settlement_amount;
+        creditor.balance := creditor.balance - settlement_amount;
+        
+        -- If debtor has paid off their debt, move to next debtor
+        IF debtor.balance >= 0 THEN
+          EXIT;
+        END IF;
+      END IF;
+    END LOOP;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get detailed debt breakdown for a specific member
+CREATE OR REPLACE FUNCTION get_member_debt_details(p_group_id UUID, p_account_id INTEGER)
+RETURNS TABLE (
+  expense_description TEXT,
+  total_expense_amount NUMERIC(18,2),
+  member_share NUMERIC(18,2),
+  payer_username TEXT,
+  expense_date TIMESTAMPTZ,
+  member_is_payer BOOLEAN
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    ge.description,
+    ge.amount,
+    ges.amount as member_share,
+    payer.username,
+    ge.created_at,
+    (ge.payer_account_id = p_account_id) as member_is_payer
+  FROM group_expenses ge
+  JOIN group_expense_splits ges ON ge.id = ges.expense_id
+  JOIN accounts payer ON ge.payer_account_id = payer.account_id
+  WHERE ge.group_id = p_group_id 
+    AND ges.account_id = p_account_id
+  ORDER BY ge.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+

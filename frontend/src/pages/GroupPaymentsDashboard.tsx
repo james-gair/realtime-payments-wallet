@@ -1,32 +1,30 @@
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BlackButton from "../components/BlackButton";
-
-export const MOCK_GROUPS = [
-  {
-    id: 1,
-    name: "Pickleball",
-    icon: "🥒",
-  },
-  {
-    id: 2,
-    name: "Gym",
-    icon: "🏋️",
-  },
-  {
-    id: 3,
-    name: "Volleyball",
-    icon: "🏐",
-  },
-];
+import { authFetch } from "../services/firebaseFetch";
+import type { Group } from "../types";
 
 export default function GroupPaymentsDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [groupName, setGroupName] = useState("");
-  const [groupIcon, setGroupIcon] = useState("");
-  const [memberEmail, setMemberEmail] = useState("");
-  const [members, setMembers] = useState<string[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupIcon, setNewGroupIcon] = useState("");
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMembers, setNewMembers] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      const groups = await authFetch("http://localhost:4000/api/groups", {
+        method: "GET",
+      });
+      const groupsData = await groups.json();
+      setGroups(groupsData);
+    };
+    fetchGroups();
+  }, []);
 
   const navigate = useNavigate();
 
@@ -39,25 +37,35 @@ export default function GroupPaymentsDashboard() {
   };
 
   const addMember = () => {
-    if (memberEmail.trim() && !members.includes(memberEmail.trim())) {
-      setMembers([...members, memberEmail.trim()]);
-      setMemberEmail("");
+    if (newMemberEmail.trim() && !newMembers.includes(newMemberEmail.trim())) {
+      setNewMembers([...newMembers, newMemberEmail.trim()]);
+      setNewMemberEmail("");
     }
   };
 
   const removeMember = (emailToRemove: string) => {
-    setMembers(members.filter((email) => email !== emailToRemove));
+    setNewMembers(newMembers.filter((email) => email !== emailToRemove));
   };
 
-  const handleSubmitGroup = () => {
-    if (groupName.trim() && members.length > 0) {
-      // TODO: Submit group creation to backend
+  const handleSubmitGroup = async () => {
+    if (newGroupName.trim() && newGroupIcon.trim()) {
+      const response = await authFetch("http://localhost:4000/api/groups", {
+        method: "POST",
+        body: JSON.stringify({
+          name: newGroupName,
+          icon: newGroupIcon,
+          newMembers: newMembers.map((member) => member.trim()),
+        }),
+      });
+      const responseData = await response.json();
+
+      setGroups([...groups, responseData[0]]);
 
       // Reset form
-      setGroupName("");
-      setGroupIcon("");
-      setMemberEmail("");
-      setMembers([]);
+      setNewGroupName("");
+      setNewGroupIcon("");
+      setNewMemberEmail("");
+      setNewMembers([]);
       closeModal();
     } else {
       // TODO: Show error message
@@ -89,22 +97,23 @@ export default function GroupPaymentsDashboard() {
       </BlackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {MOCK_GROUPS.map((group) => (
-          <button
-            key={group.id}
-            className="bg-white rounded-xl border border-gray-200 p-6 cursor-pointer hover:bg-slate-100 transition-all"
-            onClick={() => {
-              navigate(`/group-payments/${group.id}`);
-            }}
-          >
-            <div className="flex items-center justify-center mb-4">
-              <span className="text-5xl font-bold">{group.icon}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-              {group.name}
-            </h3>
-          </button>
-        ))}
+        {groups.length > 0 &&
+          groups.map((group) => (
+            <button
+              key={group.id}
+              className="bg-white rounded-xl border border-gray-200 p-6 cursor-pointer hover:bg-slate-100 transition-all"
+              onClick={() => {
+                navigate(`/group-payments/${group.id}`);
+              }}
+            >
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-5xl font-bold">{group.icon}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                {group.name}
+              </h3>
+            </button>
+          ))}
       </div>
 
       {/* Group Creation Modal */}
@@ -129,8 +138,8 @@ export default function GroupPaymentsDashboard() {
                 </label>
                 <input
                   type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
                   placeholder="Enter group name"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
@@ -140,13 +149,15 @@ export default function GroupPaymentsDashboard() {
               {/* Group Icon */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Icon
+                  Group Icon *
                 </label>
                 <input
                   type="text"
-                  value={groupIcon}
-                  onChange={(e) => setGroupIcon(e.target.value)}
+                  value={newGroupIcon}
+                  onChange={(e) => setNewGroupIcon(e.target.value)}
                   placeholder="Enter an emoji (e.g., 🏀, 🍕, 🎮)"
+                  maxLength={1}
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                 />
               </div>
@@ -154,13 +165,13 @@ export default function GroupPaymentsDashboard() {
               {/* Add Members */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Members *
+                  Add Members
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="email"
-                    value={memberEmail}
-                    onChange={(e) => setMemberEmail(e.target.value)}
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
                     placeholder="Enter username"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     onKeyPress={(e) => e.key === "Enter" && addMember()}
@@ -175,13 +186,13 @@ export default function GroupPaymentsDashboard() {
               </div>
 
               {/* Members List */}
-              {members.length > 0 && (
+              {newMembers.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Group Members ({members.length})
+                    Group Members ({newMembers.length})
                   </label>
                   <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg">
-                    {members.map((member, index) => (
+                    {newMembers.map((member, index) => (
                       <div
                         key={index}
                         className="flex justify-between items-center px-3 py-2 border-b border-gray-100 last:border-b-0"

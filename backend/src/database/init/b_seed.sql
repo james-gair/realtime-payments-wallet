@@ -202,3 +202,52 @@ INSERT INTO categories (category_id, category, icon, parent) VALUES
 (37, 'flights', '🛫', 8),
 (38, 'taxis', '🚖', 8),
 (39, 'sightseeing', '🗺️', 8);
+
+-------------------------------------------------------
+-- Group Payments test data
+-------------------------------------------------------
+
+-- Create some test groups
+INSERT INTO groups (id, admin_account_id, name, icon) VALUES 
+  ('11111111-1111-1111-1111-111111111111', 1, 'Roommates', '🏠'),
+  ('22222222-2222-2222-2222-222222222222', 2, 'Weekend Trip', '🚗'),
+  ('33333333-3333-3333-3333-333333333333', 4, 'Lunch Squad', '🍕');
+
+-- Add members to groups
+INSERT INTO group_members (group_id, account_id, balance) VALUES 
+  -- Roommates group (testuser is admin)
+  ('11111111-1111-1111-1111-111111111111', 1, -10.00),  -- testuser owes 10
+  ('11111111-1111-1111-1111-111111111111', 2, -10.00),   -- testuserverified owes 10
+  ('11111111-1111-1111-1111-111111111111', 3, 30.00),   -- nouser is owed 30
+  ('11111111-1111-1111-1111-111111111111', 4, -10.00),   -- Edwin owes 10
+
+
+  -- Lunch Squad group (Edwin is admin)
+  ('33333333-3333-3333-3333-333333333333', 1, 35.00),   -- testuser is owed 35
+  ('33333333-3333-3333-3333-333333333333', 2, -20.00),  -- testuserverified owes 20
+  ('33333333-3333-3333-3333-333333333333', 4, -15.00);  -- Edwin owes 15
+
+-- Add some expenses
+INSERT INTO group_expenses (id, group_id, payer_account_id, amount, description) VALUES 
+  ('eeeeeeee-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 3, 40.00, 'Groceries for the house'),
+  ('eeeeeeee-3333-3333-3333-333333333333', '33333333-3333-3333-3333-333333333333', 1, 50.00, 'Pizza lunch');
+
+-- Add expense splits
+INSERT INTO group_expense_splits (expense_id, account_id, amount) VALUES 
+  -- Groceries split (40.00 total)
+  ('eeeeeeee-1111-1111-1111-111111111111', 1, 10.00),   -- testuser
+  ('eeeeeeee-1111-1111-1111-111111111111', 2, 10.00),   -- testuserverified
+  ('eeeeeeee-1111-1111-1111-111111111111', 3, 10.00),   -- nouser (payer)
+  ('eeeeeeee-1111-1111-1111-111111111111', 4, 10.00),   -- Edwin
+
+  -- Pizza split (50.00 total)
+  ('eeeeeeee-3333-3333-3333-333333333333', 1, 15.00),   -- testuser (payer)
+  ('eeeeeeee-3333-3333-3333-333333333333', 2, 20.00),   -- testuserverified
+  ('eeeeeeee-3333-3333-3333-333333333333', 4, 15.00);   -- Edwin
+
+-- Add some group activity
+INSERT INTO group_activity (group_id, account_id, activity_type, description, details, amount) VALUES 
+  ('11111111-1111-1111-1111-111111111111', NULL, 'group_created', 'Group was created', 'Roommates group started', NULL),
+  ('11111111-1111-1111-1111-111111111111', 3, 'expense_added', 'Added an expense', 'Groceries for the house - $40.00', 40.00),
+  ('33333333-3333-3333-3333-333333333333', NULL, 'group_created', 'Group was created', 'Lunch Squad group started', NULL),
+  ('33333333-3333-3333-3333-333333333333', 1, 'expense_added', 'Added an expense', 'Pizza lunch - $50.00', 50.00);
