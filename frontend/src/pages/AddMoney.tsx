@@ -2,6 +2,7 @@ import { DocumentDuplicateIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import type { Card, PayIdDetails } from "../types";
+import { useNavigate } from "react-router-dom";
 
 // TODO: This is only setup for AUD
 const quickAmounts = ["50", "100", "500"];
@@ -18,7 +19,7 @@ export default function AddMoney() {
   const [isLoading, setIsLoading] = useState(false);
   const [payIdDetails, setPayIdDetails] = useState<PayIdDetails | null>(null);
   const [showPayIdDetails, setShowPayIdDetails] = useState(false);
-
+  const navigate = useNavigate();
   const fetchCards = async () => {
     try {
       const response = await authFetch(
@@ -66,6 +67,10 @@ export default function AddMoney() {
 
       if (!response.ok) {
         const errData = await response.json();
+        if (errData.redirectTo) {
+          navigate(errData.redirectTo);
+          return;
+        }
         throw new Error(errData.error || "Failed to add money.");
       }
 

@@ -95,3 +95,58 @@ docker-compose up --build
   📍 To 'Try it out' Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog. (only sample data will pass the check. You can find the sample data in: /mock-idcheck-api/src/sampleData.ts)
 
 _Note: Don't forget to copy the .env file to local machine_
+
+### 🧪 KYC & Test Accounts for Marking
+
+In our prototype, money-movement features (bill payments, transfers, etc.) are only available to **KYC-verified** users **with funds** in their wallet.
+
+- In a real-world scenario:
+
+  - A new user must complete KYC by providing valid ID documents.
+
+  - They must then transfer money from their bank account to our wallet — a process that requires interacting with an actual bank.
+
+- In our prototype:
+  To make marking simple and avoid real banking steps, we provide:
+
+  - A pre-funded demo account so you can try all money features without needing a real top-up.
+
+  - Mock KYC records so you can pass verification instantly.
+
+  - A pre-verified account in case KYC testing is skipped or fails.
+
+##### 1. Pre-funded account (funds already loaded, but KYC still required)
+
+- Email: test@gmail.com
+- Password: testtest
+- Already has funds — you can test all features immediately.
+
+##### 2. Pass KYC with mock data
+
+Create or log in with any account, and when redirected to the KYC page, enter one of these records exactly, upload any .png or .jpeg image for the ID front, and take a webcam photo as instructed.
+
+```bash
+
+  idType: "driver_license",
+  fullName: "Emily Chen",
+  dateOfBirth: "1994-06-15",
+  idNumber: "NSW1234567",
+  placeOfIssue: "NSW",
+  idExpDate: "2026-10-01",
+
+#OR
+
+  idType: "passport",
+  fullName: "David Tran",
+  dateOfBirth: "1990-12-03",
+  idNumber: "P987654321",
+  placeOfIssue: "Australia",
+  idExpDate: "2029-03-15",
+
+```
+
+##### 3. Pre-verified account (if KYC fails, which should not happen if the entered info is the same as the mock data shown above)
+
+- Email: testj@gmail.com
+- Password: testj@gmail.com
+- Already KYC-verified.
