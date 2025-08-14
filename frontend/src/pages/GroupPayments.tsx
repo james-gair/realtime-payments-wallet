@@ -291,9 +291,6 @@ export default function GroupPayments() {
       setSettlements(settlementsData);
       // Close balance modal
       closeBalanceModal();
-
-      // Show success message
-      alert(`Settlement of ${formatCurrency(amount)} processed successfully!`);
     } catch (err) {
       console.error("Error processing settlement:", err);
       alert(

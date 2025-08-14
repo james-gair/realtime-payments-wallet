@@ -529,6 +529,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to settle debt between two group members
+-- TODO: This is only for AUD wallets for now
 CREATE OR REPLACE FUNCTION settle_group_debt(
   p_group_id UUID,
   p_payer_account_id INTEGER,
@@ -540,6 +541,18 @@ RETURNS UUID AS $$
 DECLARE
   settlement_id UUID;
 BEGIN
+
+  -- Check if payer has enough balance
+  IF (SELECT balance FROM wallets WHERE account_id = p_payer_account_id AND currency_id = 1) < p_amount THEN
+    RAISE EXCEPTION 'Payer does not have enough balance to settle debt';
+  END IF;
+
+  -- Check if p_amount is positive
+  IF p_amount <= 0 THEN
+    RAISE EXCEPTION 'Settlement amount must be positive';
+  END IF;
+
+
   -- Insert settlement record
   INSERT INTO group_settlements (group_id, payer_account_id, recipient_account_id, amount, description, status)
   VALUES (p_group_id, p_payer_account_id, p_recipient_account_id, p_amount, p_description, 'completed')
@@ -551,10 +564,20 @@ BEGIN
   SET balance = balance + p_amount
   WHERE group_id = p_group_id AND account_id = p_payer_account_id;
 
+  -- Update payer wallet balance
+  UPDATE wallets
+  SET balance = balance - p_amount
+  WHERE account_id = p_payer_account_id AND currency_id = 1;
+
   -- Recipient is owed less (their balance decreases toward zero from positive)
   UPDATE group_members 
   SET balance = balance - p_amount
   WHERE group_id = p_group_id AND account_id = p_recipient_account_id;
+
+  -- Update recipient wallet balance
+  UPDATE wallets
+  SET balance = balance + p_amount
+  WHERE account_id = p_recipient_account_id AND currency_id = 1;
 
   -- Add activity log
   INSERT INTO group_activity (group_id, account_id, activity_type, description, details, amount)
@@ -567,6 +590,24 @@ BEGIN
     p_amount
   );
 
+  -- Add transaction
+  INSERT INTO transactions (
+    name,
+    amount,
+    sender_wallet_id,
+    recipient_wallet_id,
+    category,
+    currency
+  )
+  VALUES (
+    'Settlement payment',
+    p_amount,
+    (SELECT wallet_id FROM wallets WHERE account_id = p_payer_account_id AND currency_id = 1),
+    (SELECT wallet_id FROM wallets WHERE account_id = p_recipient_account_id AND currency_id = 1),
+    ARRAY['finance'],
+    1
+  );
+
   -- Mark settlement as completed
   UPDATE group_settlements 
   SET completed_at = CURRENT_TIMESTAMP 
@@ -577,6 +618,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to get member balances for a group
+-- Returns optimal settlement balances based on the calculate_optimal_settlements function
 CREATE OR REPLACE FUNCTION get_group_member_balances(p_group_id UUID)
 RETURNS TABLE (
   account_id INTEGER,
@@ -588,17 +630,39 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
+  WITH optimal_balances AS (
+    -- Calculate optimal net balances from settlements
+    SELECT 
+      gm.account_id,
+      COALESCE(
+        SUM(
+          CASE 
+            -- If this member should pay in optimal settlements (they owe money)
+            WHEN os.debtor_account_id = gm.account_id THEN -os.amount
+            -- If this member should receive in optimal settlements (they are owed money)
+            WHEN os.creditor_account_id = gm.account_id THEN os.amount
+            ELSE 0
+          END
+        ), 0
+      ) as optimal_balance
+    FROM group_members gm
+    LEFT JOIN calculate_optimal_settlements(p_group_id) os 
+      ON (os.debtor_account_id = gm.account_id OR os.creditor_account_id = gm.account_id)
+    WHERE gm.group_id = p_group_id
+    GROUP BY gm.account_id
+  )
   SELECT 
     gm.account_id,
     a.username,
     a.first_name,
     a.last_name,
-    gm.balance,
+    COALESCE(ob.optimal_balance, 0) as balance,
     gm.joined_at
   FROM group_members gm
   JOIN accounts a ON gm.account_id = a.account_id
+  LEFT JOIN optimal_balances ob ON ob.account_id = gm.account_id
   WHERE gm.group_id = p_group_id
-  ORDER BY gm.balance DESC, a.username;
+  ORDER BY COALESCE(ob.optimal_balance, 0) DESC, a.username;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -622,7 +686,7 @@ BEGIN
     FROM group_members gm
     JOIN accounts a ON gm.account_id = a.account_id
     WHERE gm.group_id = p_group_id AND gm.balance < 0
-    ORDER BY gm.balance DESC
+    ORDER BY gm.balance ASC
   LOOP
     -- For each debtor, find creditors to pay
     FOR creditor IN
@@ -630,10 +694,10 @@ BEGIN
       FROM group_members gm
       JOIN accounts a ON gm.account_id = a.account_id
       WHERE gm.group_id = p_group_id AND gm.balance > 0
-      ORDER BY gm.balance ASC
+      ORDER BY gm.balance DESC
     LOOP
       -- Calculate how much the debtor should pay this creditor
-      settlement_amount := LEAST(debtor.balance, ABS(creditor.balance));
+      settlement_amount := LEAST(ABS(debtor.balance), creditor.balance);
       
       IF settlement_amount > 0 THEN
         debtor_account_id := debtor.account_id;
@@ -645,11 +709,11 @@ BEGIN
         RETURN NEXT;
         
         -- Update remaining balances for this calculation
-        debtor.balance := debtor.balance - settlement_amount;
-        creditor.balance := creditor.balance + settlement_amount;
+        debtor.balance := debtor.balance + settlement_amount;
+        creditor.balance := creditor.balance - settlement_amount;
         
         -- If debtor has paid off their debt, move to next debtor
-        IF debtor.balance <= 0 THEN
+        IF debtor.balance >= 0 THEN
           EXIT;
         END IF;
       END IF;

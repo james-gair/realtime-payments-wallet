@@ -4,7 +4,9 @@ import type { GroupMember, GroupSettlement } from "../types";
 
 interface DebtData {
   from: string;
+  from_account_id: number;
   to: string;
+  to_account_id: number;
   amount: number;
 }
 
@@ -34,6 +36,7 @@ export default function BalanceDetailsModal({
   if (!isOpen || !selectedBalance) return null;
 
   const [debts, setDebts] = useState<DebtData[]>([]);
+
   useEffect(() => {
     if (selectedBalance) {
       const selectedUserDebts = settlements.filter(
@@ -43,10 +46,14 @@ export default function BalanceDetailsModal({
       );
       const transformedDebts = selectedUserDebts.map((settlement) => ({
         from: settlement.debtor_username,
+        from_account_id: settlement.debtor_account_id,
         to: settlement.creditor_username,
+        to_account_id: settlement.creditor_account_id,
         amount: settlement.amount,
       }));
       setDebts(transformedDebts);
+    } else {
+      setDebts([]);
     }
   }, [selectedBalance, settlements]);
 
@@ -58,13 +65,13 @@ export default function BalanceDetailsModal({
     if (onSettlement && canSettle) {
       // For simplicity, settle the full balance
       // In a real app, you might want a more sophisticated UI for partial settlements
-      const amount = Math.abs(selectedBalance.balance);
-      const recipientAccountId = selectedBalance.account_id;
-      onSettlement(
-        recipientAccountId,
-        amount,
-        `Settlement for ${selectedBalance.username}`
-      );
+      for (const debt of debts) {
+        onSettlement(
+          debt.to_account_id,
+          debt.amount,
+          `Settlement with ${debt.to}`
+        );
+      }
     }
   };
 
@@ -132,34 +139,34 @@ export default function BalanceDetailsModal({
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm">
                       {/* {getAvatarForUser(debt.from)} */}
-                      {debt.to[0].toUpperCase()}
+                      {debt.from[0].toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {isCurrentUser && selectedBalance.balance > 0 && (
-                          // You are owed money
-                          <span>{debt.to} owes you</span>
-                        )}
-                        {isCurrentUser && selectedBalance.balance == 0 && (
-                          // You owe nothing
-                          <span>All is settled up</span>
-                        )}
-                        {isCurrentUser && selectedBalance.balance < 0 && (
-                          // You owe money
-                          <span>You owe {debt.from}</span>
-                        )}
-                        {!isCurrentUser && (
-                          <span>
-                            {debt.to} owes {debt.from}
-                          </span>
-                        )}
+                        {(() => {
+                          if (isCurrentUser && selectedBalance.balance > 0) {
+                            return <span>{debt.from} owes you</span>;
+                          }
+                          if (isCurrentUser && selectedBalance.balance === 0) {
+                            return <span>All is settled up</span>;
+                          }
+                          if (isCurrentUser && selectedBalance.balance < 0) {
+                            return <span>You owe {debt.to}</span>;
+                          } else {
+                            return (
+                              <span>
+                                {debt.from} owes {debt.to}
+                              </span>
+                            );
+                          }
+                        })()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p
                       className={`text-sm font-semibold ${
-                        debt.from === selectedBalance.username
+                        debt.to === selectedBalance.username
                           ? "text-green-600"
                           : "text-red-600"
                       }`}

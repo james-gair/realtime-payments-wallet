@@ -28,6 +28,12 @@ export async function addMoney(req: Request, res: Response) {
       UPDATE wallets SET balance = ${newBalance} WHERE wallet_id = ${walletId} and account_id = ${accountId}
     `;
 
+    // Add transaction
+    await sql`
+      INSERT INTO transactions (name, amount, sender_wallet_id, recipient_wallet_id, category, currency)
+      VALUES ('Added money', ${amount}, ${walletId}, ${walletId}, ARRAY['finance'], 1)
+    `;
+
     res.status(200).json({ message: "Money added successfully." });
   } catch (error: any) {
     console.error("Failed to add money:", error);
