@@ -127,21 +127,22 @@ Create or log in with any account, and when redirected to the KYC page, enter on
 
 ```bash
 
-  idType: "driver_license",
-  fullName: "Emily Chen",
-  dateOfBirth: "1994-06-15",
-  idNumber: "NSW1234567",
-  placeOfIssue: "NSW",
-  idExpDate: "2026-10-01",
+ID Type: passport
+Full Name: David Tran
+Date of Birth: 1990-12-03
+Passport Number: P987654321
+Country of Issue: Australia
+Expiry Date: 2029-03-15
 
 #OR
 
-  idType: "passport",
-  fullName: "David Tran",
-  dateOfBirth: "1990-12-03",
-  idNumber: "P987654321",
-  placeOfIssue: "Australia",
-  idExpDate: "2029-03-15",
+ID Type: driver license
+Full Name: Emily Chen
+Date of Birth: 1994-06-15
+License Number: NSW1234567
+State of Issue: NSW
+Expiry Date: 2026-10-01
+
 
 ```
 
