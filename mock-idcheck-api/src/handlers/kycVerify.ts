@@ -14,7 +14,6 @@ export function kycVerifyHandler(
   // Just to see the req.file
   // In this mock API we don't do anything with this pic
   // In real world, a third party app will check it
-  // console.log({
   const files = req.files as {
     idPhoto?: Express.Multer.File[];
     selfieWithId?: Express.Multer.File[];

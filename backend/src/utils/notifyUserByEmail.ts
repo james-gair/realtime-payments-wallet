@@ -19,7 +19,6 @@ export async function sendEmailToUserByAccountId(
     html?: string;
   }
 ) {
-  // 1. Get user's email
   const userResult = await sql`
     SELECT email, first_name FROM accounts WHERE account_id = ${accountId}
   `;
@@ -37,7 +36,7 @@ export async function sendEmailByEmail(
 ) {
   const greeting = `Dear ${firstName || "customer"},\n\n`;
   const htmlGreeting = `<p>Dear ${firstName || "customer"},</p>`;
-  // 2. Choose transporter
+  // 1. Choose transporter
   let transporter;
   // we use a test account for development
   if (process.env.NODE_ENV === "development") {
@@ -64,11 +63,11 @@ export async function sendEmailByEmail(
     });
   }
 
-  // 3. Add greeting if message is provided
+  // 2. Add greeting if message is provided
   const fullText = message.text ? `${greeting}${message.text}` : undefined;
   const fullHtml = message.html ? `${htmlGreeting}${message.html}` : undefined;
 
-  // 4. Send it
+  // 3. Send it
   const info = await transporter.sendMail({
     from: '"Fintech App" <no-reply@fintech.test>',
     to: email,

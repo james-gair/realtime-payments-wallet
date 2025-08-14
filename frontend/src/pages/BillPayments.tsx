@@ -44,7 +44,6 @@ export function BillPayments() {
           console.error("Issues:", data.issues);
           return;
         }
-        console.log(data);
         setBills(data);
       } catch (err) {
         console.error("Network error", err);

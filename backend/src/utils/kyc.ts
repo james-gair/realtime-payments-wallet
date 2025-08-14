@@ -4,6 +4,7 @@ import { ZodIssue } from "zod";
 import FormData from "form-data";
 import sql from "../database/client";
 
+// This function prepares the form sending to the mock id check api.
 export function constructKycFormData(req: Request): FormData {
   const files = req.files as {
     idPhoto?: Express.Multer.File[];

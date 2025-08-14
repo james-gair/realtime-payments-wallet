@@ -92,7 +92,6 @@ const Cashback: React.FC = () => {
         throw new Error(error?.error || "Transfer failed");
       }
 
-      const result = await response.json();
       alert(
         `Transfer successful! Sent ${formData.amount} ${formData.currencyCode} to ${formData.recipientUsername}`
       );

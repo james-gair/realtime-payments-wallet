@@ -24,14 +24,12 @@ export function UpcomingBillCard({
       const res = await authFetch(
         `${backendUrl}/api/bill-payments/upcoming-payments/${billId}/cancel`,
         {
-          method: "PATCH",
+          method: "DELETE",
         }
       );
       const data = await res.json();
-      console.log(data);
       if (!res.ok) {
         setErrorMessage(`Error ${res.status}: ${data.error}`);
-        console.log(data.error);
         return;
       }
       onCancelBill(bill.billId);

@@ -20,7 +20,7 @@ export function BillConfirmation() {
           `${backendUrl}/api/bill-payments/bills/${id}`
         );
         const data = await res.json();
-        console.log(data);
+
         if (!res.ok) {
           setErrorMessage(data.error || "Failed to fetch bill.");
         } else if (data) {
@@ -29,7 +29,7 @@ export function BillConfirmation() {
           setErrorMessage("No bill found with that ID.");
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
         setErrorMessage("Something went wrong. Please try again later.");
       } finally {
         setLoading(false);

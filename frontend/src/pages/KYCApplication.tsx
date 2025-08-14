@@ -113,10 +113,6 @@ export function KYCApplication() {
     if (!user) throw new Error("not authenticated");
 
     const idToken = await user.getIdToken();
-    // for (const [key, value] of formData.entries()) {
-    //   console.log(`${key}: ${value}`);
-    // }
-    // Send request to the backend
 
     try {
       const res = await fetch(backendUrl + "/api/kyc", {

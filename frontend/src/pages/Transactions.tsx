@@ -1,18 +1,23 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "../services/firebaseFetch";
 import { ErrorModal } from "../components/ErrorModal";
+import { VITE_BACKEND_URL } from "../constants";
 
 //define backend
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = VITE_BACKEND_URL;
 
 interface Transaction {
   id: number;
+  transaction_id: number;
   name: string;
   amount: string;
   icon: string;
+  direct_icon: string;
+  symbol: string;
+  fallback: string;
   color: string;
   time: string;
-  category?: string[];
+  category: string[];
 }
 
 type TransactionFilters = {
@@ -25,12 +30,18 @@ type TransactionFilters = {
   searchTerm?: string;
 };
 
+type Categories = {
+  category_id: number;       
+  category: string;
+  parent?: number;
+};
+
 // converts fetched json to CSV format
 function jsonToCSV(data: Record<string, any>[]): string {
-  console.log(data);
   if (data.length === 0) return "";
+  const ignoreColumns: string[] = ["transaction_id", "id", "direct_icon","fallback_icon","icon"];
 
-  const keys = Object.keys(data[0]).slice(0, -2);
+  const keys = Object.keys(data[0]).filter(key => !ignoreColumns.includes(key));
   const header = keys.join(",");
 
   const rows = data.map(row =>
@@ -56,8 +67,11 @@ function downloadCSV(csv: string) {
 }
 
 function capitalise(word: string) {
-  if (!word) return "";
-  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  if (!word) {
+    return "";
+  } else {
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }
 }
 
 function Transactions() {
@@ -66,7 +80,7 @@ function Transactions() {
   
   // advanced search variables
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
-  const [transactionCategories, setTransactionCategories] = useState<string[]>([]);
+  const [transactionCategories, setTransactionCategories] = useState<Categories[]>([]);
   const [inputFilters, setInputFilters] = useState<TransactionFilters>({
     category: undefined,  
     minAmount: undefined,    
@@ -89,25 +103,27 @@ function Transactions() {
   const [showDownloadCSV, setDownloadCSV] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState<string[] | null>(null);
   const [showNewCategory, setNewCategory] = useState<boolean>(false);
-  const [changeCategory, setChangeCategory] = useState<string[] | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
+  const [addCategory, setAddCategory] = useState<string[]>([]);
+  const [deleteCategory, setDeleteCategory] = useState<string[]>([]);
 
   // error handling
   const [errorMessage, setErrorMessage] = useState<string | null>("");
-  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
   
+  // downloads transaction history to csv file
   async function downloadCSVData() {
     try {
       const response = await authFetch(`${backendUrl}/api/transactions`);
       const data = await response.json();
       const csv = jsonToCSV(data.transactions);
-
       downloadCSV(csv);
     } catch (err) {
       console.error("Failed to download CSV", err);
     }
   }
 
-  async function removeCategoryFromTransaction(transactionId: number, category: string) {
+  // remove single category from proveided transaction
+  async function removeCategoryFromTransaction(transactionId: number, category: string[]) {
     try {
       const response = await authFetch(`${backendUrl}/api/transactions/${transactionId}/category`, {
         method: "DELETE",
@@ -128,7 +144,7 @@ function Transactions() {
     }
   }
 
-  async function addCategoryFromTransaction(transactionId: number, category: string) {
+  async function addCategoryFromTransaction(transactionId: number, category: string[]) {
     try {
       const response = await authFetch(`${backendUrl}/api/transactions/${transactionId}/category`, {
         method: "PUT",
@@ -148,23 +164,8 @@ function Transactions() {
       throw error;
     }
   }
-  
-  // allow for delay before successive fetch calls
-  useEffect(() => {
-    console.log("trigger")
-    if (!showAdvanced) {
-      const handler = setTimeout(() => {
-        setAppliedFilters(prev => ({ ...prev, searchTerm: inputFilters.searchTerm }));
-      }, 100);
 
-      return () => clearTimeout(handler);
-    }
-  }, [inputFilters.searchTerm, showAdvanced]);
-
-  // fetch transactions data
-  useEffect(() => {
-    
-    const fetchTransactions = async () => {
+  const fetchTransactions = async () => {
       try {
         // builds query based on advanced filters
         function buildQuery(filters: Record<string, any>): string {
@@ -197,10 +198,22 @@ function Transactions() {
         setErrorMessage("Cannot retrieve transactions history. Please try again later.");
       }
     };
-    
-    fetchTransactions();  
+  
+  // allow for delay before successive fetch calls
+  useEffect(() => {
+    if (!showAdvanced) {
+      const handler = setTimeout(() => {
+        setAppliedFilters(prev => ({ ...prev, searchTerm: inputFilters.searchTerm }));
+      }, 100);
 
-  }, [appliedFilters]);
+      return () => clearTimeout(handler);
+    }
+  }, [inputFilters.searchTerm, showAdvanced]);
+
+  // fetch transactions data
+  useEffect(() => {
+    fetchTransactions();
+  }, [appliedFilters, categoryPopup]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 sm:p-6 p-6">
@@ -226,7 +239,7 @@ function Transactions() {
     {/* Advanced Fields */}
       {showAdvanced && (
         <div className="mt-4 mb-4 space-y-3 animate-fade-in text-gray-600">
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4 sm:space-x-4 sm:flex-nowrap">
             <input
               type="date"
               onChange={(e) => setInputFilters(prevFilters => ({
@@ -260,7 +273,7 @@ function Transactions() {
               <option value="amount-desc">Amount Descending</option>
             </select>           
           </div>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4 sm:space-x-4 sm:flex-nowrap">
             <input
               type="number"
               min="0"
@@ -298,7 +311,7 @@ function Transactions() {
               placeholder="Amount To"
             />
             <select
-              className="flex-1 border border-gray-300 px-3 py-2 rounded-lg"
+              className={`flex-1 border border-gray-300 rounded-lg px-3 py-2 w-80`}
               onChange={(e) => {
                 setInputFilters(prev => ({ ...prev, category: e.target.value }));
               }}
@@ -346,7 +359,7 @@ function Transactions() {
                   ...prevFilters,
                   sort: e.target.value
                 }));
-                setAppliedFilters(prev => ({ ...inputFilters }));
+                setAppliedFilters(inputFilters);
               }}
               className={`border border-gray-300 rounded p-2 w-40 text-center`}
             >
@@ -362,17 +375,18 @@ function Transactions() {
 
         {categoryPopup && (
           <div
-            // onClick={() => setCategoryPopup(null)} // Close on background click
             onClick={() => {
                 setNewCategory(false);
                 setCategoryPopup(null);
+                setAddCategory([]);
+                setDeleteCategory([]);
               }}
             style={{
               position: "fixed",
               top: 0,
               left: 0,
-              right: 0,
-              bottom: 0,
+              width: "100%",
+              height: "100%",
               backgroundColor: "rgba(0,0,0,0.5)",
               display: "flex",
               justifyContent: "center",
@@ -393,18 +407,10 @@ function Transactions() {
                 >
                   <span className="mr-2">{capitalise(cat)}</span>
                   <button
-                     onClick={async () => {
+                    onClick={async () => {
                       const newCategories = categoryPopup.filter((_, i) => i !== index);
                       setCategoryPopup(newCategories);
-                      setChangeCategory(newCategories);
-
-                      try {
-                        if (selectedTransactionId) {
-                          await removeCategoryFromTransaction(selectedTransactionId, cat);
-                        }
-                      } catch (err) {
-                        setErrorMessage("Failed to remove category. Please try again.");
-                      }
+                      setDeleteCategory(prevCategories => [...prevCategories, cat]);
                     }}
                     className="text-gray-400 hover:text-red-600 font-bold text-xs ml-1"
                     title="Remove"
@@ -421,20 +427,15 @@ function Transactions() {
                   <select
                     className="flex-1 border border-gray-300 px-3 py-2 rounded-lg"
                     onChange={async (e) => {
-                    const selectedCategory = e.target.value;
-                    if (!selectedTransactionId || !selectedCategory) return;
-
-                    try {
-                      await addCategoryFromTransaction(selectedTransactionId, selectedCategory);
+                      const selectedCategory = e.target.value;
+                      if (!selectedTransactionId || !selectedCategory) return;
+                      setAddCategory(prevCategories => [...prevCategories, selectedCategory]);
                       setAppliedFilters(prev => ({ ...prev })); // Trigger refetch
                       setCategoryPopup(prev =>
                         prev ? [...prev, selectedCategory] : [selectedCategory]
                       );
                       setNewCategory(false);                    // Hide dropdown
-                    } catch {
-                      setErrorMessage("Failed to add category");
-                    }
-                  }}
+                    }}
                   >
                     <option value="" hidden>Select Category</option>
                     <option value="">All</option>
@@ -458,10 +459,29 @@ function Transactions() {
               </div>
             </div>
             <button
-              onClick={() => {
+              onClick={async () => {
                 setNewCategory(false);
                 setCategoryPopup(null);
                 setAppliedFilters(prev => ({ ...prev }));
+                
+                try {
+                  if (selectedTransactionId) {
+                    if (Array.isArray(addCategory) && addCategory.length > 0) {
+                      await addCategoryFromTransaction(selectedTransactionId, addCategory);
+                    }
+
+                    if (Array.isArray(deleteCategory) && deleteCategory.length > 0) {
+                      await removeCategoryFromTransaction(selectedTransactionId, deleteCategory);
+                    }
+
+                    await fetchTransactions(); 
+                  }
+                } catch (err) {
+                  setErrorMessage("Failed to modify categories. Please try again.");
+                }
+
+                setAddCategory([]);
+                setDeleteCategory([]);
               }}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
@@ -470,19 +490,6 @@ function Transactions() {
           </div>
           </div>
           )}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       </div>
 
@@ -521,7 +528,6 @@ function Transactions() {
           <div
             key={idx}
             onClick={() => {
-              console.log(transaction.id)
               setCategoryPopup(transaction.category || []);
               setSelectedTransactionId(transaction.id);
             }}
@@ -536,16 +542,16 @@ function Transactions() {
       <div className="hidden sm:block text-center">
         <div
           className={`text-sm px-2 py-1 rounded-xl font-medium inline-block
-            ${transaction.amount >= 0
+            ${parseFloat(transaction.amount) >= 0
             ? 'bg-green-100 text-green-700'
             : 'bg-red-100 text-red-700'}`}>
-            {transaction.amount > 0 ? "Incoming" : "Outgoing"}
+            {parseFloat(transaction.amount) > 0 ? "Incoming" : "Outgoing"}
         </div>
       </div>
       <div 
         className="text-sm text-right px-2 py-1 rounded-xl font-medium inline-block"
-      > {transaction.amount < 0
-        ? `-${transaction.symbol}${Math.abs(transaction.amount).toFixed(2)}`
+      > {parseFloat(transaction.amount) < 0
+        ? `-${transaction.symbol}${Math.abs(parseFloat(transaction.amount)).toFixed(2)}`
         : `${transaction.symbol}${transaction.amount}`}
       </div>
       <div className="col-span-full flex justify-end mt-2">

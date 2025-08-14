@@ -27,8 +27,8 @@ export async function registerUser(req: Request, res: Response) {
 }
 
 export async function loginUser(req: Request, res: Response) {
-  console.log(req.body);
-  console.log((req as any).user.uid);
+  // console.log(req.body);
+  // console.log((req as any).user.uid);
   res.json({ message: "login" });
 }
 

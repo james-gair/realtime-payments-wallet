@@ -116,7 +116,7 @@ VALUES (
   2, 3, 40.00, 'bpay',
   '123123', '45645678',
   'Water Co.', 'Water Bill',
-  'recurring', 'monthly', NOW(), 'active', '2025-08-02',
+  'recurring', 'monthly', NOW(), 'active', '2025-08-11',
   true, 1
 );
 
@@ -132,7 +132,7 @@ VALUES (
   2, 3, 88.00, 'bankAcct',
   '062000', '87654321',
   'Gas Corp', 'Gas Bill',
-  'recurring', 'monthly', NOW(), 'active', '2025-08-03',
+  'recurring', 'monthly', NOW(), 'active', '2025-08-11',
   true, 2
 );
 
