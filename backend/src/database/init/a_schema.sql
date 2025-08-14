@@ -616,12 +616,12 @@ DECLARE
   creditor RECORD;
   settlement_amount NUMERIC(18,2);
 BEGIN
-  -- Get all members who owe money (positive balance)
+  -- Get all members who owe money (negative balance)
   FOR debtor IN
     SELECT gm.account_id, a.username, gm.balance
     FROM group_members gm
     JOIN accounts a ON gm.account_id = a.account_id
-    WHERE gm.group_id = p_group_id AND gm.balance > 0
+    WHERE gm.group_id = p_group_id AND gm.balance < 0
     ORDER BY gm.balance DESC
   LOOP
     -- For each debtor, find creditors to pay
@@ -629,7 +629,7 @@ BEGIN
       SELECT gm.account_id, a.username, gm.balance
       FROM group_members gm
       JOIN accounts a ON gm.account_id = a.account_id
-      WHERE gm.group_id = p_group_id AND gm.balance < 0
+      WHERE gm.group_id = p_group_id AND gm.balance > 0
       ORDER BY gm.balance ASC
     LOOP
       -- Calculate how much the debtor should pay this creditor

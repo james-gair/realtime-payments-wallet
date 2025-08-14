@@ -7,7 +7,7 @@ import type { Card, PayIdDetails } from "../types";
 const quickAmounts = ["50", "100", "500"];
 
 const MOCK_DATA = {
-  payId: "edwin@sendit.com.au",
+  payId: "username@sendit.com.au",
 };
 
 export default function AddMoney() {
@@ -58,7 +58,7 @@ export default function AddMoney() {
           body: JSON.stringify({
             amount: parseFloat(amount),
             currency: selectedCard?.currency,
-            walletId: selectedCard?.id,
+            walletId: selectedCard?.wallet_id,
             paymentMethod: paymentMethod,
           }),
         }
@@ -84,7 +84,7 @@ export default function AddMoney() {
 
       setCards(
         cards.map((card) =>
-          card.id === selectedCard?.id
+          card.wallet_id === selectedCard?.wallet_id
             ? {
                 ...card,
                 balance: card.balance + parseFloat(amount),
@@ -170,10 +170,10 @@ export default function AddMoney() {
             <div className="space-y-3">
               {cards.map((card) => (
                 <button
-                  key={card.id}
+                  key={card.wallet_id}
                   onClick={() => setSelectedCard(card)}
                   className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                    selectedCard?.id === card.id
+                    selectedCard?.wallet_id === card.wallet_id
                       ? "border-black bg-gray-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
@@ -197,7 +197,7 @@ export default function AddMoney() {
                         </div>
                       </div>
                     </div>
-                    {selectedCard?.id === card.id && (
+                    {selectedCard?.wallet_id === card.wallet_id && (
                       <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center">
                         <svg
                           className="w-3 h-3 text-white"

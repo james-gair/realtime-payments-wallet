@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import sql from "../database/client";
+import { getAccountId } from "../utils/getAccountId";
 
 export async function addMoney(req: Request, res: Response) {
   try {
@@ -9,8 +10,11 @@ export async function addMoney(req: Request, res: Response) {
       return res.status(400).json({ error: "Missing required fields." });
     }
 
+    const firebase_id = (req as any).user?.uid;
+    const accountId = await getAccountId(firebase_id);
+
     const walletDetails = await sql`
-      SELECT balance FROM wallets WHERE wallet_id = ${walletId}
+      SELECT balance FROM wallets WHERE wallet_id = ${walletId} and account_id = ${accountId}
     `;
 
     if (walletDetails.length === 0) {
@@ -21,10 +25,9 @@ export async function addMoney(req: Request, res: Response) {
     const newBalance = parseFloat(balance) + parseFloat(amount);
 
     await sql`
-      UPDATE wallets SET balance = ${newBalance} WHERE wallet_id = ${walletId}
+      UPDATE wallets SET balance = ${newBalance} WHERE wallet_id = ${walletId} and account_id = ${accountId}
     `;
 
-    console.log(newBalance);
     res.status(200).json({ message: "Money added successfully." });
   } catch (error: any) {
     console.error("Failed to add money:", error);

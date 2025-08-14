@@ -1,25 +1,17 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
-
-interface BalanceData {
-  id: number;
-  name: string;
-  amount: number;
-  avatar: string;
-  admin: boolean;
-}
+import { useEffect, useState } from "react";
+import type { GroupMember, GroupSettlement } from "../types";
 
 interface DebtData {
   from: string;
   to: string;
   amount: number;
-  reason: string;
 }
 
 interface BalanceDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedBalance: BalanceData | null;
-  debtsData: { [key: string]: DebtData[] };
+  selectedBalance: GroupMember | null;
   onSettlement?: (
     recipientAccountId: number,
     amount: number,
@@ -27,35 +19,51 @@ interface BalanceDetailsModalProps {
   ) => void;
   isProcessingSettlement?: boolean;
   isCurrentUser?: boolean;
+  settlements: GroupSettlement[];
 }
 
 export default function BalanceDetailsModal({
   isOpen,
   onClose,
   selectedBalance,
-  debtsData,
+  settlements,
   onSettlement,
   isProcessingSettlement = false,
   isCurrentUser = false,
 }: BalanceDetailsModalProps) {
   if (!isOpen || !selectedBalance) return null;
 
-  const userDebts = debtsData[selectedBalance.name] || [];
+  const [debts, setDebts] = useState<DebtData[]>([]);
+  useEffect(() => {
+    if (selectedBalance) {
+      const selectedUserDebts = settlements.filter(
+        (settlement) =>
+          settlement.debtor_account_id === selectedBalance.account_id ||
+          settlement.creditor_account_id === selectedBalance.account_id
+      );
+      const transformedDebts = selectedUserDebts.map((settlement) => ({
+        from: settlement.debtor_username,
+        to: settlement.creditor_username,
+        amount: settlement.amount,
+      }));
+      setDebts(transformedDebts);
+    }
+  }, [selectedBalance, settlements]);
 
   // Determine if settlement should be available
   // Only show settlement for current user when they owe money (negative balance)
-  const canSettle = isCurrentUser && selectedBalance.amount < 0;
+  const canSettle = isCurrentUser && selectedBalance.balance < 0;
 
   const handleSettleUp = () => {
     if (onSettlement && canSettle) {
       // For simplicity, settle the full balance
       // In a real app, you might want a more sophisticated UI for partial settlements
-      const amount = Math.abs(selectedBalance.amount);
-      const recipientAccountId = selectedBalance.id;
+      const amount = Math.abs(selectedBalance.balance);
+      const recipientAccountId = selectedBalance.account_id;
       onSettlement(
         recipientAccountId,
         amount,
-        `Settlement for ${selectedBalance.name}`
+        `Settlement for ${selectedBalance.username}`
       );
     }
   };
@@ -71,12 +79,7 @@ export default function BalanceDetailsModal({
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">
-            {selectedBalance.name === "You"
-              ? "Your"
-              : `${selectedBalance.name}'s`}{" "}
-            Balance Details
-          </h3>
+          <h3 className="text-xl font-bold text-gray-900">Balance Details</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -89,25 +92,27 @@ export default function BalanceDetailsModal({
         <div className="mb-6 p-4 bg-gray-50 rounded-xl text-center">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">
-              {selectedBalance.avatar}
+              {selectedBalance.username[0].toUpperCase()}
             </div>
             <div>
               <p className="text-lg font-semibold text-gray-900">
-                {selectedBalance.name}
+                {selectedBalance.username}
               </p>
               <p
                 className={`text-xl font-bold ${
-                  selectedBalance.amount > 0 ? "text-green-600" : "text-red-600"
+                  selectedBalance.balance > 0
+                    ? "text-green-600"
+                    : "text-red-600"
                 }`}
               >
-                ${selectedBalance.amount.toFixed(2)}
+                ${selectedBalance.balance.toFixed(2)}
               </p>
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            {selectedBalance.amount > 0
+            {selectedBalance.balance > 0
               ? "Is owed money"
-              : selectedBalance.amount < 0
+              : selectedBalance.balance < 0
               ? "Owes money"
               : "All settled up"}
           </p>
@@ -115,13 +120,11 @@ export default function BalanceDetailsModal({
 
         {/* Debt Details */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900">
-            {selectedBalance.amount > 0 ? "Money You're Owed" : "Money You Owe"}
-          </h4>
+          <h4 className="text-lg font-semibold text-gray-900">Settlements</h4>
 
-          {userDebts.length > 0 ? (
+          {debts.length > 0 ? (
             <div className="space-y-3">
-              {userDebts.map((debt, index) => (
+              {debts.map((debt, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -129,25 +132,39 @@ export default function BalanceDetailsModal({
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm">
                       {/* {getAvatarForUser(debt.from)} */}
+                      {debt.to[0].toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {debt.from === selectedBalance.name
-                          ? `You owe ${debt.to}`
-                          : `${debt.to} owes you`}
+                        {isCurrentUser && selectedBalance.balance > 0 && (
+                          // You are owed money
+                          <span>{debt.to} owes you</span>
+                        )}
+                        {isCurrentUser && selectedBalance.balance == 0 && (
+                          // You owe nothing
+                          <span>All is settled up</span>
+                        )}
+                        {isCurrentUser && selectedBalance.balance < 0 && (
+                          // You owe money
+                          <span>You owe {debt.from}</span>
+                        )}
+                        {!isCurrentUser && (
+                          <span>
+                            {debt.to} owes {debt.from}
+                          </span>
+                        )}
                       </p>
-                      <p className="text-xs text-gray-500">{debt.reason}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p
                       className={`text-sm font-semibold ${
-                        debt.from === selectedBalance.name
+                        debt.from === selectedBalance.username
                           ? "text-green-600"
                           : "text-red-600"
                       }`}
                     >
-                      ${debt.amount.toFixed(2)}
+                      ${debt.amount}
                     </p>
                   </div>
                 </div>

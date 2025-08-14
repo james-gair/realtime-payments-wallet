@@ -29,6 +29,7 @@ import type {
   GroupActivity,
   GroupExpense,
   GroupMember,
+  GroupSettlement,
 } from "../types";
 
 export default function GroupPayments() {
@@ -50,7 +51,7 @@ export default function GroupPayments() {
   const [balances, setBalances] = useState<GroupMember[]>([]);
   const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [activity, setActivity] = useState<GroupActivity[]>([]);
-  const [settlements, setSettlements] = useState<any[]>([]);
+  const [settlements, setSettlements] = useState<GroupSettlement[]>([]);
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -70,30 +71,6 @@ export default function GroupPayments() {
 
   // Group members for the form
   const groupMembers = balances.map((member) => member.account_id.toString());
-
-  // Convert settlements to debt data format for BalanceDetailsModal
-  const getDebtDataForMember = (member: GroupMember) => {
-    if (!settlements || settlements.length === 0) return [];
-
-    return settlements
-      .filter(
-        (settlement: any) =>
-          settlement.debtor_account_id === member.account_id ||
-          settlement.creditor_account_id === member.account_id
-      )
-      .map((settlement: any) => ({
-        from:
-          settlement.debtor_account_id === member.account_id
-            ? getCurrentUserDisplayName(member)
-            : settlement.debtor_username,
-        to:
-          settlement.creditor_account_id === member.account_id
-            ? getCurrentUserDisplayName(member)
-            : settlement.creditor_username,
-        amount: parseAmount(settlement.amount),
-        reason: "Group expense settlement",
-      }));
-  };
 
   useEffect(() => {
     const fetchGroupData = async () => {
@@ -118,11 +95,14 @@ export default function GroupPayments() {
           fetchOptimalSettlements(id),
         ]);
 
+        console.log("balancesData", balancesData);
+
         setGroup(groupData);
         setBalances(balancesData);
         setExpenses(expensesData);
         setActivity(activityData);
         setSettlements(settlementsData);
+        console.log("settlements", settlementsData);
       } catch (err) {
         console.error("Error fetching group data:", err);
         setError(
@@ -240,7 +220,13 @@ export default function GroupPayments() {
       const totalAmount = parseFloat(expenseAmount);
 
       // Convert splits to the format expected by the API (account_id: amount)
+      // Initialize all members with a split of 0
       const apiSplits: ExpenseSplit = {};
+      balances.forEach((member) => {
+        apiSplits[member.account_id.toString()] = 0;
+      });
+
+      // Update with calculated splits for selected members
       Object.entries(splits).forEach(([memberId, amount]) => {
         apiSplits[memberId] = amount;
       });
@@ -261,20 +247,12 @@ export default function GroupPayments() {
       setExpenses(expensesData);
       setActivity(activityData);
       setSettlements(settlementsData);
-
       // Close modal and reset form
       closeModal();
       setExpenseDescription("");
       setExpenseAmount("");
       setSelectedMembers([]);
       setCustomAmounts({});
-
-      // Show success message
-      alert(
-        `Expense "${expenseDescription}" for $${totalAmount.toFixed(
-          2
-        )} added successfully!`
-      );
     } catch (err) {
       console.error("Error adding expense:", err);
       alert(
@@ -311,7 +289,6 @@ export default function GroupPayments() {
       setBalances(balancesData);
       setActivity(activityData);
       setSettlements(settlementsData);
-
       // Close balance modal
       closeBalanceModal();
 
@@ -747,7 +724,13 @@ export default function GroupPayments() {
                               key={member}
                               className="flex justify-between text-sm"
                             >
-                              <span className="text-gray-600">{member}</span>
+                              <span className="text-gray-600">
+                                {
+                                  balances.find(
+                                    (m) => m.account_id.toString() === member
+                                  )?.username
+                                }
+                              </span>
                               <span className="font-medium">
                                 ${amount.toFixed(2)}
                               </span>
@@ -794,27 +777,8 @@ export default function GroupPayments() {
       <BalanceDetailsModal
         isOpen={isBalanceModalOpen}
         onClose={closeBalanceModal}
-        selectedBalance={
-          selectedBalance
-            ? {
-                id: selectedBalance.account_id,
-                name: getCurrentUserDisplayName(selectedBalance),
-                amount: parseAmount(selectedBalance.balance),
-                avatar: selectedBalance.first_name
-                  ? selectedBalance.first_name[0]
-                  : selectedBalance.username[0],
-                admin: false, // TODO: check if user is admin
-              }
-            : null
-        }
-        debtsData={
-          selectedBalance
-            ? {
-                [getCurrentUserDisplayName(selectedBalance)]:
-                  getDebtDataForMember(selectedBalance),
-              }
-            : {}
-        }
+        selectedBalance={selectedBalance}
+        settlements={settlements}
         onSettlement={handleSettlement}
         isProcessingSettlement={isProcessingSettlement}
         isCurrentUser={selectedBalance?.is_current_user || false}

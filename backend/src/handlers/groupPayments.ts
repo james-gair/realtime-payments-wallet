@@ -142,7 +142,8 @@ export async function getGroupBalances(req: Request, res: Response) {
     // Add a flag to indicate which member is the current user
     const balancesWithCurrentUser = balances.map((balance: any) => ({
       ...balance,
-      is_current_user: balance.account_id === accountId,
+      balance: parseFloat(balance.balance),
+      is_current_user: balance.account_id.toString() === accountId,
     }));
 
     // Sort so current user appears first, then by balance descending
@@ -152,7 +153,7 @@ export async function getGroupBalances(req: Request, res: Response) {
       if (!a.is_current_user && b.is_current_user) return 1;
 
       // Then sort by balance (descending)
-      return parseFloat(b.balance) - parseFloat(a.balance);
+      return b.balance - a.balance;
     });
 
     res.status(200).json(sortedBalances);

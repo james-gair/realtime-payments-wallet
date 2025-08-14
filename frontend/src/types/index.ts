@@ -7,7 +7,7 @@
 // ============================================================================
 
 export interface Card {
-  id: number;
+  wallet_id: number;
   currency: string;
   balance: number;
   cardNumber?: string;
@@ -194,7 +194,7 @@ export interface GroupMember {
   username: string;
   first_name: string;
   last_name: string;
-  balance: number | string; // Can be string from database
+  balance: number;
   joined_at: string;
   is_current_user?: boolean;
 }
