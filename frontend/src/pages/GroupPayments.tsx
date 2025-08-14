@@ -6,6 +6,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BalanceDetailsModal from "../components/BalanceDetailsModal";
+import GroupSettingsModal from "../components/GroupSettingsModal";
 import Loading from "../components/Loading";
 import { SavedContacts } from "../components/SavedContacts";
 import {
@@ -64,6 +65,10 @@ export default function GroupPayments() {
   const [selectedBalance, setSelectedBalance] = useState<GroupMember | null>(
     null
   );
+
+  // Group settings modal functionality
+  const [isGroupSettingsModalOpen, setIsGroupSettingsModalOpen] =
+    useState(false);
 
   // SavedContacts functionality
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -319,6 +324,34 @@ export default function GroupPayments() {
     console.log("Navigate to add contact page");
   };
 
+  // Group settings handlers - simplified callbacks for modal
+  const handleGroupUpdate = (updatedGroup: Group) => {
+    setGroup(updatedGroup);
+  };
+
+  // Refresh all group data after operations
+  const handleDataRefresh = async () => {
+    if (!id) return;
+
+    try {
+      // Fetch all group data in parallel
+      const [balancesData, expensesData, activityData, settlementsData] =
+        await Promise.all([
+          fetchGroupBalances(id),
+          fetchGroupExpenses(id),
+          fetchGroupActivity(id),
+          fetchOptimalSettlements(id),
+        ]);
+
+      setBalances(balancesData);
+      setExpenses(expensesData);
+      setActivity(activityData);
+      setSettlements(settlementsData);
+    } catch (err) {
+      console.error("Error refreshing group data:", err);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -367,7 +400,10 @@ export default function GroupPayments() {
         <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
 
         <button className="hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-          <EllipsisHorizontalIcon className="w-6 h-6 text-gray-700" />
+          <EllipsisHorizontalIcon
+            className="w-6 h-6 text-gray-700"
+            onClick={() => setIsGroupSettingsModalOpen(true)}
+          />
         </button>
       </div>
 
@@ -823,6 +859,19 @@ export default function GroupPayments() {
           allowedTypes={["sendit", "payid", "bank"]}
         />
       </div>
+
+      {/* Group Settings Modal */}
+      <GroupSettingsModal
+        isOpen={isGroupSettingsModalOpen}
+        onClose={() => setIsGroupSettingsModalOpen(false)}
+        group={group}
+        members={balances}
+        currentUserAccountId={
+          balances.find((m) => m.is_current_user)?.account_id.toString() || ""
+        }
+        onUpdateGroup={handleGroupUpdate}
+        onDataRefresh={handleDataRefresh}
+      />
     </div>
   );
 }

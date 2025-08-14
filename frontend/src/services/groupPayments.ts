@@ -190,6 +190,7 @@ export function formatActivityIcon(activityType: string): string {
     member_joined: "👋",
     member_left: "👋",
     group_created: "🎉",
+    group_updated: "✏️",
   };
   return icons[activityType] || "📝";
 }

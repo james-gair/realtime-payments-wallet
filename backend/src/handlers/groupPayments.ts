@@ -401,3 +401,361 @@ export async function processSettlement(req: Request, res: Response) {
     res.status(500).json({ error: "Failed to process settlement" });
   }
 }
+
+// ============================================================================
+// GROUP SETTINGS MANAGEMENT
+// ============================================================================
+
+export async function updateGroup(req: Request, res: Response) {
+  try {
+    const { id: groupId } = req.params;
+    const firebase_id = (req as any).user?.uid;
+
+    if (!firebase_id) {
+      res.status(401).json({ error: "Not authenticated. Please log in." });
+      return;
+    }
+
+    const accountId = await getAccountId(firebase_id);
+    const { name, icon } = req.body;
+
+    if (!name || !icon) {
+      res.status(400).json({ error: "Missing required fields: name, icon" });
+      return;
+    }
+
+    // Verify user is admin of the group
+    const group = await sql`
+      SELECT admin_account_id FROM groups 
+      WHERE id = ${groupId}
+    `;
+
+    if (group.length === 0) {
+      res.status(404).json({ error: "Group not found" });
+      return;
+    }
+
+    if (group[0].admin_account_id.toString() !== accountId) {
+      console.log(group[0].admin_account_id.toString(), typeof accountId);
+      res
+        .status(403)
+        .json({ error: "Only group admin can update group settings" });
+      return;
+    }
+
+    // Update group
+    const updatedGroup = await sql`
+      UPDATE groups 
+      SET name = ${name}, icon = ${icon}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${groupId}
+      RETURNING *
+    `;
+
+    // Add activity log
+    await sql`
+      INSERT INTO group_activity (group_id, account_id, activity_type, description, details)
+      VALUES (${groupId}, ${accountId}, 'group_updated', 'Updated group settings', 'Group name and icon updated')
+    `;
+
+    res.status(200).json({
+      success: true,
+      group: updatedGroup[0],
+      message: "Group updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating group:", error);
+    res.status(500).json({ error: "Failed to update group" });
+  }
+}
+
+export async function addGroupMember(req: Request, res: Response) {
+  try {
+    const { id: groupId } = req.params;
+    const firebase_id = (req as any).user?.uid;
+
+    if (!firebase_id) {
+      res.status(401).json({ error: "Not authenticated. Please log in." });
+      return;
+    }
+
+    const accountId = await getAccountId(firebase_id);
+    const { username } = req.body;
+
+    if (!username) {
+      res.status(400).json({ error: "Missing required field: username" });
+      return;
+    }
+
+    // Verify user is admin of the group
+    const group = await sql`
+      SELECT admin_account_id FROM groups 
+      WHERE id = ${groupId}
+    `;
+
+    if (group.length === 0) {
+      res.status(404).json({ error: "Group not found" });
+      return;
+    }
+
+    if (group[0].admin_account_id.toString() !== accountId) {
+      res.status(403).json({ error: "Only group admin can add members" });
+      return;
+    }
+
+    // Get the account ID for the username
+    const newMemberAccountId = await getAccountIdByUsername(username);
+
+    // Check if user is already a member
+    const existingMember = await sql`
+      SELECT 1 FROM group_members 
+      WHERE group_id = ${groupId} AND account_id = ${newMemberAccountId}
+    `;
+
+    if (existingMember.length > 0) {
+      res.status(400).json({ error: "User is already a member of this group" });
+      return;
+    }
+
+    // Add member
+    await sql`
+      INSERT INTO group_members (group_id, account_id) 
+      VALUES (${groupId}, ${newMemberAccountId})
+    `;
+
+    // Add activity log
+    await sql`
+      INSERT INTO group_activity (group_id, account_id, activity_type, description, details)
+      VALUES (${groupId}, ${newMemberAccountId}, 'member_joined', 'Joined the group', 'Added by admin')
+    `;
+
+    res.status(201).json({
+      success: true,
+      message: "Member added successfully",
+    });
+  } catch (error) {
+    console.error("Error adding group member:", error);
+    if (error instanceof Error && error.message.includes("not found")) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      res.status(500).json({ error: "Failed to add member" });
+    }
+  }
+}
+
+export async function removeGroupMember(req: Request, res: Response) {
+  try {
+    const { id: groupId, accountId: memberAccountIdParam } = req.params;
+    const memberAccountId = parseInt(memberAccountIdParam);
+    const firebase_id = (req as any).user?.uid;
+
+    if (!firebase_id) {
+      res.status(401).json({ error: "Not authenticated. Please log in." });
+      return;
+    }
+
+    const accountId = parseInt(await getAccountId(firebase_id));
+
+    // Verify user is admin of the group
+    const group = await sql`
+      SELECT admin_account_id FROM groups 
+      WHERE id = ${groupId}
+    `;
+
+    if (group.length === 0) {
+      res.status(404).json({ error: "Group not found" });
+      return;
+    }
+
+    if (group[0].admin_account_id !== accountId) {
+      res.status(403).json({ error: "Only group admin can remove members" });
+      return;
+    }
+
+    // Prevent admin from removing themselves
+    if (memberAccountId === accountId) {
+      res.status(400).json({
+        error:
+          "Admin cannot remove themselves. Transfer admin rights first or delete the group.",
+      });
+      return;
+    }
+
+    // Check if member exists in group
+    const member = await sql`
+      SELECT 1 FROM group_members 
+      WHERE group_id = ${groupId} AND account_id = ${memberAccountId}
+    `;
+
+    if (member.length === 0) {
+      res.status(404).json({ error: "Member not found in this group" });
+      return;
+    }
+
+    // Check if member has outstanding balances
+    const memberBalance = await sql`
+      SELECT balance FROM group_members 
+      WHERE group_id = ${groupId} AND account_id = ${memberAccountId}
+    `;
+
+    if (Math.abs(parseFloat(memberBalance[0].balance)) > 0.01) {
+      // Allow for small floating point errors
+      res.status(400).json({
+        error:
+          "Cannot remove member with outstanding balance. Please settle debts first.",
+        balance: parseFloat(memberBalance[0].balance),
+      });
+      return;
+    }
+
+    // Remove member
+    await sql`
+      DELETE FROM group_members 
+      WHERE group_id = ${groupId} AND account_id = ${memberAccountId}
+    `;
+
+    // Add activity log
+    await sql`
+      INSERT INTO group_activity (group_id, account_id, activity_type, description, details)
+      VALUES (${groupId}, ${memberAccountId}, 'member_left', 'Was removed from the group', 'Removed by admin')
+    `;
+
+    res.status(200).json({
+      success: true,
+      message: "Member removed successfully",
+    });
+  } catch (error) {
+    console.error("Error removing group member:", error);
+    res.status(500).json({ error: "Failed to remove member" });
+  }
+}
+
+export async function leaveGroup(req: Request, res: Response) {
+  try {
+    const { id: groupId } = req.params;
+    const firebase_id = (req as any).user?.uid;
+
+    if (!firebase_id) {
+      res.status(401).json({ error: "Not authenticated. Please log in." });
+      return;
+    }
+
+    const accountId = await getAccountId(firebase_id);
+
+    // Verify user is member of the group
+    const membership = await sql`
+      SELECT gm.balance, g.admin_account_id
+      FROM group_members gm
+      JOIN groups g ON gm.group_id = g.id
+      WHERE gm.group_id = ${groupId} AND gm.account_id = ${accountId}
+    `;
+
+    if (membership.length === 0) {
+      res.status(404).json({ error: "Not a member of this group" });
+      return;
+    }
+
+    // Prevent admin from leaving if there are other members
+    if (membership[0].admin_account_id === accountId) {
+      const otherMembers = await sql`
+        SELECT COUNT(*) as count FROM group_members 
+        WHERE group_id = ${groupId} AND account_id != ${accountId}
+      `;
+
+      if (parseInt(otherMembers[0].count) > 0) {
+        res.status(400).json({
+          error:
+            "Admin cannot leave group with other members. Transfer admin rights first or delete the group.",
+        });
+        return;
+      }
+    }
+
+    // Check if member has outstanding balances
+    if (Math.abs(parseFloat(membership[0].balance)) > 0.01) {
+      // Allow for small floating point errors
+      res.status(400).json({
+        error:
+          "Cannot leave group with outstanding balance. Please settle debts first.",
+        balance: parseFloat(membership[0].balance),
+      });
+      return;
+    }
+
+    // Remove member
+    await sql`
+      DELETE FROM group_members 
+      WHERE group_id = ${groupId} AND account_id = ${accountId}
+    `;
+
+    // Add activity log
+    await sql`
+      INSERT INTO group_activity (group_id, account_id, activity_type, description, details)
+      VALUES (${groupId}, ${accountId}, 'member_left', 'Left the group', 'Left voluntarily')
+    `;
+
+    res.status(200).json({
+      success: true,
+      message: "Left group successfully",
+    });
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    res.status(500).json({ error: "Failed to leave group" });
+  }
+}
+
+export async function deleteGroup(req: Request, res: Response) {
+  try {
+    const { id: groupId } = req.params;
+    const firebase_id = (req as any).user?.uid;
+
+    if (!firebase_id) {
+      res.status(401).json({ error: "Not authenticated. Please log in." });
+      return;
+    }
+
+    const accountId = await getAccountId(firebase_id);
+
+    // Verify user is admin of the group
+    const group = await sql`
+      SELECT admin_account_id FROM groups 
+      WHERE id = ${groupId}
+    `;
+
+    if (group.length === 0) {
+      res.status(404).json({ error: "Group not found" });
+      return;
+    }
+
+    if (group[0].admin_account_id !== accountId) {
+      res.status(403).json({ error: "Only group admin can delete the group" });
+      return;
+    }
+
+    // Check if any member has outstanding balances
+    const outstandingBalances = await sql`
+      SELECT COUNT(*) as count FROM group_members 
+      WHERE group_id = ${groupId} AND ABS(balance) > 0.01
+    `;
+
+    if (parseInt(outstandingBalances[0].count) > 0) {
+      res.status(400).json({
+        error:
+          "Cannot delete group with outstanding balances. Please settle all debts first.",
+      });
+      return;
+    }
+
+    // Delete group (cascade will handle related records)
+    await sql`
+      DELETE FROM groups WHERE id = ${groupId}
+    `;
+
+    res.status(200).json({
+      success: true,
+      message: "Group deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    res.status(500).json({ error: "Failed to delete group" });
+  }
+}

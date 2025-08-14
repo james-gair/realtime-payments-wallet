@@ -217,7 +217,8 @@ export interface GroupActivity {
     | "payment_settled"
     | "member_joined"
     | "member_left"
-    | "group_created";
+    | "group_created"
+    | "group_updated";
   description: string;
   details: string | null;
   amount: number | null;

@@ -428,7 +428,7 @@ CREATE TABLE group_activity (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   account_id INTEGER REFERENCES accounts(account_id), -- NULL for system events
-  activity_type TEXT NOT NULL CHECK (activity_type IN ('expense_added', 'payment_made', 'payment_settled', 'member_joined', 'member_left', 'group_created')),
+  activity_type TEXT NOT NULL CHECK (activity_type IN ('expense_added', 'payment_made', 'payment_settled', 'member_joined', 'member_left', 'group_created', 'group_updated')),
   description TEXT NOT NULL,
   details TEXT,
   amount NUMERIC(18, 2), -- optional, for money-related activities

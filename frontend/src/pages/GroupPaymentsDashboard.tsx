@@ -148,13 +148,15 @@ export default function GroupPaymentsDashboard() {
               {/* Group Icon */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Icon
+                  Group Icon *
                 </label>
                 <input
                   type="text"
                   value={newGroupIcon}
                   onChange={(e) => setNewGroupIcon(e.target.value)}
                   placeholder="Enter an emoji (e.g., 🏀, 🍕, 🎮)"
+                  maxLength={1}
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                 />
               </div>
@@ -162,7 +164,7 @@ export default function GroupPaymentsDashboard() {
               {/* Add Members */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Members *
+                  Add Members
                 </label>
                 <div className="flex gap-2">
                   <input
