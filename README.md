@@ -96,57 +96,41 @@ docker-compose up --build
 
 _Note: Don't forget to copy the .env file to local machine_
 
-### 🧪 KYC & Test Accounts for Marking
+### 🧪 KYC Mock Data
 
-In our prototype, money-movement features (bill payments, transfers, etc.) are only available to **KYC-verified** users **with funds** in their wallet.
+In our prototype, money-movement features (add money, bill payments, etc.) are only available to **KYC-verified** users.
+In this section:
 
-- In a real-world scenario:
+- Mock KYC records are provided so you can pass KYC verification.
 
-  - A new user must complete KYC by providing valid ID documents.
+- A pre-verified account in case KYC testing fails for unexpected reason.
 
-  - They must then transfer money from their bank account to our wallet — a process that requires interacting with an actual bank.
+##### 1. Pass KYC with mock data
 
-- In our prototype:
-  To make marking simple and avoid real banking steps, we provide:
-
-  - A pre-funded demo account so you can try all money features without needing a real top-up.
-
-  - Mock KYC records so you can pass verification instantly.
-
-  - A pre-verified account in case KYC testing is skipped or fails.
-
-##### 1. Pre-funded account (funds already loaded, but KYC still required)
-
-- Email: test@gmail.com
-- Password: testtest
-- Already has funds — you can test all features immediately.
-
-##### 2. Pass KYC with mock data
-
-Create or log in with any account, and when redirected to the KYC page, enter one of these records exactly, upload any .png or .jpeg image for the ID front, and take a webcam photo as instructed.
+Create or log in with any account, and when redirected to the KYC page, enter one of these records exactly, upload any .png or .jpeg image for the ID front, allow camera access when prompted, and take a webcam photo as instructed:
 
 ```bash
 
 ID Type: passport
 Full Name: David Tran
-Date of Birth: 1990-12-03
+Date of Birth: 03/12/1990
 Passport Number: P987654321
 Country of Issue: Australia
-Expiry Date: 2029-03-15
+Expiry Date: 15/03/2029
 
 #OR
 
-ID Type: driver license
+ID Type: driver licence
 Full Name: Emily Chen
-Date of Birth: 1994-06-15
-License Number: NSW1234567
+Date of Birth: 15/06/1994
+Licence Number: NSW1234567
 State of Issue: NSW
-Expiry Date: 2026-10-01
+Expiry Date: 01/10/2026
 
 
 ```
 
-##### 3. Pre-verified account (if KYC fails, which should not happen if the entered info is the same as the mock data shown above)
+##### 2. Pre-verified account (used only if KYC fails, which should not happen if the entered info is the same as the mock data shown above)
 
 - Email: testj@gmail.com
 - Password: testj@gmail.com
