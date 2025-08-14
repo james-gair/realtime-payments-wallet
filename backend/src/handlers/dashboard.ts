@@ -183,7 +183,7 @@ export async function getUserTransactions(req: Request, res: Response) {
         transactions.transaction_id AS transaction_id,
         transactions.name,
         CASE 
-          WHEN sender_account.firebase_id = ${auth_id} AND recipient_account.firebase_id != ${auth_id} THEN -transactions.amount
+          WHEN sender_account.firebase_id = ${auth_id} THEN -transactions.amount
           ELSE transactions.amount
         END AS amount, 
         currency.symbol as symbol,
