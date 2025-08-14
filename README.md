@@ -95,3 +95,43 @@ docker-compose up --build
   📍 To 'Try it out' Mock ID Check API docs: use `mock-kyc-secret-token` in the Swagger **Authorize** dialog. (only sample data will pass the check. You can find the sample data in: /mock-idcheck-api/src/sampleData.ts)
 
 _Note: Don't forget to copy the .env file to local machine_
+
+### 🧪 KYC Mock Data
+
+In our prototype, money-movement features (add money, bill payments, etc.) are only available to **KYC-verified** users.
+In this section:
+
+- Mock KYC records are provided so you can pass KYC verification.
+
+- A pre-verified account in case KYC testing fails for unexpected reason.
+
+##### 1. Pass KYC with mock data
+
+Create or log in with any account, and when redirected to the KYC page, enter one of these records exactly, upload any .png or .jpeg image for the ID front, allow camera access when prompted, and take a webcam photo as instructed:
+
+```bash
+
+ID Type: passport
+Full Name: David Tran
+Date of Birth: 03/12/1990
+Passport Number: P987654321
+Country of Issue: Australia
+Expiry Date: 15/03/2029
+
+#OR
+
+ID Type: driver licence
+Full Name: Emily Chen
+Date of Birth: 15/06/1994
+Licence Number: NSW1234567
+State of Issue: NSW
+Expiry Date: 01/10/2026
+
+
+```
+
+##### 2. Pre-verified account (used only if KYC fails, which should not happen if the entered info is the same as the mock data shown above)
+
+- Email: testj@gmail.com
+- Password: testj@gmail.com
+- Already KYC-verified.
