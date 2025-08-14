@@ -181,9 +181,62 @@ export interface KYCVerifyResultResponse {
 // GROUP TYPES
 // ============================================================================
 export interface Group {
-  id: number;
+  id: string; // UUID in backend
   name: string;
   icon: string;
+  admin_account_id: number;
+  created_at: string;
+  balance?: number; // Current user's balance in this group
+}
+
+export interface GroupMember {
+  account_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  balance: number | string; // Can be string from database
+  joined_at: string;
+  is_current_user?: boolean;
+}
+
+export interface GroupExpense {
+  id: string;
+  amount: number | string; // Can be string from database
+  description: string;
+  created_at: string;
+  payer_username: string;
+  payer_first_name: string;
+  payer_last_name: string;
+}
+
+export interface GroupActivity {
+  id: string;
+  activity_type:
+    | "expense_added"
+    | "payment_made"
+    | "payment_settled"
+    | "member_joined"
+    | "member_left"
+    | "group_created";
+  description: string;
+  details: string | null;
+  amount: number | null;
+  created_at: string;
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+export interface GroupSettlement {
+  debtor_account_id: number;
+  debtor_username: string;
+  creditor_account_id: number;
+  creditor_username: string;
+  amount: number;
+}
+
+export interface ExpenseSplit {
+  [accountId: string]: number;
 }
 
 // ============================================================================

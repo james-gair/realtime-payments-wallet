@@ -20,6 +20,13 @@ interface BalanceDetailsModalProps {
   onClose: () => void;
   selectedBalance: BalanceData | null;
   debtsData: { [key: string]: DebtData[] };
+  onSettlement?: (
+    recipientAccountId: number,
+    amount: number,
+    description?: string
+  ) => void;
+  isProcessingSettlement?: boolean;
+  isCurrentUser?: boolean;
 }
 
 export default function BalanceDetailsModal({
@@ -27,22 +34,30 @@ export default function BalanceDetailsModal({
   onClose,
   selectedBalance,
   debtsData,
+  onSettlement,
+  isProcessingSettlement = false,
+  isCurrentUser = false,
 }: BalanceDetailsModalProps) {
   if (!isOpen || !selectedBalance) return null;
 
   const userDebts = debtsData[selectedBalance.name] || [];
 
-  const getAvatarForUser = (userName: string) => {
-    if (userName === "You") return "🫵";
-    if (userName === "@Person") return "👤";
-    if (userName === "@Pizza") return "🍕";
-    if (userName === "@Apple") return "🍎";
-    return "👤";
-  };
+  // Determine if settlement should be available
+  // Only show settlement for current user when they owe money (negative balance)
+  const canSettle = isCurrentUser && selectedBalance.amount < 0;
 
   const handleSettleUp = () => {
-    // TODO: Navigate to settle up functionality
-    console.log("Settle up with", selectedBalance.name);
+    if (onSettlement && canSettle) {
+      // For simplicity, settle the full balance
+      // In a real app, you might want a more sophisticated UI for partial settlements
+      const amount = Math.abs(selectedBalance.amount);
+      const recipientAccountId = selectedBalance.id;
+      onSettlement(
+        recipientAccountId,
+        amount,
+        `Settlement for ${selectedBalance.name}`
+      );
+    }
   };
 
   return (
@@ -113,7 +128,7 @@ export default function BalanceDetailsModal({
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm">
-                      {getAvatarForUser(debt.from)}
+                      {/* {getAvatarForUser(debt.from)} */}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
@@ -148,16 +163,20 @@ export default function BalanceDetailsModal({
 
         {/* Modal Actions */}
         <div className="mt-6 flex gap-3">
-          <button
-            onClick={handleSettleUp}
-            className="flex-1 py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl transition"
-            disabled={selectedBalance.amount === 0}
-          >
-            Settle Up
-          </button>
+          {canSettle && (
+            <button
+              onClick={handleSettleUp}
+              className="flex-1 py-3 bg-black hover:bg-zinc-800 text-white font-semibold rounded-xl transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+              disabled={isProcessingSettlement}
+            >
+              {isProcessingSettlement ? "Processing..." : "Settle Up"}
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition"
+            className={`${
+              canSettle ? "flex-1" : "w-full"
+            } py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition`}
           >
             Close
           </button>

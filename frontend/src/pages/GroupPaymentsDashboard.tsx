@@ -5,24 +5,6 @@ import BlackButton from "../components/BlackButton";
 import { authFetch } from "../services/firebaseFetch";
 import type { Group } from "../types";
 
-export const MOCK_GROUPS = [
-  {
-    id: 1,
-    name: "Pickleball",
-    icon: "🥒",
-  },
-  {
-    id: 2,
-    name: "Gym",
-    icon: "🏋️",
-  },
-  {
-    id: 3,
-    name: "Volleyball",
-    icon: "🏐",
-  },
-];
-
 export default function GroupPaymentsDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -30,13 +12,14 @@ export default function GroupPaymentsDashboard() {
   const [newGroupIcon, setNewGroupIcon] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMembers, setNewMembers] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchGroups = async () => {
       const groups = await authFetch("http://localhost:4000/api/groups", {
         method: "GET",
       });
-      console.log("groups", await groups.json());
       const groupsData = await groups.json();
       setGroups(groupsData);
     };
@@ -64,9 +47,19 @@ export default function GroupPaymentsDashboard() {
     setNewMembers(newMembers.filter((email) => email !== emailToRemove));
   };
 
-  const handleSubmitGroup = () => {
-    if (newGroupName.trim() && newMembers.length > 0) {
-      // TODO: Submit group creation to backend
+  const handleSubmitGroup = async () => {
+    if (newGroupName.trim() && newGroupIcon.trim()) {
+      const response = await authFetch("http://localhost:4000/api/groups", {
+        method: "POST",
+        body: JSON.stringify({
+          name: newGroupName,
+          icon: newGroupIcon,
+          newMembers: newMembers.map((member) => member.trim()),
+        }),
+      });
+      const responseData = await response.json();
+
+      setGroups([...groups, responseData[0]]);
 
       // Reset form
       setNewGroupName("");
