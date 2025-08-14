@@ -66,7 +66,7 @@ export function kycVerifyHandler(
 
   if (!findRecord) result = "rejected";
   else result = "verified";
-  console.log(result);
+
   res.status(200).json({
     result: result,
     validatedData: validatedData,
